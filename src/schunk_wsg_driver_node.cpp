@@ -20,18 +20,15 @@ namespace schunk_wsg_driver
         ros::Subscriber command_sub_;
         ros::Publisher status_pub_;
 
-        std::pair<WSGCommand, bool> maybe_command_;
-
-        std::shared_ptr<WSGInterface> gripper_interface_;
+        std::shared_ptr<WSGInterface> gripper_interface_ptr_;
 
     public:
 
-        SchunkWSGDriver(const ros::NodeHandle& nh, const std::shared_ptr<WSGInterface>& gripper_interface, const std::string& command_topic, const std::string& status_topic) : nh_(nh), gripper_interface_(gripper_interface)
+        SchunkWSGDriver(const ros::NodeHandle& nh, const std::shared_ptr<WSGInterface>& gripper_interface, const std::string& command_topic, const std::string& status_topic) : nh_(nh), gripper_interface_ptr_(gripper_interface)
         {
-            maybe_command_ = std::make_pair(WSGCommand(), false);
             status_pub_ = nh_.advertise<WSGStatus>(status_topic, 1, false);
             command_sub_ = nh_.subscribe(command_topic, 1, &SchunkWSGDriver::CommandCB, this);
-            const bool success = gripper_interface_->InitializeGripper();
+            const bool success = gripper_interface_ptr_->InitializeGripper();
             if (!success)
             {
                 throw std::invalid_argument("Unable to initialize gripper");
@@ -40,40 +37,40 @@ namespace schunk_wsg_driver
 
         void Shutdown()
         {
-            gripper_interface_->Shutdown();
+            gripper_interface_ptr_->Shutdown();
             ros::requestShutdown();
         }
 
         void Loop(const double control_rate)
         {
-            gripper_interface_->Log("Gripper interface running");;
+            gripper_interface_ptr_->Log("Gripper interface running");;
             ros::Rate rate(control_rate);
             while (ros::ok())
             {
-                ros::spinOnce();
-                if (maybe_command_.second)
-                {
-                    const WSGCommand current_command = maybe_command_.first;
-                    maybe_command_.second = false;
-                    CommandGripper(current_command);
-                }
                 PublishGripperStatus();
+                ros::spinOnce();
                 rate.sleep();
             }
-            gripper_interface_->Log("Gripper interface shutting down");
+            gripper_interface_ptr_->Log("Gripper interface shutting down");
         }
 
     protected:
 
-        void CommandCB(WSGCommand command_msg)
+        void CommandCB(WSGCommand command)
         {
-            maybe_command_ = std::make_pair(command_msg, true);
+            const double target_position = std::abs(command.target_position);
+            const double max_effort = std::abs(command.max_effort);
+            const bool sent = gripper_interface_ptr_->SetTargetPositionAndEffort(target_position, max_effort);
+            if (!sent)
+            {
+                ROS_ERROR_NAMED(ros::this_node::getName(), "Failed to send command to gripper");
+            }
         }
 
         void PublishGripperStatus()
         {
-            gripper_interface_->RefreshGripperStatus();
-            const GripperMotionStatus status = gripper_interface_->GetGripperStatus();
+            gripper_interface_ptr_->RefreshGripperStatus();
+            const GripperMotionStatus status = gripper_interface_ptr_->GetGripperStatus();
             WSGStatus status_msg;
             status_msg.actual_position = status.ActualPosition();
             status_msg.actual_velocity = status.ActualVelocity();
@@ -82,13 +79,6 @@ namespace schunk_wsg_driver
             status_msg.max_effort = status.MaxEffort();
             status_msg.header.stamp = ros::Time::now();
             status_pub_.publish(status_msg);
-        }
-
-        bool CommandGripper(const WSGCommand& command)
-        {
-            const double target_position = std::abs(command.target_position);
-            const double max_effort = std::abs(command.max_effort);
-            return gripper_interface_->SetTargetPositionAndEffort(target_position, max_effort);
         }
     };
 }
