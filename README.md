@@ -1,9 +1,6 @@
 # ati_netcanoem_ft_driver
 ROS driver for ATI Force/Torque sensors using the NETCANOEM interface board
 
-# schunk_wsg_driver
-ROS driver for Schunk WSG grippers supporting UDP and CAN control interfaces
-
 ## Dependencies
 
 - Linux kernel with socketcan support enabled (enabled by default in Ubuntu 16.04.* and others)
