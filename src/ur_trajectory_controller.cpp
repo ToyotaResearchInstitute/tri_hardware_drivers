@@ -323,6 +323,8 @@ namespace lightweight_ur_interface
             if (SetsEqual(trajectory.joint_names, joint_names_))
             {
                 std::list<Eigen::VectorXd> ordered_waypoints;
+                // Always add the current config to the beginning of the commanded trajectory
+                ordered_waypoints.push_back(EigenHelpers::StdVectorDoubleToEigenVectorXd(current_config_));
                 bool trajectory_valid = true;
                 for (size_t tdx = 0; tdx < trajectory.points.size(); tdx++)
                 {
