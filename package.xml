@@ -41,7 +41,6 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>arc_utilities</build_depend>
-  <build_depend>factory_optimized_planners</build_depend>
   <build_depend>control_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>roscpp</build_depend>
@@ -51,7 +50,6 @@
   <build_depend>std_srvs</build_depend>
   <build_depend>message_generation</build_depend>
   <run_depend>arc_utilities</run_depend>
-  <run_depend>factory_optimized_planners</run_depend>
   <run_depend>control_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>roscpp</run_depend>

@@ -19,7 +19,7 @@
 #include <lightweight_ur_interface/VelocityCommand.h>
 #include <arc_utilities/pretty_print.hpp>
 #include <arc_utilities/eigen_helpers.hpp>
-#include <factory_optimized_planners/trajectory.hpp>
+#include <arc_utilities/time_optimal_trajectory_parametrization.hpp>
 
 namespace lightweight_ur_interface
 {
@@ -36,7 +36,7 @@ namespace lightweight_ur_interface
 
         bool current_config_valid_;
         ros::Time active_trajectory_start_time_;
-        std::shared_ptr<factory_optimized_planners::Trajectory> active_trajectory_;
+        std::shared_ptr<time_optimal_trajectory_parametrization::Trajectory> active_trajectory_;
         std::vector<double> current_config_;
         std::vector<double> current_velocities_;
 
@@ -380,7 +380,9 @@ namespace lightweight_ur_interface
                     // Make the trajectory
                     const Eigen::VectorXd velocity_limits = EigenHelpers::StdVectorDoubleToEigenVectorXd(joint_velocity_limits_);
                     const Eigen::VectorXd acceleration_limits = EigenHelpers::StdVectorDoubleToEigenVectorXd(joint_acceleration_limits_);
-                    std::shared_ptr<factory_optimized_planners::Trajectory> new_trajectory_ptr = std::make_shared<factory_optimized_planners::Trajectory>(factory_optimized_planners::Path(ordered_waypoints, 0.01), velocity_limits, acceleration_limits);
+                    const double max_path_deviation = 0.01;
+                    const double timestep = 0.001;
+                    std::shared_ptr<time_optimal_trajectory_parametrization::Trajectory> new_trajectory_ptr = std::make_shared<time_optimal_trajectory_parametrization::Trajectory>(ordered_waypoints, velocity_limits, acceleration_limits, max_path_deviation, timestep);
                     if (new_trajectory_ptr->isValid())
                     {
                         active_trajectory_.reset();

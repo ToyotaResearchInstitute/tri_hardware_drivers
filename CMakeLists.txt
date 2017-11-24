@@ -9,7 +9,6 @@ project(lightweight_ur_interface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   arc_utilities
-  factory_optimized_planners
   control_msgs
   geometry_msgs
   roscpp
@@ -105,7 +104,7 @@ generate_messages(DEPENDENCIES std_msgs)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS arc_utilities factory_optimized_planners control_msgs geometry_msgs roscpp rospy sensor_msgs std_msgs std_srvs message_runtime DEPENDS Eigen3)
+catkin_package(INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS arc_utilities control_msgs geometry_msgs roscpp rospy sensor_msgs std_msgs std_srvs message_runtime DEPENDS Eigen3)
 
 ###########
 ## Build ##
