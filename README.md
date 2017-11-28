@@ -9,11 +9,7 @@ ROS provides the build system, Catkin, and IPC with the driver. May work with ot
 
 - [arc_utilities](https://github.com/ToyotaResearchInstitute/arc_utilities)
 
-`arc_utilities` provides helper functions used for math operations and data serialization/de-serialization.
-
-- [factory_optimized_planners](https://github.com/ToyotaResearchInstitute/factory_optimized_planners)
-
-`factory_optimized_planners` provides a path->trajectory parametrization implementation. Since this dependency is expensive to compile, it will be removed once the path->trajectory parametrization implementation is moved to `arc_utilities`.
+`arc_utilities` provides helper functions used for math operations, data serialization/de-serialization, and smooth trajectory parametrization.
 
 ## Optional Dependencies (real or simulated robot hardware)
 
