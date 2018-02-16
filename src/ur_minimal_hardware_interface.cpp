@@ -37,43 +37,47 @@ namespace lightweight_ur_interface
         ros::NodeHandle nh_;
         ros::Publisher joint_state_pub_;
         ros::Publisher ee_pose_pub_;
-        ros::Publisher ee_twist_pub_;
+        ros::Publisher ee_body_twist_pub_;
+        ros::Publisher ee_world_twist_pub_;
         ros::Publisher ee_wrench_pub_;
         ros::Subscriber velocity_command_sub_;
         ros::Subscriber twist_command_sub_;
-        ros::Subscriber wrench_command_sub_;
-        ros::ServiceServer switch_force_mode_server_;
-        ros::ServiceServer switch_teach_mode_server_;
 
-        std::atomic<bool> in_force_mode_;
-        std::atomic<bool> in_teach_mode_;
         std::unique_ptr<URRealtimeInterface> robot_ptr_;
         std::mutex latest_state_mutex_;
         bool valid_latest_state_;
         sensor_msgs::JointState latest_joint_state_;
-        std::vector<double> latest_raw_tcp_pose_;
+        Eigen::Isometry3d latest_tcp_pose_;
 
     public:
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         URMinimalHardwareInterface(ros::NodeHandle& nh,
                                    const std::string& velocity_command_topic,
                                    const std::string& twist_command_topic,
-                                   const std::string& wrench_command_topic,
                                    const std::string& joint_state_topic,
                                    const std::string& ee_pose_topic,
-                                   const std::string& ee_twist_topic,
+                                   const std::string& ee_world_twist_topic,
+                                   const std::string& ee_body_twist_topic,
                                    const std::string& ee_wrench_topic,
                                    const std::string& base_frame,
                                    const std::string& ee_frame,
-                                   const std::string& force_mode_service,
-                                   const std::string& teach_mode_service,
+                                   const std::vector<std::string>& ordered_joint_names,
                                    const std::map<std::string, JointLimits>& joint_limits,
                                    const std::string& robot_host) : nh_(nh)
         {
-            in_force_mode_.store(false);
-            in_teach_mode_.store(false);
             valid_latest_state_ = false;
-            joint_names_ = arc_helpers::GetKeys(joint_limits);
+            // Make sure our ordered joint names match our joint limits
+            joint_names_ = ordered_joint_names;
+            if (joint_names_.size() != 6)
+            {
+                throw std::invalid_argument("There must be exactly 6 joints");
+            }
+            if (SetsEqual(joint_names_, arc_helpers::GetKeys(joint_limits)) == false)
+            {
+                throw std::invalid_argument("Ordered joint names do not match those provided with joint limits");
+            }
             base_frame_ = base_frame;
             ee_frame_ = ee_frame;
             joint_limits_ = joint_limits;
@@ -88,43 +92,35 @@ namespace lightweight_ur_interface
             ROS_INFO_NAMED(ros::this_node::getName(), "Set max_acceleration_limit to %f", max_acceleration_limit_);
             joint_state_pub_ = nh_.advertise<sensor_msgs::JointState>(joint_state_topic, 1, false);
             ee_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(ee_pose_topic, 1, false);
-            ee_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>(ee_twist_topic, 1, false);
+            ee_world_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>(ee_world_twist_topic, 1, false);
+            ee_body_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>(ee_body_twist_topic, 1, false);
             ee_wrench_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ee_wrench_topic, 1, false);
             velocity_command_sub_ = nh_.subscribe(velocity_command_topic, 1, &URMinimalHardwareInterface::VelocityCommandCallback, this);
             twist_command_sub_ = nh_.subscribe(twist_command_topic, 1, &URMinimalHardwareInterface::TwistCommandCallback, this);
-            wrench_command_sub_ = nh_.subscribe(wrench_command_topic, 1, &URMinimalHardwareInterface::WrenchCommandCallback, this);
-            switch_force_mode_server_ = nh_.advertiseService(force_mode_service, &URMinimalHardwareInterface::SwitchForceModeCB, this);
-            switch_teach_mode_server_ = nh_.advertiseService(teach_mode_service, &URMinimalHardwareInterface::SwitchTeachModeCB, this);
             // Build robot interface
-            const std::function<void(const URRealtimeState&)> callback_fn = [&] (const URRealtimeState& latest_state) { return PublishState(joint_names_, ee_frame_, latest_state); };
+            const std::function<void(const URRealtimeState&)> callback_fn = [&] (const URRealtimeState& latest_state) { return PublishState(joint_names_, base_frame_, ee_frame_, latest_state); };
             std::function<void(const std::string&)> logging_fn = [] (const std::string& message) { ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str()); };
             robot_ptr_ = std::unique_ptr<URRealtimeInterface>(new URRealtimeInterface(robot_host, callback_fn, logging_fn));
         }
 
-        void Run()
+        void Run(const double control_rate)
         {
             // Start robot interface
             robot_ptr_->StartRecv();
             // Start ROS spinloop
-            ros::Rate looprate(300.0);
+            ros::Rate looprate(control_rate);
             while (nh_.ok())
             {
-                if (in_teach_mode_.load())
-                {
-                    const std::string cmd = "teach_mode()\n";
-                    const bool success = robot_ptr_->SendURScriptCommand(cmd);
-                    if (!success)
-                    {
-                        throw std::runtime_error("Failed to send tech mode command");
-                    }
-                }
                 ros::spinOnce();
                 looprate.sleep();
             }
             robot_ptr_->StopRecv();
         }
 
-        void PublishState(const std::vector<std::string>& joint_names, const std::string& ee_frame_name, const URRealtimeState& robot_state)
+        void PublishState(const std::vector<std::string>& joint_names,
+                          const std::string& base_frame_name,
+                          const std::string& ee_frame_name,
+                          const URRealtimeState& robot_state)
         {
             // Get the current time
             const ros::Time state_time = ros::Time::now();
@@ -137,19 +133,27 @@ namespace lightweight_ur_interface
             joint_state_msg.effort = robot_state.TargetTorque();
             latest_state_mutex_.lock();
             latest_joint_state_ = joint_state_msg;
-            latest_raw_tcp_pose_ = robot_state.RawActualTcpPose();
+            latest_tcp_pose_ = robot_state.ActualTcpPose();
             valid_latest_state_ = true;
             latest_state_mutex_.unlock();
             // EE transform
             geometry_msgs::PoseStamped ee_transform_msg = EigenHelpersConversions::EigenIsometry3dToGeometryPoseStamped(robot_state.ActualTcpPose(), base_frame_);
             ee_transform_msg.header.stamp = state_time;
             // EE twist
-            const Eigen::Matrix<double, 6, 1>& ee_twist = robot_state.ActualTcpTwist();
-            geometry_msgs::TwistStamped ee_twist_msg;
-            ee_twist_msg.header.stamp = state_time;
-            ee_twist_msg.header.frame_id = ee_frame_name;
-            ee_twist_msg.twist.linear = EigenHelpersConversions::EigenVector3dToGeometryVector3(ee_twist.block<3, 1>(0, 0));
-            ee_twist_msg.twist.angular = EigenHelpersConversions::EigenVector3dToGeometryVector3(ee_twist.block<3, 1>(3, 0));
+            const Eigen::Matrix<double, 6, 1>& ee_world_twist = robot_state.ActualTcpTwist();
+            geometry_msgs::TwistStamped ee_world_twist_msg;
+            ee_world_twist_msg.header.stamp = state_time;
+            ee_world_twist_msg.header.frame_id = base_frame_name;
+            ee_world_twist_msg.twist.linear = EigenHelpersConversions::EigenVector3dToGeometryVector3(ee_world_twist.block<3, 1>(0, 0));
+            ee_world_twist_msg.twist.angular = EigenHelpersConversions::EigenVector3dToGeometryVector3(ee_world_twist.block<3, 1>(3, 0));
+            const Eigen::Quaterniond ee_rotation(robot_state.ActualTcpPose().rotation());
+            const Eigen::Vector3d body_frame_linear_velocity = EigenHelpers::RotateVectorReverse(ee_rotation, ee_world_twist.block<3, 1>(0, 0));
+            const Eigen::Vector3d body_frame_angular_velocity = EigenHelpers::RotateVectorReverse(ee_rotation, ee_world_twist.block<3, 1>(3, 0));
+            geometry_msgs::TwistStamped ee_body_twist_msg;
+            ee_body_twist_msg.header.stamp = state_time;
+            ee_body_twist_msg.header.frame_id = ee_frame_name;
+            ee_body_twist_msg.twist.linear = EigenHelpersConversions::EigenVector3dToGeometryVector3(body_frame_linear_velocity);
+            ee_body_twist_msg.twist.angular = EigenHelpersConversions::EigenVector3dToGeometryVector3(body_frame_angular_velocity);
             // EE wrench
             const Eigen::Matrix<double, 6, 1>& ee_wrench = robot_state.ActualTcpWrench();
             geometry_msgs::WrenchStamped ee_wrench_msg;
@@ -160,94 +164,9 @@ namespace lightweight_ur_interface
             // Publish
             joint_state_pub_.publish(joint_state_msg);
             ee_pose_pub_.publish(ee_transform_msg);
-            ee_twist_pub_.publish(ee_twist_msg);
+            ee_world_twist_pub_.publish(ee_world_twist_msg);
+            ee_body_twist_pub_.publish(ee_body_twist_msg);
             ee_wrench_pub_.publish(ee_wrench_msg);
-        }
-
-        bool SwitchForceModeCB(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
-        {
-            if (req.data)
-            {
-                if (in_force_mode_.load() == false)
-                {
-                    in_force_mode_.store(true);
-                    res.success = true;
-                    res.message = "Entered force mode";
-                }
-                else
-                {
-                    res.success = true;
-                    res.message = "Already in force mode, ignoring request to enter force mode";
-                }
-            }
-            else
-            {
-                if (in_force_mode_.load() == true)
-                {
-                    in_force_mode_.store(false);
-                    res.success = true;
-                    res.message = "Exited force mode";
-                }
-                else
-                {
-                    res.success = true;
-                    res.message = "Not in force mode, ignoring request to exit force mode";
-                }
-            }
-            return true;
-        }
-
-        bool SwitchTeachModeCB(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
-        {
-            if (req.data)
-            {
-                if (in_teach_mode_.load() == false)
-                {
-                    const std::string cmd = "teach_mode()\n";
-                    const bool success = robot_ptr_->SendURScriptCommand(cmd);
-                    if (success)
-                    {
-                        in_teach_mode_.store(true);
-                        res.success = true;
-                        res.message = "Entered teach mode";
-                    }
-                    else
-                    {
-                        res.success = false;
-                        res.message = "Failed to enter teach mode";
-                    }
-                }
-                else
-                {
-                    res.success = true;
-                    res.message = "Already in teach mode, ignoring request to enter teach mode";
-                }
-            }
-            else
-            {
-                if (in_teach_mode_.load() == true)
-                {
-                    const std::string cmd = "end_teach_mode()\n";
-                    const bool success = robot_ptr_->SendURScriptCommand(cmd);
-                    if (success)
-                    {
-                        in_teach_mode_.store(false);
-                        res.success = true;
-                        res.message = "Exited teach mode";
-                    }
-                    else
-                    {
-                        res.success = false;
-                        res.message = "Failed to exit teach mode";
-                    }
-                }
-                else
-                {
-                    res.success = true;
-                    res.message = "Not in teach mode, ignoring request to exit teach mode";
-                }
-            }
-            return true;
         }
 
         void SendVelocityCommand(const std::vector<double>& command)
@@ -314,14 +233,7 @@ namespace lightweight_ur_interface
                 }
                 if (command_valid)
                 {
-                    if (in_teach_mode_.load() == false)
-                    {
-                        SendVelocityCommand(target_velocity);
-                    }
-                    else
-                    {
-                        ROS_WARN_NAMED(ros::this_node::getName(), "Ignoring VelocityCommand since robot is in teach mode");
-                    }
+                    SendVelocityCommand(target_velocity);
                 }
             }
             else
@@ -336,15 +248,7 @@ namespace lightweight_ur_interface
             // We need to determine the appropriate max acceleration here?
             const int max_str_len = 1024;
             char command_str_buffer[max_str_len];
-            int written = 0;
-            if (in_force_mode_.load())
-            {
-                written = snprintf(command_str_buffer, max_str_len - 1, "force_mode(get_actual_tcp_pose(), [1, 1, 1, 1, 1, 1], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 2, [10.0, 10.0, 10.0, 10.0, 10.0, 10.0])\nspeedl([%1.5f, %1.5f, %1.5f, %1.5f, %1.5f, %1.5f], %f, 0.008)\n", command[0], command[1], command[2], command[3], command[4], command[5], max_command_acceleration);
-            }
-            else
-            {
-                written = snprintf(command_str_buffer, max_str_len - 1, "speedl([%1.5f, %1.5f, %1.5f, %1.5f, %1.5f, %1.5f], %f, 0.008)\n", command[0], command[1], command[2], command[3], command[4], command[5], max_command_acceleration);
-            }
+            const int written = snprintf(command_str_buffer, max_str_len - 1, "speedl([%1.5f, %1.5f, %1.5f, %1.5f, %1.5f, %1.5f], %f, 0.008)\n", command[0], command[1], command[2], command[3], command[4], command[5], max_command_acceleration);
             assert(written > 0);
             assert(written < max_str_len);
             const std::string command_str(command_str_buffer);
@@ -357,124 +261,75 @@ namespace lightweight_ur_interface
 
         void TwistCommandCallback(geometry_msgs::TwistStamped twist_command)
         {
-            if (twist_command.header.frame_id == ee_frame_)
+            bool valid_twist = true;
+            if (std::isinf(twist_command.twist.linear.x) || std::isnan(twist_command.twist.linear.x))
             {
-                bool valid_twist = true;
-                if (std::isinf(twist_command.twist.linear.x) || std::isnan(twist_command.twist.linear.x))
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.x is NAN or INF");
+                valid_twist = false;
+            }
+            if (std::isinf(twist_command.twist.linear.y) || std::isnan(twist_command.twist.linear.y))
+            {
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.y is NAN or INF");
+                valid_twist = false;
+            }
+            if (std::isinf(twist_command.twist.linear.z) || std::isnan(twist_command.twist.linear.z))
+            {
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.z is NAN or INF");
+                valid_twist = false;
+            }
+            if (std::isinf(twist_command.twist.angular.x) || std::isnan(twist_command.twist.angular.x))
+            {
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.x is NAN or INF");
+                valid_twist = false;
+            }
+            if (std::isinf(twist_command.twist.angular.y) || std::isnan(twist_command.twist.angular.y))
+            {
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.y is NAN or INF");
+                valid_twist = false;
+            }
+            if (std::isinf(twist_command.twist.angular.z) || std::isnan(twist_command.twist.angular.z))
+            {
+                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.z is NAN or INF");
+                valid_twist = false;
+            }
+            if (valid_twist)
+            {
+                const std::vector<double> raw_twist = {twist_command.twist.linear.x, twist_command.twist.linear.y, twist_command.twist.linear.z, twist_command.twist.angular.x, twist_command.twist.angular.y, twist_command.twist.angular.z};
+                if (twist_command.header.frame_id == ee_frame_)
                 {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.x is NAN or INF");
-                    valid_twist = false;
-                }
-                if (std::isinf(twist_command.twist.linear.y) || std::isnan(twist_command.twist.linear.y))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.y is NAN or INF");
-                    valid_twist = false;
-                }
-                if (std::isinf(twist_command.twist.linear.z) || std::isnan(twist_command.twist.linear.z))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, linear.z is NAN or INF");
-                    valid_twist = false;
-                }
-                if (std::isinf(twist_command.twist.angular.x) || std::isnan(twist_command.twist.angular.x))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.x is NAN or INF");
-                    valid_twist = false;
-                }
-                if (std::isinf(twist_command.twist.angular.y) || std::isnan(twist_command.twist.angular.y))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.y is NAN or INF");
-                    valid_twist = false;
-                }
-                if (std::isinf(twist_command.twist.angular.z) || std::isnan(twist_command.twist.angular.z))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist command, angular.z is NAN or INF");
-                    valid_twist = false;
-                }
-                if (valid_twist)
-                {
-                    const std::vector<double> raw_twist = {twist_command.twist.linear.x, twist_command.twist.linear.y, twist_command.twist.linear.z, twist_command.twist.angular.x, twist_command.twist.angular.y, twist_command.twist.angular.z};
-                    if (in_teach_mode_.load() == false)
+                    latest_state_mutex_.lock();
+                    const Eigen::Isometry3d latest_tcp_pose = latest_tcp_pose_;
+                    const bool valid_latest_state = valid_latest_state_;
+                    latest_state_mutex_.unlock();
+                    if (valid_latest_state)
                     {
-                        SendTwistCommand(raw_twist);
+                        const Eigen::Quaterniond latest_tcp_rotation(latest_tcp_pose.rotation());
+                        const Eigen::Vector3d ee_frame_linear_velocity(raw_twist[0], raw_twist[1], raw_twist[2]);
+                        const Eigen::Vector3d ee_frame_angular_velocity(raw_twist[3], raw_twist[4], raw_twist[5]);
+                        const Eigen::Vector3d base_frame_linear_velocity = EigenHelpers::RotateVector(latest_tcp_rotation, ee_frame_linear_velocity);
+                        const Eigen::Vector3d base_frame_angular_velocity = EigenHelpers::RotateVector(latest_tcp_rotation, ee_frame_angular_velocity);
+                        const std::vector<double> base_frame_twist = {base_frame_linear_velocity.x(),
+                                                                      base_frame_linear_velocity.y(),
+                                                                      base_frame_linear_velocity.z(),
+                                                                      base_frame_angular_velocity.x(),
+                                                                      base_frame_angular_velocity.y(),
+                                                                      base_frame_angular_velocity.z()};
+                        SendTwistCommand(base_frame_twist);
                     }
                     else
                     {
-                        ROS_WARN_NAMED(ros::this_node::getName(), "Ignoring Twist since robot is in teach mode");
+                        ROS_WARN_NAMED(ros::this_node::getName(), "Ignoring ee-frame Twist since latest state is not valid");
                     }
                 }
-            }
-            else
-            {
-                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist frame: got [%s] needs [%s]", twist_command.header.frame_id.c_str(), ee_frame_.c_str());
-            }
-        }
-
-        void SendWrenchCommand(const std::vector<double>& wrench)
-        {
-            const int max_str_len = 1024;
-            char command_str_buffer[max_str_len];
-            const int written = snprintf(command_str_buffer, max_str_len - 1, "force_mode(get_actual_tcp_pose(), [1, 1, 1, 1, 1, 1], [%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], 2, [10.0, 10.0, 10.0, 10.0, 10.0, 10.0])\n", wrench[0], wrench[1], wrench[2], wrench[3], wrench[4], wrench[5]);
-            assert(written > 0);
-            assert(written < max_str_len);
-            const std::string command_str(command_str_buffer);
-            const bool success = robot_ptr_->SendURScriptCommand(command_str);
-            if (!success)
-            {
-                throw std::runtime_error("Failed to send force_mode(...) command");
-            }
-        }
-
-        void WrenchCommandCallback(geometry_msgs::WrenchStamped wrench_command)
-        {
-            if (wrench_command.header.frame_id == ee_frame_)
-            {
-                bool valid_wrench = true;
-                if (std::isinf(wrench_command.wrench.force.x) || std::isnan(wrench_command.wrench.force.x))
+                else if (twist_command.header.frame_id == base_frame_)
                 {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, force.x is NAN or INF");
-                    valid_wrench = false;
+                    SendTwistCommand(raw_twist);
                 }
-                if (std::isinf(wrench_command.wrench.force.y) || std::isnan(wrench_command.wrench.force.y))
+                else
                 {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, force.y is NAN or INF");
-                    valid_wrench = false;
+                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Twist frame: got [%s] needs [%s] or [%s]",
+                                   twist_command.header.frame_id.c_str(), base_frame_.c_str(), ee_frame_.c_str());
                 }
-                if (std::isinf(wrench_command.wrench.force.z) || std::isnan(wrench_command.wrench.force.z))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, force.z is NAN or INF");
-                    valid_wrench = false;
-                }
-                if (std::isinf(wrench_command.wrench.torque.x) || std::isnan(wrench_command.wrench.torque.x))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, torque.x is NAN or INF");
-                    valid_wrench = false;
-                }
-                if (std::isinf(wrench_command.wrench.torque.y) || std::isnan(wrench_command.wrench.torque.y))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, torque.y is NAN or INF");
-                    valid_wrench = false;
-                }
-                if (std::isinf(wrench_command.wrench.torque.z) || std::isnan(wrench_command.wrench.torque.z))
-                {
-                    ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench command, torque.z is NAN or INF");
-                    valid_wrench = false;
-                }
-                if (valid_wrench)
-                {
-                    const std::vector<double> raw_wrench = {wrench_command.wrench.force.x, wrench_command.wrench.force.y, wrench_command.wrench.force.z, wrench_command.wrench.torque.x, wrench_command.wrench.torque.y, wrench_command.wrench.torque.z};
-                    if (in_teach_mode_.load() == false)
-                    {
-                        SendWrenchCommand(raw_wrench);
-                    }
-                    else
-                    {
-                        ROS_WARN_NAMED(ros::this_node::getName(), "Ignoring Wrench since robot is in teach mode");
-                    }
-                }
-            }
-            else
-            {
-                ROS_WARN_NAMED(ros::this_node::getName(), "Invalid Wrench frame: got [%s] needs [%s]", wrench_command.header.frame_id.c_str(), ee_frame_.c_str());
             }
         }
     };
@@ -482,44 +337,42 @@ namespace lightweight_ur_interface
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "ur_velocity_interface");
-    ROS_INFO_NAMED(ros::this_node::getName(), "Starting ur_velocity_interface...");
+    ros::init(argc, argv, "ur_minimal_hardware_interface");
+    ROS_INFO_NAMED(ros::this_node::getName(), "Starting ur_minimal_hardware_interface...");
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
     const std::string DEFAULT_JOINT_STATE_TOPIC = "/ur10/joint_states";
     const std::string DEFAULT_VELOCITY_COMMAND_TOPIC = "/ur10/joint_command_velocity";
     const std::string DEFAULT_TWIST_COMMAND_TOPIC = "/ur10/ee_twist_command";
-    const std::string DEFAULT_WRENCH_COMMAND_TOPIC = "/ur10/ee_wrench_command";
     const std::string DEFAULT_EE_POSE_TOPIC = "/ur10/ee_pose";
-    const std::string DEFAULT_EE_TWIST_TOPIC = "/ur10/ee_twist";
+    const std::string DEFAULT_EE_WORLD_TWIST_TOPIC = "/ur10/ee_world_twist";
+    const std::string DEFAULT_EE_BODY_TWIST_TOPIC = "/ur10/ee_body_twist";
     const std::string DEFAULT_EE_WRENCH_TOPIC = "/ur10/ee_wrench";
     const std::string DEFAULT_BASE_FRAME = "base";
-    const std::string DEFAULT_EE_WRENCH_FRAME = "ur10_ee_ft_frame";
-    const std::string DEFAULT_FORCE_MODE_SERVICE = "/ur10/switch_force_mode";
-    const std::string DEFAULT_TEACH_MODE_SERVICE = "/ur10/switch_teach_mode";
+    const std::string DEFAULT_EE_FRAME = "ur10_ee_frame";
     const std::string DEFAULT_ROBOT_HOSTNAME = "172.31.1.200";
-    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.25;
-    const double DEFAULT_ACCELERATION_LIMIT_SCALING = 0.25;
+    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.5;
+    const double DEFAULT_ACCELERATION_LIMIT_SCALING = 0.5;
     const std::string joint_state_topic = nhp.param(std::string("joint_state_topic"), DEFAULT_JOINT_STATE_TOPIC);
     const std::string velocity_command_topic = nhp.param(std::string("velocity_command_topic"), DEFAULT_VELOCITY_COMMAND_TOPIC);
     const std::string twist_command_topic = nhp.param(std::string("twist_command_topic"), DEFAULT_TWIST_COMMAND_TOPIC);
-    const std::string wrench_command_topic = nhp.param(std::string("wrench_command_topic"), DEFAULT_WRENCH_COMMAND_TOPIC);
     const std::string ee_pose_topic = nhp.param(std::string("ee_pose_topic"), DEFAULT_EE_POSE_TOPIC);
-    const std::string ee_twist_topic = nhp.param(std::string("ee_twist_topic"), DEFAULT_EE_TWIST_TOPIC);
+    const std::string ee_world_twist_topic = nhp.param(std::string("ee_world_twist_topic"), DEFAULT_EE_WORLD_TWIST_TOPIC);
+    const std::string ee_body_twist_topic = nhp.param(std::string("ee_body_twist_topic"), DEFAULT_EE_BODY_TWIST_TOPIC);
     const std::string ee_wrench_topic = nhp.param(std::string("ee_wrench_topic"), DEFAULT_EE_WRENCH_TOPIC);
     const std::string base_frame = nhp.param(std::string("base_frame"), DEFAULT_BASE_FRAME);
-    const std::string ee_wrench_frame = nhp.param(std::string("ee_wrench_frame"), DEFAULT_EE_WRENCH_FRAME);
-    const std::string force_mode_service = nhp.param(std::string("force_mode_service"), DEFAULT_FORCE_MODE_SERVICE);
-    const std::string teach_mode_service = nhp.param(std::string("teach_mode_service"), DEFAULT_TEACH_MODE_SERVICE);
+    const std::string ee_frame = nhp.param(std::string("ee_frame"), DEFAULT_EE_FRAME);
     const std::string robot_hostname = nhp.param(std::string("robot_hostname"), DEFAULT_ROBOT_HOSTNAME);
     const double velocity_limit_scaling = std::abs(nhp.param(std::string("velocity_limit_scaling"), DEFAULT_VELOCITY_LIMIT_SCALING));
     const double acceleration_limit_scaling = std::abs(nhp.param(std::string("acceleration_limit_scaling"), DEFAULT_ACCELERATION_LIMIT_SCALING));
     const double real_velocity_limit_scaling = arc_helpers::ClampValueAndWarn(velocity_limit_scaling, 0.0, 1.0);
     const double real_acceleration_limit_scaling = arc_helpers::ClampValueAndWarn(acceleration_limit_scaling, 0.0, 1.0);
+    // Joint names in true order
+    const std::vector<std::string> ordered_joint_names = lightweight_ur_interface::GetOrderedJointNames();
     // Joint limits
     const std::map<std::string, lightweight_ur_interface::JointLimits> joint_limits = lightweight_ur_interface::GetLimits(real_velocity_limit_scaling, real_acceleration_limit_scaling);
-    lightweight_ur_interface::URMinimalHardwareInterface interface(nh, velocity_command_topic, twist_command_topic, wrench_command_topic, joint_state_topic, ee_pose_topic, ee_twist_topic, ee_wrench_topic, base_frame, ee_wrench_frame, force_mode_service, teach_mode_service, joint_limits, robot_hostname);
+    lightweight_ur_interface::URMinimalHardwareInterface interface(nh, velocity_command_topic, twist_command_topic, joint_state_topic, ee_pose_topic, ee_world_twist_topic, ee_body_twist_topic, ee_wrench_topic, base_frame, ee_frame, ordered_joint_names, joint_limits, robot_hostname);
     ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
-    interface.Run();
+    interface.Run(400.0);
     return 0;
 }

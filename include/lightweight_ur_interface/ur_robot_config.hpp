@@ -50,6 +50,12 @@ namespace lightweight_ur_interface
         }
     };
 
+    inline std::ostream& operator<<(std::ostream& strm, const PIDParams& params)
+    {
+        strm << "Kp: " << params.Kp() << " Ki: " << params.Ki() << " Kd: " << params.Kd() << " iclamp: " << params.Iclamp();
+        return strm;
+    }
+
     class JointLimits
     {
     protected:
@@ -98,15 +104,31 @@ namespace lightweight_ur_interface
         }
     };
 
+    inline std::ostream& operator<<(std::ostream& strm, const JointLimits& limits)
+    {
+        strm << "Position: [" << limits.MinPosition() << "," << limits.MaxPosition() << ") Velocity: " << limits.MaxVelocity() << " Acceleration: " << limits.MaxAcceleration();
+        return strm;
+    }
+
+    inline std::vector<std::string> GetOrderedJointNames()
+    {
+        return std::vector<std::string>{"shoulder_pan_joint",
+                                        "shoulder_lift_joint",
+                                        "elbow_joint",
+                                        "wrist_1_joint",
+                                        "wrist_2_joint",
+                                        "wrist_3_joint"};
+    }
+
     inline std::map<std::string, JointLimits> GetDefaultLimits()
     {
         std::map<std::string, JointLimits> joint_limits;
-        joint_limits["joint_1"] = JointLimits(-M_PI, M_PI, 2.16, 2.16);
-        joint_limits["joint_2"] = JointLimits(-M_PI, M_PI, 2.16, 2.16);
-        joint_limits["joint_3"] = JointLimits(-M_PI, M_PI, 3.15, 3.15);
-        joint_limits["joint_4"] = JointLimits(-M_PI, M_PI, 3.2, 3.2);
-        joint_limits["joint_5"] = JointLimits(-M_PI, M_PI, 3.2, 3.2);
-        joint_limits["joint_6"] = JointLimits(-M_PI, M_PI, 3.2, 3.2);
+        joint_limits["shoulder_pan_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 2.0, 2.0);
+        joint_limits["shoulder_lift_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 2.0, 2.0);
+        joint_limits["elbow_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 3.0, 3.0);
+        joint_limits["wrist_1_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 3.0, 3.0);
+        joint_limits["wrist_2_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 3.0, 3.0);
+        joint_limits["wrist_3_joint"] = JointLimits(-2.0 * M_PI, 2.0 * M_PI, 3.0, 3.0);
         return joint_limits;
     }
 
@@ -132,12 +154,12 @@ namespace lightweight_ur_interface
     inline std::map<std::string, PIDParams> GetDefaultPositionControllerParams(const double base_kp, const double base_ki, const double base_kd, const double base_i_clamp)
     {
         std::map<std::string, PIDParams> joint_controller_params;
-        joint_controller_params["joint_1"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
-        joint_controller_params["joint_2"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
-        joint_controller_params["joint_3"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
-        joint_controller_params["joint_4"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
-        joint_controller_params["joint_5"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
-        joint_controller_params["joint_6"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["shoulder_pan_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["shoulder_lift_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["elbow_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["wrist_1_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["wrist_2_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
+        joint_controller_params["wrist_3_joint"] = PIDParams(base_kp, base_ki, base_kd, base_i_clamp);
         return joint_controller_params;
     }
 

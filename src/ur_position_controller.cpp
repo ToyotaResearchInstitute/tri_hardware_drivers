@@ -161,6 +161,7 @@ namespace lightweight_ur_interface
             UNUSED(req);
             UNUSED(res);
             ROS_INFO_NAMED(ros::this_node::getName(), "Aborting config target");
+            CommandVelocities(std::vector<double>(joint_names_.size(), 0.0));
             target_config_valid_ = false;
             config_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
             last_config_errors_ = std::vector<double>(joint_names_.size(), 0.0);
@@ -314,6 +315,7 @@ namespace lightweight_ur_interface
                 }
                 if (command_valid == true)
                 {
+                    ROS_INFO_NAMED(ros::this_node::getName(), "Starting execution to a new target configuration");
                     target_config_ = target_config;
                     target_config_valid_ = true;
                 }
@@ -391,8 +393,8 @@ int main(int argc, char** argv)
     const std::string DEFAULT_VELOCITY_COMMAND_TOPIC = "/ur10/joint_command_velocity";
     const std::string DEFAULT_ABORT_SERVICE = "/ur10_position_controller/abort";
     const double DEFAULT_CONTROL_RATE = 150.0;
-    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.25;
-    const double DEFAULT_ACCELERATION_LIMIT_SCALING = 0.25;
+    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.5;
+    const double DEFAULT_ACCELERATION_LIMIT_SCALING = 0.5;
     const double DEFAULT_BASE_KP = 1.0;
     const double DEFAULT_BASE_KD = 0.1;
     const bool DEFAULT_LIMIT_ACCELERATION = false;

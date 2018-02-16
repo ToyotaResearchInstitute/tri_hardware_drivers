@@ -83,6 +83,7 @@ namespace lightweight_ur_interface
                 const PIDParams& params = joint_controller_params.at(joint_name);
                 joint_controller_parameters_[joint] = params;
             }
+            ROS_INFO_NAMED(ros::this_node::getName(), "Running with joint limits:\n%s\nand joint controller parameters:\n%s", PrettyPrint::PrettyPrint(joint_limits, false, "\n").c_str(), PrettyPrint::PrettyPrint(joint_controller_params, false, "\n").c_str());
             status_pub_ = nh_.advertise<control_msgs::JointTrajectoryControllerState>(status_topic, 1, false);
             command_pub_ = nh_.advertise<lightweight_ur_interface::VelocityCommand>(velocity_command_topic, 1, false);
             feedback_sub_ = nh_.subscribe(state_feedback_topic, 1, &URTrajectoryController::StateFeedbackCallback, this);
@@ -182,6 +183,7 @@ namespace lightweight_ur_interface
             UNUSED(req);
             UNUSED(res);
             ROS_INFO_NAMED(ros::this_node::getName(), "Aborting config target");
+            CommandVelocities(std::vector<double>(joint_names_.size(), 0.0));
             active_trajectory_.reset();
             position_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
             last_position_errors_ = std::vector<double>(joint_names_.size(), 0.0);
@@ -385,12 +387,14 @@ namespace lightweight_ur_interface
                     std::shared_ptr<time_optimal_trajectory_parametrization::Trajectory> new_trajectory_ptr = std::make_shared<time_optimal_trajectory_parametrization::Trajectory>(ordered_waypoints, velocity_limits, acceleration_limits, max_path_deviation, timestep);
                     if (new_trajectory_ptr->isValid())
                     {
+                        ROS_INFO_NAMED(ros::this_node::getName(), "Starting execution of new trajectory");
                         active_trajectory_.reset();
                         active_trajectory_ = new_trajectory_ptr;
                         active_trajectory_start_time_ = ros::Time::now();
                     }
                     else
                     {
+                        ROS_WARN_NAMED(ros::this_node::getName(), "New trajectory could not be parametrized");
                         active_trajectory_.reset();
                     }
                 }
@@ -449,10 +453,6 @@ namespace lightweight_ur_interface
                     current_config_valid_ = true;
                 }
             }
-            else if (config_feedback.name.size() == 1 && config_feedback.position.size() == 1)
-            {
-                ;
-            }
             else
             {
                 ROS_WARN_NAMED(ros::this_node::getName(), "Invalid JointState feedback: %zu names, %zu positions", config_feedback.name.size(), config_feedback.position.size());
@@ -473,8 +473,8 @@ int main(int argc, char** argv)
     const std::string DEFAULT_STATE_FEEDBACK_TOPIC = "/ur10/joint_states";
     const std::string DEFAULT_VELOCITY_COMMAND_TOPIC = "/ur10/joint_command_velocity";
     const std::string DEFAULT_ABORT_SERVICE = "/ur10_trajectory_controller/abort";
-    const double DEFAULT_CONTROL_RATE = 150.0;
-    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.25;
+    const double DEFAULT_CONTROL_RATE = 200.0;
+    const double DEFAULT_VELOCITY_LIMIT_SCALING = 0.5;
     const double DEFAULT_ACCELERATION_LIMIT_SCALING = 0.25;
     const double DEFAULT_BASE_KP = 1.0;
     const double DEFAULT_BASE_KD = 0.1;

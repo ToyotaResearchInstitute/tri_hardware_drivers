@@ -30,7 +30,10 @@
 namespace lightweight_ur_interface
 {
     template<typename T, typename Allocator>
-    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeKnownSizeVector(const size_t size, const std::vector<uint8_t>& buffer, const uint64_t current, const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer)
+    inline std::pair<std::vector<T, Allocator>, uint64_t> DeserializeKnownSizeVector(const size_t size,
+                                                                                     const std::vector<uint8_t>& buffer,
+                                                                                     const uint64_t current,
+                                                                                     const std::function<std::pair<T, uint64_t>(const std::vector<uint8_t>&, const uint64_t)>& item_deserializer)
     {
         assert(current < buffer.size());
         uint64_t current_position = current;
@@ -88,7 +91,7 @@ namespace lightweight_ur_interface
         double mainboard_current_;
         bool initialized_;
 
-        static inline std::pair<std::vector<double>, uint64_t> DeserializeDoubleVector(const size_t size, const std::vector<uint8_t>& buffer, const uint64_t current)
+        static inline std::pair<std::vector<double>, uint64_t> DeserializeKnownSizeDoubleVector(const size_t size, const std::vector<uint8_t>& buffer, const uint64_t current)
         {
             return DeserializeKnownSizeVector<double, std::allocator<double>>(size, buffer, current, arc_helpers::DeserializeNetworkFixedSizePOD<double>);
         }

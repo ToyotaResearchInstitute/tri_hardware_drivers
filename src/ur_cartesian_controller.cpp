@@ -122,6 +122,8 @@ namespace lightweight_ur_interface
             UNUSED(req);
             UNUSED(res);
             ROS_INFO_NAMED(ros::this_node::getName(), "Aborting pose target");
+            const Twist stop_twist = Twist::Zero();
+            CommandTwist(stop_twist, twist_frame_);
             target_pose_valid_ = false;
             pose_error_integral_ = Twist::Zero();
             last_pose_error_ = Twist::Zero();
@@ -142,11 +144,11 @@ namespace lightweight_ur_interface
 
         inline Twist ComputePoseError(const Eigen::Isometry3d& current_pose, const Eigen::Isometry3d& target_pose) const
         {
-            Twist pose_error;
-            pose_error.head<3>() = target_pose.translation() - current_pose.translation();
-            pose_error.tail<3>() = -0.5 * (target_pose.linear().col(0).cross(current_pose.linear().col(0)) + target_pose.linear().col(1).cross(current_pose.linear().col(1)) + target_pose.linear().col(2).cross(current_pose.linear().col(2)));
-            return pose_error;
-            //return EigenHelpers::TwistBetweenTransforms(current_pose, target_pose);
+            //Twist pose_error;
+            //pose_error.head<3>() = target_pose.translation() - current_pose.translation();
+            //pose_error.tail<3>() = -0.5 * (target_pose.linear().col(0).cross(current_pose.linear().col(0)) + target_pose.linear().col(1).cross(current_pose.linear().col(1)) + target_pose.linear().col(2).cross(current_pose.linear().col(2)));
+            //return pose_error;
+            return EigenHelpers::TwistBetweenTransforms(current_pose, target_pose);
         }
 
         inline Twist ComputeRawNextStep(const Eigen::Isometry3d& current_pose, const Eigen::Isometry3d& target_pose, const double time_interval)
@@ -212,12 +214,14 @@ namespace lightweight_ur_interface
         {
             if (target_pose.header.frame_id == pose_frame_)
             {
+                ROS_INFO_NAMED(ros::this_node::getName(), "Starting execution to a new target pose");
                 target_pose_ = EigenHelpersConversions::GeometryPoseToEigenIsometry3d(target_pose.pose);
                 target_pose_valid_ = true;
             }
             else
             {
                 ROS_WARN_NAMED(ros::this_node::getName(), "Invalid target pose frame %s, should be %s", target_pose.header.frame_id.c_str(), pose_frame_.c_str());
+                target_pose_valid_ = false;
             }
         }
 
@@ -244,7 +248,7 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
     const std::string DEFAULT_POSE_FRAME = "base";
-    const std::string DEFAULT_TWIST_FRAME = "ur10_ee_ft_frame";
+    const std::string DEFAULT_TWIST_FRAME = "ur10_ee_frame";
     const std::string DEFAULT_TARGET_POSE_TOPIC = "/ur10/target_cartesian_pose";
     const std::string DEFAULT_POSE_FEEDBACK_TOPIC = "/ur10/ee_pose";
     const std::string DEFAULT_TWIST_COMMAND_TOPIC = "/ur10/ee_twist_command";

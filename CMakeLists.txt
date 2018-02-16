@@ -56,14 +56,10 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(DIRECTORY msg FILES PositionCommand.msg VelocityCommand.msg)
+add_message_files(DIRECTORY msg FILES PositionCommand.msg VelocityCommand.msg WrenchCommand.msg)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(DIRECTORY srv FILES ConfigureForceMode.srv)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -73,7 +69,7 @@ add_message_files(DIRECTORY msg FILES PositionCommand.msg VelocityCommand.msg)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES std_msgs)
+generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -129,6 +125,11 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 add_executable(ur_minimal_hardware_interface src/ur_minimal_hardware_interface.cpp)
 add_dependencies(ur_minimal_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ur_minimal_hardware_interface ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+## Declare a C++ executable
+add_executable(ur_script_hardware_interface src/ur_script_hardware_interface.cpp)
+add_dependencies(ur_script_hardware_interface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ur_script_hardware_interface ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
 add_executable(ur_position_controller src/ur_position_controller.cpp)
