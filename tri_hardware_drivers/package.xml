@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>tri_hardware_drivers</name>
+  <version>0.0.0</version>
+  <description>Metapackage for TRI drivers for third-party hardware</description>
+  <maintainer email="calder.phillips-grafflin@tri.global">Calder Phillips-Grafflin</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>ati_netcanoem_driver</run_depend>
+  <run_depend>lightweight_ur_interface</run_depend>
+  <run_depend>robotiq_ft_driver</run_depend>
+  <run_depend>robotiq_2_finger_gripper_driver</run_depend>
+  <run_depend>schunk_wsg_driver</run_depend>
+  <export>
+    <metapackage />
+  </export>
+</package>
