@@ -322,7 +322,12 @@ namespace lightweight_ur_interface
                 ROS_WARN_NAMED(ros::this_node::getName(), "Ignoring trajectory command since current state is not valid");
                 return;
             }
-            if (SetsEqual(trajectory.joint_names, joint_names_))
+            if (trajectory.points.empty())
+            {
+                ROS_INFO_NAMED(ros::this_node::getName(), "Received empty trajectory, aborting current trajectory");
+                active_trajectory_.reset();
+            }
+            else if (SetsEqual(trajectory.joint_names, joint_names_))
             {
                 std::list<Eigen::VectorXd> ordered_waypoints;
                 // Always add the current config to the beginning of the commanded trajectory
