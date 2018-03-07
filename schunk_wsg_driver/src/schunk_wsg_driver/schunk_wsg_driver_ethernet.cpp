@@ -44,7 +44,10 @@ namespace schunk_wsg_driver
 
     WSGUDPInterface::~WSGUDPInterface()
     {
-        Shutdown();
+        if (active_.load())
+        {
+            Shutdown();
+        }
     }
 
     void WSGUDPInterface::ShutdownConnection()

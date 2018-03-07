@@ -93,6 +93,21 @@ namespace schunk_wsg_driver
         return bytes_read;
     }
 
+    std::string PhysicalLimits::Print() const
+    {
+        std::ostringstream strm;
+        strm << "Physical limits:";
+        strm << "\nStroke (mm) " << StrokeMM();
+        strm << "\nMin speed (mm/s) " << MinMaxSpeedMMPerS().first;
+        strm << "\nMax speed (mm/s) " << MinMaxSpeedMMPerS().second;
+        strm << "\nMin accel (mm/ss) " << MinMaxAccelMMPerSS().first;
+        strm << "\nMax accel (mm/ss) " << MinMaxAccelMMPerSS().second;
+        strm << "\nMin force (n) " << MinForce();
+        strm << "\nNominal force (n) " << NominalForce();
+        strm << "\nOverdrive force (n) " << OverdriveForce();
+        return strm.str();
+    }
+
     // Internal implementation
 
     std::pair<WSGRawStatusMessage, bool> WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command, const double timeout)
@@ -474,6 +489,7 @@ namespace schunk_wsg_driver
         }
         // Get the physical limits
         const PhysicalLimits limits = GetGripperPhysicalLimits();
+        Log(limits.Print());
         // Set all limits to max
         Log("Reseting gripper soft limits...");
         success = success && ClearSoftLimits();
@@ -527,9 +543,88 @@ namespace schunk_wsg_driver
         {
             throw std::runtime_error("Failed to disable recurring kGetForce");
         }
+        ShutdownConnection();
     }
 
-    bool WSGInterface::SetTargetPositionAndEffort(const double target_position, const double max_effort)
+    double WSGInterface::GetCommandPositionMM(const double target_position, const PhysicalLimits& limits)
+    {
+        const double target_position_mm = target_position * 1000.0;
+        const double min_position_mm = 0.0;
+        const double max_position_mm = limits.StrokeMM();
+        if (target_position > max_position_mm)
+        {
+            Log("Target position > maximum of " + std::to_string(max_position_mm) + " mm");
+            return max_position_mm;
+        }
+        else if (target_position < min_position_mm)
+        {
+            Log("Target position < minimum of " + std::to_string(min_position_mm) + " mm");
+            return min_position_mm;
+        }
+        else
+        {
+            return target_position_mm;
+        }
+    }
+
+    double WSGInterface::GetCommandSpeedMMpS(const double target_speed, const PhysicalLimits& limits)
+    {
+        const double min_mmps = limits.MinMaxSpeedMMPerS().first;
+        const double max_mmps = limits.MinMaxSpeedMMPerS().second;
+        if (target_speed > 0.0)
+        {
+            const double target_speed_mmps = target_speed * 1000.0;
+            if (target_speed_mmps > max_mmps)
+            {
+                Log("Target speed greater than using physical limits max speed of " + std::to_string(max_mmps) + " mm/s");
+                return max_mmps;
+            }
+            else if (target_speed < min_mmps)
+            {
+                Log("Target speed lower than using physical limits min speed of " + std::to_string(min_mmps) + " mm/s");
+                return min_mmps;
+            }
+            else
+            {
+                return target_speed_mmps;
+            }
+        }
+        else
+        {
+            Log("Target speed <= 0.0, using physical limits max speed of " + std::to_string(max_mmps) + " mm/s");
+            return max_mmps;
+        }
+    }
+
+    double WSGInterface::GetCommandEffortN(const double target_effort, const PhysicalLimits& limits)
+    {
+        const double min_effort = limits.MinForce();
+        const double max_effort = limits.NominalForce();
+        if (target_effort > 0.0)
+        {
+            if (target_effort > max_effort)
+            {
+                Log("Target effort greater than physical limits max effort of " + std::to_string(max_effort) + " N");
+                return max_effort;
+            }
+            else if (target_effort < min_effort)
+            {
+                Log("Target effort lower than physical limits min effort of " + std::to_string(min_effort) + " N");
+                return min_effort;
+            }
+            else
+            {
+                return target_effort;
+            }
+        }
+        else
+        {
+            Log("Target effort <= 0.0, using physical limits max effort of " + std::to_string(max_effort) + " N");
+            return max_effort;
+        }
+    }
+
+    bool WSGInterface::SetTargetPositionSpeedEffort(const double target_position, const double max_speed, const double max_effort)
     {
         RefreshGripperStatus();
         const double force_deadband = 5.0;
@@ -539,7 +634,7 @@ namespace schunk_wsg_driver
         {
             throw std::runtime_error("Physical limits are not available");
         }
-        const PhysicalLimits& physical_limits = maybe_physical_limits_.first;
+        const PhysicalLimits physical_limits = maybe_physical_limits_.first;
         status_mutex_.unlock();
         bool is_new_command = false;
         if (std::abs(max_effort - current_status.ActualEffort()) > force_deadband)
@@ -556,12 +651,15 @@ namespace schunk_wsg_driver
         }
         if (is_new_command)
         {
+            const double target_position_mm = GetCommandPositionMM(target_position, physical_limits);
+            const double max_speed_mmps = GetCommandSpeedMMpS(max_speed, physical_limits);
+            const double max_effort_n = GetCommandEffortN(max_effort, physical_limits);
             bool success = true;
-            success = success && SetForceLimitNonBlocking(max_effort);
-            success = success && PrePositionNonBlocking(kPrePositionClampOnBlock, kPrePositionAbsolute, target_position * 1000.0, physical_limits.MinMaxSpeedMMPerS().second);
+            success = success && SetForceLimitNonBlocking(max_effort_n);
+            success = success && PrePositionNonBlocking(kPrePositionClampOnBlock, kPrePositionAbsolute, target_position_mm, max_speed_mmps);
             // Update motion status
             std::lock_guard<std::mutex> status_lock(status_mutex_);
-            motion_status_.UpdateTargetPositionAndEffort(target_position, max_effort);
+            motion_status_.UpdateTargetPositionSpeedEffort(target_position, max_speed, max_effort);
             return success;
         }
         else

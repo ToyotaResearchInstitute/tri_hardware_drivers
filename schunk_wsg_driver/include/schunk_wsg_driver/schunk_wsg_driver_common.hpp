@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <chrono>
 #include <thread>
 #include <mutex>
@@ -268,13 +269,14 @@ namespace schunk_wsg_driver
         double actual_velocity_;
         double actual_effort_;
         double target_position_;
+        double max_speed_;
         double max_effort_;
 
     public:
 
-        GripperMotionStatus(const double actual_position, const double actual_velocity, const double actual_effort, const double target_position, const double max_effort) : actual_position_(actual_position), actual_velocity_(actual_velocity), actual_effort_(actual_effort), target_position_(target_position), max_effort_(max_effort) {}
+        GripperMotionStatus(const double actual_position, const double actual_velocity, const double actual_effort, const double target_position, const double max_speed, const double max_effort) : actual_position_(actual_position), actual_velocity_(actual_velocity), actual_effort_(actual_effort), target_position_(target_position), max_speed_(max_speed), max_effort_(max_effort) {}
 
-        GripperMotionStatus() : actual_position_(-1.0), actual_velocity_(0.0), actual_effort_(0.0), target_position_(-1.0), max_effort_(0.0) {}
+        GripperMotionStatus() : actual_position_(-1.0), actual_velocity_(0.0), actual_effort_(0.0), target_position_(-1.0), max_speed_(0.0), max_effort_(0.0) {}
 
         inline void UpdateActualPosition(const double actual_position) { actual_position_ = actual_position; }
 
@@ -282,9 +284,10 @@ namespace schunk_wsg_driver
 
         inline void UpdateActualEffort(const double actual_effort) { actual_effort_ = actual_effort; }
 
-        inline void UpdateTargetPositionAndEffort(const double target_position, const double max_effort)
+        inline void UpdateTargetPositionSpeedEffort(const double target_position, const double max_speed, const double max_effort)
         {
             target_position_ = target_position;
+            max_speed_ = max_speed;
             max_effort_ = max_effort;
         }
 
@@ -295,6 +298,8 @@ namespace schunk_wsg_driver
         inline double ActualEffort() const { return actual_effort_; }
 
         inline double TargetPosition() const { return target_position_; }
+
+        inline double MaxSpeed() const { return max_speed_; }
 
         inline double MaxEffort() const { return max_effort_; }
     };
@@ -329,6 +334,8 @@ namespace schunk_wsg_driver
         inline double NominalForce() const { return nominal_force_; }
 
         inline double OverdriveForce() const { return overdrive_force_; }
+
+        std::string Print() const;
     };
 
     class WSGInterface
@@ -348,7 +355,7 @@ namespace schunk_wsg_driver
 
         bool InitializeGripper();
 
-        bool SetTargetPositionAndEffort(const double target_position, const double max_effort);
+        bool SetTargetPositionSpeedEffort(const double target_position, const double max_speed, const double max_effort);
 
         GripperMotionStatus GetGripperStatus();
 
@@ -357,6 +364,12 @@ namespace schunk_wsg_driver
         void Shutdown();
 
     protected:
+
+        double GetCommandPositionMM(const double target_position, const PhysicalLimits& limits);
+
+        double GetCommandSpeedMMpS(const double target_speed, const PhysicalLimits& limits);
+
+        double GetCommandEffortN(const double target_effort, const PhysicalLimits& limits);
 
         std::pair<WSGRawStatusMessage, bool> SendCommandAndAwaitStatus(const WSGRawCommandMessage& command, const double timeout);
 

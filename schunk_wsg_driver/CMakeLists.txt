@@ -43,7 +43,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy message_generation)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(DIRECTORY msg FILES WSGStatus.msg WSGCommand.msg)
+add_message_files(DIRECTORY msg FILES WSGState.msg WSGCommand.msg)
 
 ## Generate services in the 'srv' folder
 # add_service_files(

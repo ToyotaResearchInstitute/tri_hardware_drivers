@@ -24,7 +24,17 @@ namespace robotiq_ft_driver
         RobotiqFTDriver(const ros::NodeHandle& nh, const std::string& status_topic, const std::string& sensor_frame, const std::string& modbus_rtu_interface, const uint16_t sensor_slave_id) : nh_(nh), sensor_frame_(sensor_frame)
         {
             // Make the logging function
-            std::function<void(const std::string&)> logging_fn = [] (const std::string& message) { ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str()); };
+            std::function<void(const std::string&)> logging_fn = [] (const std::string& message)
+            {
+                if (ros::ok())
+                {
+                    ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+                }
+                else
+                {
+                    std::cout << "[Post-shutdown] " << message << std::endl;
+                }
+            };
             ROS_INFO_NAMED(ros::this_node::getName(), "Connecting to Robotiq F/T sensor with sensor slave ID %hx on Modbus RTU interface %s...", sensor_slave_id, modbus_rtu_interface.c_str());
             sensor_ptr_ = std::unique_ptr<RobotiqFTModbusRtuInterface>(new RobotiqFTModbusRtuInterface(logging_fn, modbus_rtu_interface, sensor_slave_id));
             const std::string serial_num = sensor_ptr_->ReadSerialNumber();
@@ -32,12 +42,6 @@ namespace robotiq_ft_driver
             const uint16_t year = sensor_ptr_->ReadYearOfManufacture();
             ROS_INFO_NAMED(ros::this_node::getName(), "Connected to sensor with serial # %s firmware version %s year of manufacture %hu", serial_num.c_str(), firmware_version.c_str(), year);
             status_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic, 1, false);
-        }
-
-        void Shutdown()
-        {
-            sensor_ptr_.reset();
-            ros::requestShutdown();
         }
 
         void Loop(const double poll_rate)
@@ -71,26 +75,6 @@ namespace robotiq_ft_driver
     };
 }
 
-std::unique_ptr<robotiq_ft_driver::RobotiqFTDriver> g_sensor;
-
-void SigIntHandler(int signal)
-{
-    (void)(signal);
-    g_sensor->Shutdown();
-}
-
-void XmlRpcShutdownCB(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
-{
-    const int num_params = (params.getType() == XmlRpc::XmlRpcValue::TypeArray) ? params.size() : 0;
-    if (num_params > 1)
-    {
-        const std::string& reason = params[1];
-        ROS_WARN("Shutdown request received. Reason: [%s]", reason.c_str());
-        g_sensor->Shutdown();
-    }
-    result = ros::xmlrpc::responseInt(1, "", 0);
-}
-
 int main(int argc, char** argv)
 {
     // Default ROS params
@@ -100,13 +84,9 @@ int main(int argc, char** argv)
     const std::string DEFAULT_MODBUS_RTU_INTERFACE("/dev/ttyUSB0");
     const int32_t DEFAULT_SENSOR_SLAVE_ID = 0x09;
     // Start ROS
-    ros::init(argc, argv, "robotiq_ft_driver", ros::init_options::NoSigintHandler);
-    signal(SIGINT, SigIntHandler);
+    ros::init(argc, argv, "robotiq_ft_driver");
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
-    // Override XMLRPC shutdown
-    ros::XMLRPCManager::instance()->unbind("shutdown");
-    ros::XMLRPCManager::instance()->bind("shutdown", XmlRpcShutdownCB);
     // Get params
     const std::string modbus_rtu_interface = nhp.param(std::string("modbus_rtu_interface"), DEFAULT_MODBUS_RTU_INTERFACE);
     const uint16_t sensor_slave_id = (uint16_t)nhp.param(std::string("sensor_slave_id"), DEFAULT_SENSOR_SLAVE_ID);
@@ -114,7 +94,7 @@ int main(int argc, char** argv)
     const std::string status_topic = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
     const std::string sensor_frame = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
     // Start the driver
-    g_sensor = std::unique_ptr<robotiq_ft_driver::RobotiqFTDriver>(new robotiq_ft_driver::RobotiqFTDriver(nh, status_topic, sensor_frame, modbus_rtu_interface, sensor_slave_id));
-    g_sensor->Loop(poll_rate);
+    robotiq_ft_driver::RobotiqFTDriver sensor(nh, status_topic, sensor_frame, modbus_rtu_interface, sensor_slave_id);
+    sensor.Loop(poll_rate);
     return 0;
 }

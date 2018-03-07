@@ -27,7 +27,17 @@ namespace robotiq_2_finger_gripper_driver
             status_pub_ = nh_.advertise<Robotiq2FingerStatus>(status_topic, 1, false);
             command_sub_ = nh_.subscribe(command_topic, 1, &Robotiq2FingerDriver::CommandCB, this);
             // Make the logging function
-            std::function<void(const std::string&)> logging_fn = [] (const std::string& message) { ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str()); };
+            std::function<void(const std::string&)> logging_fn = [] (const std::string& message)
+            {
+                if (ros::ok())
+                {
+                    ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+                }
+                else
+                {
+                    std::cout << "[Post-shutdown] " << message << std::endl;
+                }
+            };
             ROS_INFO_NAMED(ros::this_node::getName(), "Connecting to Robotiq 2-Finger gripper with sensor slave ID %hx on Modbus RTU interface %s...", sensor_slave_id, modbus_rtu_interface.c_str());
             gripper_interface_ptr_ = std::unique_ptr<Robotiq2FingerGripperModbusRtuInterface>(new Robotiq2FingerGripperModbusRtuInterface(logging_fn, modbus_rtu_interface, sensor_slave_id));
             const bool success = gripper_interface_ptr_->ActivateGripper();
@@ -35,12 +45,6 @@ namespace robotiq_2_finger_gripper_driver
             {
                 throw std::runtime_error("Unable to initialize gripper");
             }
-        }
-
-        void Shutdown()
-        {
-            gripper_interface_ptr_.reset();
-            ros::requestShutdown();
         }
 
         void Loop(const double control_rate)
@@ -81,26 +85,6 @@ namespace robotiq_2_finger_gripper_driver
     };
 }
 
-std::unique_ptr<robotiq_2_finger_gripper_driver::Robotiq2FingerDriver> g_gripper;
-
-void SigIntHandler(int signal)
-{
-    (void)(signal);
-    g_gripper->Shutdown();
-}
-
-void XmlRpcShutdownCB(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
-{
-    const int num_params = (params.getType() == XmlRpc::XmlRpcValue::TypeArray) ? params.size() : 0;
-    if (num_params > 1)
-    {
-        const std::string& reason = params[1];
-        ROS_WARN("Shutdown request received. Reason: [%s]", reason.c_str());
-        g_gripper->Shutdown();
-    }
-    result = ros::xmlrpc::responseInt(1, "", 0);
-}
-
 int main(int argc, char** argv)
 {
     // Default ROS params
@@ -110,13 +94,9 @@ int main(int argc, char** argv)
     const std::string DEFAULT_MODBUS_RTU_INTERFACE("/dev/ttyUSB0");
     const int32_t DEFAULT_GRIPPER_SLAVE_ID = 0x09;
     // Start ROS
-    ros::init(argc, argv, "robotiq_2_finger_driver", ros::init_options::NoSigintHandler);
-    signal(SIGINT, SigIntHandler);
+    ros::init(argc, argv, "robotiq_2_finger_driver");
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
-    // Override XMLRPC shutdown
-    ros::XMLRPCManager::instance()->unbind("shutdown");
-    ros::XMLRPCManager::instance()->bind("shutdown", XmlRpcShutdownCB);
     // Get params
     const std::string modbus_rtu_interface = nhp.param(std::string("modbus_rtu_interface"), DEFAULT_MODBUS_RTU_INTERFACE);
     const uint16_t gripper_slave_id = (uint16_t)nhp.param(std::string("gripper_slave_id"), DEFAULT_GRIPPER_SLAVE_ID);
@@ -124,7 +104,7 @@ int main(int argc, char** argv)
     const std::string status_topic = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
     const std::string command_topic = nhp.param(std::string("command_topic"), DEFAULT_COMMAND_TOPIC);
     // Start the driver
-    g_gripper = std::unique_ptr<robotiq_2_finger_gripper_driver::Robotiq2FingerDriver>(new robotiq_2_finger_gripper_driver::Robotiq2FingerDriver(nh, status_topic, command_topic, modbus_rtu_interface, gripper_slave_id));
-    g_gripper->Loop(poll_rate);
+    robotiq_2_finger_gripper_driver::Robotiq2FingerDriver gripper(nh, status_topic, command_topic, modbus_rtu_interface, gripper_slave_id);
+    gripper.Loop(poll_rate);
     return 0;
 }

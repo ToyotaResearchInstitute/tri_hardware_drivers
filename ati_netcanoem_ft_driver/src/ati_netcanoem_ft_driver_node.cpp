@@ -24,7 +24,17 @@ namespace ati_netcanoem_ft_driver
         AtiNetCanOemDriver(const ros::NodeHandle& nh, const std::string& status_topic, const std::string& sensor_frame, const std::string& can_interface, const uint8_t sensor_base_can_id, const uint8_t sensor_calibration_index) : nh_(nh), sensor_frame_(sensor_frame)
         {
             // Make the logging function
-            std::function<void(const std::string&)> logging_fn = [] (const std::string& message) { ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str()); };
+            std::function<void(const std::string&)> logging_fn = [] (const std::string& message)
+            {
+                if (ros::ok())
+                {
+                    ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+                }
+                else
+                {
+                    std::cout << "[Post-shutdown] " << message << std::endl;
+                }
+            };
             ROS_INFO_NAMED(ros::this_node::getName(), "Connecting to ATI F/T sensor with CAN base ID %hhx on socketcan interface %s...", sensor_base_can_id, can_interface.c_str());
             sensor_ptr_ = std::unique_ptr<AtiNetCanOemInterface>(new AtiNetCanOemInterface(logging_fn, can_interface, sensor_base_can_id));
             const std::string serial_num = sensor_ptr_->ReadSerialNumber();
@@ -41,12 +51,6 @@ namespace ati_netcanoem_ft_driver
             {
                 ROS_FATAL_NAMED(ros::this_node::getName(), "Failed to load calibration %x", sensor_calibration_index);
             }
-        }
-
-        void Shutdown()
-        {
-            sensor_ptr_.reset();
-            ros::requestShutdown();
         }
 
         void Loop(const double poll_rate)
@@ -80,26 +84,6 @@ namespace ati_netcanoem_ft_driver
     };
 }
 
-std::unique_ptr<ati_netcanoem_ft_driver::AtiNetCanOemDriver> g_sensor;
-
-void SigIntHandler(int signal)
-{
-    (void)(signal);
-    g_sensor->Shutdown();
-}
-
-void XmlRpcShutdownCB(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
-{
-    const int num_params = (params.getType() == XmlRpc::XmlRpcValue::TypeArray) ? params.size() : 0;
-    if (num_params > 1)
-    {
-        const std::string& reason = params[1];
-        ROS_WARN("Shutdown request received. Reason: [%s]", reason.c_str());
-        g_sensor->Shutdown();
-    }
-    result = ros::xmlrpc::responseInt(1, "", 0);
-}
-
 int main(int argc, char** argv)
 {
     // Default ROS params
@@ -110,13 +94,9 @@ int main(int argc, char** argv)
     const int32_t DEFAULT_SENSOR_BASE_CAN_ID = 0x00;
     const int32_t DEFAULT_SENSOR_CALIBRATION = 0x00;
     // Start ROS
-    ros::init(argc, argv, "ati_netcanoem_ft_driver", ros::init_options::NoSigintHandler);
-    signal(SIGINT, SigIntHandler);
+    ros::init(argc, argv, "ati_netcanoem_ft_driver");
     ros::NodeHandle nh;
     ros::NodeHandle nhp("~");
-    // Override XMLRPC shutdown
-    ros::XMLRPCManager::instance()->unbind("shutdown");
-    ros::XMLRPCManager::instance()->bind("shutdown", XmlRpcShutdownCB);
     // Get params
     const std::string can_interface = nhp.param(std::string("socketcan_interface"), DEFAULT_SOCKETCAN_INTERFACE);
     const uint8_t sensor_base_can_id = (uint8_t)nhp.param(std::string("sensor_base_can_id"), DEFAULT_SENSOR_BASE_CAN_ID);
@@ -125,7 +105,7 @@ int main(int argc, char** argv)
     const std::string sensor_frame = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
     const uint8_t sensor_calibration_index = (uint8_t)nhp.param(std::string("sensor_calibration_index"), DEFAULT_SENSOR_CALIBRATION);
     // Start the driver
-    g_sensor = std::unique_ptr<ati_netcanoem_ft_driver::AtiNetCanOemDriver>(new ati_netcanoem_ft_driver::AtiNetCanOemDriver(nh, status_topic, sensor_frame, can_interface, sensor_base_can_id, sensor_calibration_index));
-    g_sensor->Loop(poll_rate);
+    ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(nh, status_topic, sensor_frame, can_interface, sensor_base_can_id, sensor_calibration_index);
+    sensor.Loop(poll_rate);
     return 0;
 }

@@ -25,11 +25,20 @@ namespace schunk_wsg_driver
         struct can_filter filter[1];
         filter[0].can_id   = gripper_recv_can_id_;
         filter[0].can_mask = CAN_SFF_MASK;
-        const int setsockopt_result = setsockopt(can_socket_fd_, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
-        if (setsockopt_result != 0)
+        const int setsockopt_can_result = setsockopt(can_socket_fd_, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
+        if (setsockopt_can_result != 0)
         {
             perror(NULL);
-            throw std::runtime_error("setsockopt failed");
+            throw std::runtime_error("setsockopt CAN configuration failed");
+        }
+        struct timeval read_timeout;
+        read_timeout.tv_sec = 1;
+        read_timeout.tv_usec = 0;
+        const int setsockopt_timeout_result = setsockopt(can_socket_fd_, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof(read_timeout));
+        if (setsockopt_timeout_result != 0)
+        {
+            perror(NULL);
+            throw std::runtime_error("setsockopt timeout configuration failed");
         }
         // Bind the socket to the interface
         struct sockaddr_can can_interface;
@@ -48,7 +57,10 @@ namespace schunk_wsg_driver
 
     WSGCANInterface::~WSGCANInterface()
     {
-        Shutdown();
+        if (active_.load())
+        {
+            Shutdown();
+        }
     }
 
     void WSGCANInterface::ShutdownConnection()
