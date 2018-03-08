@@ -51,7 +51,7 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(DIRECTORY msg FILES Robotiq2FingerCommand.msg Robotiq2FingerStatus.msg)
+add_message_files(DIRECTORY msg FILES Robotiq2FingerCommand.msg Robotiq2FingerState.msg)
 
 ## Generate services in the 'srv' folder
 # add_service_files(

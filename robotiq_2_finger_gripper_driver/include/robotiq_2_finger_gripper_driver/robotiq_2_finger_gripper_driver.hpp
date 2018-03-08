@@ -66,7 +66,7 @@ namespace robotiq_2_finger_gripper_driver
         enum OBJECT_STATUS : uint8_t { FINGERS_IN_MOTION=0x00,
                                        FINGERS_STOPPED_CONTACT_OPENING=0x01,
                                        FINGERS_STOPPED_CONTACT_CLOSING=0x02,
-                                       FIGERS_AT_REQUESTED=0x03,
+                                       FINGERS_AT_REQUESTED=0x03,
                                        FINGERS_STOPPED=0x04 };
 
     protected:
@@ -184,7 +184,9 @@ namespace robotiq_2_finger_gripper_driver
 
     public:
 
-        Robotiq2FingerGripperCommand(const double target_position, const double target_speed, const double target_force)
+        Robotiq2FingerGripperCommand(const double target_position,
+                                     const double target_speed,
+                                     const double target_force)
         {
             if (std::isinf(target_position) || std::isnan(target_position))
             {
@@ -250,7 +252,10 @@ namespace robotiq_2_finger_gripper_driver
 
     public:
 
-        Robotiq2FingerGripperModbusRtuInterface(const std::function<void(const std::string&)>& logging_fn, const std::string& modbus_rtu_interface, const uint16_t gripper_slave_id);
+        Robotiq2FingerGripperModbusRtuInterface(const std::function<void(const std::string&)>& logging_fn,
+                                                const std::string& modbus_rtu_interface,
+                                                const int32_t gripper_baud_rate,
+                                                const uint16_t gripper_slave_id);
 
         ~Robotiq2FingerGripperModbusRtuInterface();
 
@@ -268,7 +273,7 @@ namespace robotiq_2_finger_gripper_driver
 
     protected:
 
-        bool RobotiqCompatibleWriteMultipleRegisters(const uint16_t start_register, const std::vector<uint16_t>& register_values);
+        bool WriteMultipleRegisters(const uint16_t start_register, const std::vector<uint16_t>& register_values);
 
         void ShutdownConnection();
     };

@@ -3,14 +3,17 @@
 
 namespace robotiq_2_finger_gripper_driver
 {
-    Robotiq2FingerGripperModbusRtuInterface::Robotiq2FingerGripperModbusRtuInterface(const std::function<void(const std::string&)>& logging_fn, const std::string& modbus_rtu_interface, const uint16_t gripper_slave_id) : logging_fn_(logging_fn)
+    Robotiq2FingerGripperModbusRtuInterface::Robotiq2FingerGripperModbusRtuInterface(const std::function<void(const std::string&)>& logging_fn,
+                                                                                     const std::string& modbus_rtu_interface,
+                                                                                     const int32_t gripper_baud_rate,
+                                                                                     const uint16_t gripper_slave_id)
+        : logging_fn_(logging_fn)
     {
-        const int baud_rate = 115200;
         const int data_bits = 8;
         const int stop_bits = 1;
         const char parity = 'N';
         modbus_interface_ptr_ = nullptr;
-        modbus_interface_ptr_ = modbus_new_rtu(modbus_rtu_interface.c_str(), baud_rate, parity, data_bits, stop_bits);
+        modbus_interface_ptr_ = modbus_new_rtu(modbus_rtu_interface.c_str(), gripper_baud_rate, parity, data_bits, stop_bits);
         if (modbus_interface_ptr_ == nullptr)
         {
             const std::string error_msg(modbus_strerror(errno));
@@ -28,20 +31,6 @@ namespace robotiq_2_finger_gripper_driver
             const std::string error_msg(modbus_strerror(errno));
             throw std::runtime_error("Failed to connect with error: " + error_msg);
         }
-        struct timeval response_timeout;
-        struct timeval byte_timeout;
-        modbus_get_response_timeout(modbus_interface_ptr_, &response_timeout);
-        modbus_get_byte_timeout(modbus_interface_ptr_, &byte_timeout);
-        Log("Modbus response timeout " + std::to_string(response_timeout.tv_sec) + " (s) " + std::to_string(response_timeout.tv_usec) + " (us)");
-        Log("Modbus byte timeout " + std::to_string(byte_timeout.tv_sec) + " (s) " + std::to_string(byte_timeout.tv_usec) + " (us)");
-        struct timeval new_response_timeout;
-        new_response_timeout.tv_sec = 10;
-        new_response_timeout.tv_usec = 0;
-        struct timeval new_byte_timeout;
-        new_byte_timeout.tv_sec = 10;
-        new_byte_timeout.tv_usec = 0;
-        modbus_set_response_timeout(modbus_interface_ptr_, &new_response_timeout);
-        modbus_set_byte_timeout(modbus_interface_ptr_, &new_byte_timeout);
     }
 
     Robotiq2FingerGripperModbusRtuInterface::~Robotiq2FingerGripperModbusRtuInterface()
@@ -59,16 +48,12 @@ namespace robotiq_2_finger_gripper_driver
             throw std::runtime_error("Failed to read status registers with error: " + error_msg);
         }
         const std::vector<uint8_t> received_bytes = {(uint8_t)((raw_status_buffer[0] & 0xff00) >> 8),
-                                               (uint8_t)(raw_status_buffer[0] & 0x00ff),
-                                               (uint8_t)((raw_status_buffer[1] & 0xff00) >> 8),
-                                               (uint8_t)(raw_status_buffer[1] & 0x00ff),
-                                               (uint8_t)((raw_status_buffer[2] & 0xff00) >> 8),
-                                               (uint8_t)(raw_status_buffer[2] & 0x00ff)};
-        //Log("Raw status bytes: " + std::to_string(received_bytes[0]) + "," + std::to_string(received_bytes[1])
-        //                   + "," + std::to_string(received_bytes[2]) + "," + std::to_string(received_bytes[3])
-        //                   + "," + std::to_string(received_bytes[4]) + "," + std::to_string(received_bytes[5]));
+                                                     (uint8_t)(raw_status_buffer[0] & 0x00ff),
+                                                     (uint8_t)((raw_status_buffer[1] & 0xff00) >> 8),
+                                                     (uint8_t)(raw_status_buffer[1] & 0x00ff),
+                                                     (uint8_t)((raw_status_buffer[2] & 0xff00) >> 8),
+                                                     (uint8_t)(raw_status_buffer[2] & 0x00ff)};
         const Robotiq2FingerGripperStatus status(received_bytes);
-        //Log(status.Print());
         return status;
     }
 
@@ -79,7 +64,7 @@ namespace robotiq_2_finger_gripper_driver
         {
             // First, stop the gripper
             const std::vector<uint16_t> stop_gripper_command = {0x0100, 0x0000, 0x0000};
-            const bool stop_sent = RobotiqCompatibleWriteMultipleRegisters(ROGI_FIRST_REGISTER, stop_gripper_command);
+            const bool stop_sent = WriteMultipleRegisters(ROGI_FIRST_REGISTER, stop_gripper_command);
             if (stop_sent == false)
             {
                 return false;
@@ -98,14 +83,14 @@ namespace robotiq_2_finger_gripper_driver
             const uint16_t command_register_2 = byte_3 | (uint16_t)(byte_2 << 8);
             // Send
             const std::vector<uint16_t> set_command = {0x0100, command_register_1, command_register_2};
-            const bool set_sent = RobotiqCompatibleWriteMultipleRegisters(ROGI_FIRST_REGISTER, set_command);
+            const bool set_sent = WriteMultipleRegisters(ROGI_FIRST_REGISTER, set_command);
             if (set_sent == false)
             {
                 return false;
             }
             // Third, restart the gripper
             const std::vector<uint16_t> restart_command = {0x0900, command_register_1, command_register_2};
-            const bool restart_sent = RobotiqCompatibleWriteMultipleRegisters(ROGI_FIRST_REGISTER, restart_command);
+            const bool restart_sent = WriteMultipleRegisters(ROGI_FIRST_REGISTER, restart_command);
             if (restart_sent == false)
             {
                 return false;
@@ -152,7 +137,7 @@ namespace robotiq_2_finger_gripper_driver
         Log("Reinitializing/activating the gripper...");
         // First, reset the gripper
         const std::vector<uint16_t> reset_command = {0x0000, 0x0000, 0x0000};
-        const bool reset_sent = RobotiqCompatibleWriteMultipleRegisters(ROGI_FIRST_REGISTER, reset_command);
+        const bool reset_sent = WriteMultipleRegisters(ROGI_FIRST_REGISTER, reset_command);
         if (reset_sent == false)
         {
             return false;
@@ -161,7 +146,7 @@ namespace robotiq_2_finger_gripper_driver
         std::this_thread::sleep_for(std::chrono::duration<double>(1.0));
         // Second, activate the gripper
         const std::vector<uint16_t> activate_command = {0x0100, 0x0000, 0x0000};
-        const bool activate_sent = RobotiqCompatibleWriteMultipleRegisters(ROGI_FIRST_REGISTER, activate_command);
+        const bool activate_sent = WriteMultipleRegisters(ROGI_FIRST_REGISTER, activate_command);
         if (activate_sent == false)
         {
             return false;
@@ -201,38 +186,26 @@ namespace robotiq_2_finger_gripper_driver
         }
     }
 
-    bool Robotiq2FingerGripperModbusRtuInterface::RobotiqCompatibleWriteMultipleRegisters(const uint16_t start_register, const std::vector<uint16_t>& register_values)
+    bool Robotiq2FingerGripperModbusRtuInterface::WriteMultipleRegisters(const uint16_t start_register,
+                                                                         const std::vector<uint16_t>& register_values)
     {
-        std::vector<uint8_t> raw_request;
-        raw_request.push_back(0x09); // slave address
-        raw_request.push_back(0x10); // Function code 16 "preset multiple registers"
-        raw_request.push_back((uint8_t)((start_register & 0xff00) >> 8)); // Top byte of register #
-        raw_request.push_back((uint8_t)(start_register & 0x00ff)); // Bottom byte of register #
-        const uint16_t num_registers = (uint16_t)register_values.size();
-        raw_request.push_back((uint8_t)((num_registers & 0xff00) >> 8)); // Top byte of # registers
-        raw_request.push_back((uint8_t)(num_registers & 0x00ff)); // Bottom byte of # registers
-        for (size_t idx = 0; idx < register_values.size(); idx++)
-        {
-            const uint16_t register_value = register_values[idx];
-            raw_request.push_back((uint8_t)((register_value & 0xff00) >> 8)); // Top byte of # register value
-            raw_request.push_back((uint8_t)(register_value & 0x00ff)); // Bottom byte of # register value
-        }
-        const int request_length = modbus_send_raw_request(modbus_interface_ptr_, raw_request.data(), (int)raw_request.size());
-        if (request_length == -1)
+        const int num_registers = (int)register_values.size();
+        const int registers_written = modbus_write_registers(modbus_interface_ptr_, start_register, num_registers, register_values.data());
+        if (registers_written == -1)
         {
             const std::string error_msg(modbus_strerror(errno));
-            Log("Modbus send_raw_request error: " + error_msg);
-            //return false;
+            Log("modbus_write_registers error: " + error_msg);
+            return false;
         }
-        std::vector<uint8_t> response(MODBUS_RTU_MAX_ADU_LENGTH, 0x00);
-        const int response_len = modbus_receive_confirmation(modbus_interface_ptr_, response.data());
-        if (response_len == -1)
+        else if (registers_written != num_registers)
         {
-            const std::string error_msg(modbus_strerror(errno));
-            Log("Modbus receive_confirmation error: " + error_msg);
-            //return false;
+            Log("Modbus wrote " + std::to_string(registers_written) + " registers, expected to write " + std::to_string(num_registers) + " registers");
+            return false;
         }
-        return true;
+        else
+        {
+            return true;
+        }
     }
 
     void Robotiq2FingerGripperModbusRtuInterface::ShutdownConnection()
