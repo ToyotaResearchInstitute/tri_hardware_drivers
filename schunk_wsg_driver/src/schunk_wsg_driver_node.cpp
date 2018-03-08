@@ -84,8 +84,8 @@ int main(int argc, char** argv)
     // Default ROS params
     const std::string DEFAULT_INTERFACE_TYPE("udp");
     const double DEFAULT_CONTROL_RATE = 10.0;
-    const std::string DEFAULT_COMMAND_TOPIC("gripper_command");
-    const std::string DEFAULT_STATUS_TOPIC("gripper_status");
+    const std::string DEFAULT_COMMAND_TOPIC("schunk_wsg_gripper_command");
+    const std::string DEFAULT_STATE_TOPIC("schunk_wsg_gripper_state");
     const std::string DEFAULT_GRIPPER_IP_ADDRESS("172.31.1.121");
     const int32_t DEFAULT_GRIPPER_PORT = 1500;
     const int32_t DEFAULT_LOCAL_PORT = 1501;
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     const std::string interface_type = nhp.param(std::string("interface_type"), DEFAULT_INTERFACE_TYPE);
     const double control_rate = std::abs(nhp.param(std::string("control_rate"), DEFAULT_CONTROL_RATE));
     const std::string command_topic = nhp.param(std::string("command_topic"), DEFAULT_COMMAND_TOPIC);
-    const std::string status_topic = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
+    const std::string status_topic = nhp.param(std::string("status_topic"), DEFAULT_STATE_TOPIC);
     // Make the logging function
     std::function<void(const std::string&)> logging_fn = [] (const std::string& message)
     {
