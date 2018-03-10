@@ -10,102 +10,151 @@
 
 namespace ati_netcanoem_ft_driver
 {
-    class AtiNetCanOemDriver
+  class AtiNetCanOemDriver
+  {
+  protected:
+
+    ros::NodeHandle nh_;
+    std::string sensor_frame_;
+    ros::Publisher status_pub_;
+    std::unique_ptr<AtiNetCanOemInterface> sensor_ptr_;
+
+  public:
+
+    AtiNetCanOemDriver(const ros::NodeHandle& nh,
+                       const std::string& status_topic,
+                       const std::string& sensor_frame,
+                       const std::string& can_interface,
+                       const uint8_t sensor_base_can_id,
+                       const uint8_t sensor_calibration_index)
+      : nh_(nh), sensor_frame_(sensor_frame)
     {
-    protected:
-
-        ros::NodeHandle nh_;
-        std::string sensor_frame_;
-        ros::Publisher status_pub_;
-        std::unique_ptr<AtiNetCanOemInterface> sensor_ptr_;
-
-    public:
-
-        AtiNetCanOemDriver(const ros::NodeHandle& nh, const std::string& status_topic, const std::string& sensor_frame, const std::string& can_interface, const uint8_t sensor_base_can_id, const uint8_t sensor_calibration_index) : nh_(nh), sensor_frame_(sensor_frame)
+      // Make the logging function
+      std::function<void(const std::string&)> logging_fn
+          = [] (const std::string& message)
+      {
+        if (ros::ok())
         {
-            // Make the logging function
-            std::function<void(const std::string&)> logging_fn = [] (const std::string& message)
-            {
-                if (ros::ok())
-                {
-                    ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
-                }
-                else
-                {
-                    std::cout << "[Post-shutdown] " << message << std::endl;
-                }
-            };
-            ROS_INFO_NAMED(ros::this_node::getName(), "Connecting to ATI F/T sensor with CAN base ID %hhx on socketcan interface %s...", sensor_base_can_id, can_interface.c_str());
-            sensor_ptr_ = std::unique_ptr<AtiNetCanOemInterface>(new AtiNetCanOemInterface(logging_fn, can_interface, sensor_base_can_id));
-            const std::string serial_num = sensor_ptr_->ReadSerialNumber();
-            const std::pair<std::pair<uint8_t, uint8_t>, uint16_t> firmware_version = sensor_ptr_->ReadFirmwareVersion();
-            ROS_INFO_NAMED(ros::this_node::getName(), "Connected to sensor with serial # %s and firmware version %hhu (major version) %hhu (minor version) %hu (build)", serial_num.c_str(), firmware_version.first.first, firmware_version.first.second, firmware_version.second);
-            ROS_INFO_NAMED(ros::this_node::getName(), "Attempting to load active calibration %hhu...", sensor_calibration_index);
-            const bool set_calibration = sensor_ptr_->LoadNewActiveCalibration(sensor_calibration_index);
-            if (set_calibration)
-            {
-                ROS_INFO_NAMED(ros::this_node::getName(), "Loaded calibration %hhu", sensor_calibration_index);
-                status_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic, 1, false);
-            }
-            else
-            {
-                ROS_FATAL_NAMED(ros::this_node::getName(), "Failed to load calibration %x", sensor_calibration_index);
-            }
+          ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
         }
-
-        void Loop(const double poll_rate)
+        else
         {
-            ROS_INFO_NAMED(ros::this_node::getName(), "Starting to stream F/T measurements at %f Hz...", poll_rate);
-            ros::Rate rate(poll_rate);
-            while (ros::ok())
-            {
-                ros::spinOnce();
-                PublishWrench();
-                rate.sleep();
-            }
+          std::cout << "[Post-shutdown] " << message << std::endl;
         }
+      };
+      ROS_INFO_NAMED(ros::this_node::getName(),
+                     "Connecting to ATI F/T sensor with CAN base ID %hhx"
+                     "on socketcan interface %s...",
+                     sensor_base_can_id,
+                     can_interface.c_str());
+      sensor_ptr_
+          = std::unique_ptr<AtiNetCanOemInterface>(
+              new AtiNetCanOemInterface(logging_fn,
+                                        can_interface,
+                                        sensor_base_can_id));
+      const std::string serial_num = sensor_ptr_->ReadSerialNumber();
+      const std::pair<std::pair<uint8_t, uint8_t>, uint16_t> firmware_version
+          = sensor_ptr_->ReadFirmwareVersion();
+      ROS_INFO_NAMED(ros::this_node::getName(),
+                     "Connected to sensor with serial # %s and firmware"
+                     " version %hhu (major version) %hhu (minor version)"
+                     " %hu (build)",
+                     serial_num.c_str(),
+                     firmware_version.first.first,
+                     firmware_version.first.second,
+                     firmware_version.second);
+      ROS_INFO_NAMED(ros::this_node::getName(),
+                     "Attempting to load active calibration %hhu...",
+                     sensor_calibration_index);
+      const bool set_calibration
+          = sensor_ptr_->LoadNewActiveCalibration(sensor_calibration_index);
+      if (set_calibration)
+      {
+        ROS_INFO_NAMED(ros::this_node::getName(),
+                 "Loaded calibration %hhu",
+                 sensor_calibration_index);
+        status_pub_
+          = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic,
+                                  1, false);
+      }
+      else
+      {
+        ROS_FATAL_NAMED(ros::this_node::getName(),
+                "Failed to load calibration %x",
+                sensor_calibration_index);
+      }
+    }
 
-    protected:
+    void Loop(const double poll_rate)
+    {
+      ROS_INFO_NAMED(ros::this_node::getName(),
+               "Starting to stream F/T measurements at %f Hz...",
+               poll_rate);
+      ros::Rate rate(poll_rate);
+      while (ros::ok())
+      {
+        ros::spinOnce();
+        PublishWrench();
+        rate.sleep();
+      }
+    }
 
-        void PublishWrench()
-        {
-            const Eigen::Matrix<double, 6, 1> wrench = sensor_ptr_->GetCurrentForceTorque();
-            geometry_msgs::WrenchStamped wrench_msg;
-            wrench_msg.header.frame_id = sensor_frame_;
-            wrench_msg.header.stamp = ros::Time::now();
-            wrench_msg.wrench.force.x = wrench(0, 0);
-            wrench_msg.wrench.force.y = wrench(1, 0);
-            wrench_msg.wrench.force.z = wrench(2, 0);
-            wrench_msg.wrench.torque.x = wrench(3, 0);
-            wrench_msg.wrench.torque.y = wrench(4, 0);
-            wrench_msg.wrench.torque.z = wrench(5, 0);
-            status_pub_.publish(wrench_msg);
-        }
-    };
+  protected:
+
+    void PublishWrench()
+    {
+      const Eigen::Matrix<double, 6, 1> wrench
+        = sensor_ptr_->GetCurrentForceTorque();
+      geometry_msgs::WrenchStamped wrench_msg;
+      wrench_msg.header.frame_id = sensor_frame_;
+      wrench_msg.header.stamp = ros::Time::now();
+      wrench_msg.wrench.force.x = wrench(0, 0);
+      wrench_msg.wrench.force.y = wrench(1, 0);
+      wrench_msg.wrench.force.z = wrench(2, 0);
+      wrench_msg.wrench.torque.x = wrench(3, 0);
+      wrench_msg.wrench.torque.y = wrench(4, 0);
+      wrench_msg.wrench.torque.z = wrench(5, 0);
+      status_pub_.publish(wrench_msg);
+    }
+  };
 }
 
 int main(int argc, char** argv)
 {
-    // Default ROS params
-    const double DEFAULT_POLL_RATE = 100.0;
-    const std::string DEFAULT_STATUS_TOPIC("ati_ft_sensor");
-    const std::string DEFAULT_SENSOR_FRAME("ati_ft_sensor");
-    const std::string DEFAULT_SOCKETCAN_INTERFACE("can0");
-    const int32_t DEFAULT_SENSOR_BASE_CAN_ID = 0x00;
-    const int32_t DEFAULT_SENSOR_CALIBRATION = 0x00;
-    // Start ROS
-    ros::init(argc, argv, "ati_netcanoem_ft_driver");
-    ros::NodeHandle nh;
-    ros::NodeHandle nhp("~");
-    // Get params
-    const std::string can_interface = nhp.param(std::string("socketcan_interface"), DEFAULT_SOCKETCAN_INTERFACE);
-    const uint8_t sensor_base_can_id = (uint8_t)nhp.param(std::string("sensor_base_can_id"), DEFAULT_SENSOR_BASE_CAN_ID);
-    const double poll_rate = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
-    const std::string status_topic = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
-    const std::string sensor_frame = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
-    const uint8_t sensor_calibration_index = (uint8_t)nhp.param(std::string("sensor_calibration_index"), DEFAULT_SENSOR_CALIBRATION);
-    // Start the driver
-    ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(nh, status_topic, sensor_frame, can_interface, sensor_base_can_id, sensor_calibration_index);
-    sensor.Loop(poll_rate);
-    return 0;
+  // Default ROS params
+  const double DEFAULT_POLL_RATE = 100.0;
+  const std::string DEFAULT_STATUS_TOPIC("ati_ft_sensor");
+  const std::string DEFAULT_SENSOR_FRAME("ati_ft_sensor");
+  const std::string DEFAULT_SOCKETCAN_INTERFACE("can0");
+  const int32_t DEFAULT_SENSOR_BASE_CAN_ID = 0x00;
+  const int32_t DEFAULT_SENSOR_CALIBRATION = 0x00;
+  // Start ROS
+  ros::init(argc, argv, "ati_netcanoem_ft_driver");
+  ros::NodeHandle nh;
+  ros::NodeHandle nhp("~");
+  // Get params
+  const std::string can_interface
+      = nhp.param(std::string("socketcan_interface"),
+                  DEFAULT_SOCKETCAN_INTERFACE);
+  const uint8_t sensor_base_can_id
+      = (uint8_t)nhp.param(std::string("sensor_base_can_id"),
+                           DEFAULT_SENSOR_BASE_CAN_ID);
+  const double poll_rate
+      = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
+  const std::string status_topic
+      = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
+  const std::string sensor_frame
+      = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
+  const uint8_t sensor_calibration_index
+      = (uint8_t)nhp.param(std::string("sensor_calibration_index"),
+                           DEFAULT_SENSOR_CALIBRATION);
+  // Start the driver
+  ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(nh,
+                                                     status_topic,
+                                                     sensor_frame,
+                                                     can_interface,
+                                                     sensor_base_can_id,
+                                                     sensor_calibration_index);
+  sensor.Loop(poll_rate);
+  return 0;
 }

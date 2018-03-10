@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -18,39 +20,36 @@
 #include <sys/ioctl.h>
 #include <schunk_wsg_driver/schunk_wsg_driver_common.hpp>
 
-#ifndef SCHUNK_WSG_DRIVER_CAN_HPP
-#define SCHUNK_WSG_DRIVER_CAN_HPP
-
 namespace schunk_wsg_driver
 {
-    class WSGCANInterface : public WSGInterface
-    {
-    protected:
+class WSGCANInterface : public WSGInterface
+{
+protected:
 
-        int can_socket_fd_;
-        uint32_t gripper_send_can_id_;
-        uint32_t gripper_recv_can_id_;
-        std::thread recv_thread_;
-        std::atomic<bool> active_;
-        std::mutex status_mutex_;
-        std::vector<WSGRawStatusMessage> status_queue_;
+  int can_socket_fd_;
+  uint32_t gripper_send_can_id_;
+  uint32_t gripper_recv_can_id_;
+  std::thread recv_thread_;
+  std::atomic<bool> active_;
+  std::mutex status_mutex_;
+  std::vector<WSGRawStatusMessage> status_queue_;
 
-    public:
+public:
 
-        WSGCANInterface(const std::function<void(const std::string&)>& logging_fn, const std::string& socketcan_interface, const uint32_t gripper_send_can_id);
+  WSGCANInterface(const std::function<void(const std::string&)>& logging_fn,
+                  const std::string& socketcan_interface,
+                  const uint32_t gripper_send_can_id);
 
-        ~WSGCANInterface();
+  ~WSGCANInterface();
 
-    protected:
+protected:
 
-        void RecvFromGripper();
+  void RecvFromGripper();
 
-        virtual bool CommandGripper(const WSGRawCommandMessage& command);
+  virtual bool CommandGripper(const WSGRawCommandMessage& command);
 
-        virtual std::vector<WSGRawStatusMessage> GetStatusQueue();
+  virtual std::vector<WSGRawStatusMessage> GetStatusQueue();
 
-        virtual void ShutdownConnection();
-    };
+  virtual void ShutdownConnection();
+};
 }
-
-#endif // SCHUNK_WSG_DRIVER_CAN_HPP
