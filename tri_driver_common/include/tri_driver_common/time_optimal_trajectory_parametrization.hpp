@@ -16,27 +16,27 @@ class PathSegment
 {
 public:
 
-PathSegment(const double length = 0.0) : length_(length) {}
+  PathSegment(const double length = 0.0) : length_(length) {}
 
-virtual ~PathSegment() {}
+  virtual ~PathSegment() {}
 
-double getLength() const { return length_; }
+  double Length() const { return length_; }
 
-virtual Eigen::VectorXd getConfig(double s) const = 0;
+  virtual Eigen::VectorXd GetConfig(const double s) const = 0;
 
-virtual Eigen::VectorXd getTangent(double s) const = 0;
+  virtual Eigen::VectorXd GetTangent(const double s) const = 0;
 
-virtual Eigen::VectorXd getCurvature(double s) const = 0;
+  virtual Eigen::VectorXd GetCurvature(const double s) const = 0;
 
-virtual std::list<double> getSwitchingPoints() const = 0;
+  virtual std::list<double> GetSwitchingPoints() const = 0;
 
-virtual PathSegment* clone() const = 0;
+  virtual PathSegment* Clone() const = 0;
 
-double position;
+  double position;
 
 protected:
 
-double length_;
+  double length_;
 };
 
 
@@ -44,110 +44,134 @@ double length_;
 class Path
 {
 public:
-Path(const std::list<Eigen::VectorXd>& path, double maxDeviation = 0.0);
 
-Path(const Path& path);
+  Path(const std::list<Eigen::VectorXd>& path,
+       const double maxDeviation = 0.0);
 
-~Path();
+  Path(const Path& path);
 
-double getLength() const;
+  ~Path();
 
-Eigen::VectorXd getConfig(double s) const;
+  double Length() const;
 
-Eigen::VectorXd getTangent(double s) const;
+  Eigen::VectorXd GetConfig(const double s) const;
 
-Eigen::VectorXd getCurvature(double s) const;
+  Eigen::VectorXd GetTangent(const double s) const;
 
-double getNextSwitchingPoint(double s, bool& discontinuity) const;
+  Eigen::VectorXd GetCurvature(const double s) const;
 
-std::list<std::pair<double, bool>> getSwitchingPoints() const;
+  double GetNextSwitchingPoint(const double s, bool& discontinuity) const;
+
+  std::list<std::pair<double, bool>> SwitchingPoints() const;
 
 private:
 
-PathSegment* getPathSegment(double &s) const;
+  PathSegment* GetPathSegment(double& s) const;
 
-double length;
+  double length_;
 
-std::list<std::pair<double, bool> > switchingPoints;
+  std::list<std::pair<double, bool>> switching_points_;
 
-std::list<PathSegment*> pathSegments;
+  std::list<PathSegment*> path_segments_;
 };
 
 class Trajectory
 {
 public:
-// Generates a time-optimal trajectory
-Trajectory(const std::list<Eigen::VectorXd>& waypoints, const Eigen::VectorXd& max_velocity, const Eigen::VectorXd& max_acceleration, const double max_deviation, const double timestep);
+  // Generates a time-optimal trajectory
+  Trajectory(const std::list<Eigen::VectorXd>& waypoints,
+             const Eigen::VectorXd& max_velocity,
+             const Eigen::VectorXd& max_acceleration,
+             const double max_deviation,
+             const double timestep);
 
-Trajectory(const Path &path, const Eigen::VectorXd &maxVelocity, const Eigen::VectorXd &maxAcceleration, double timeStep = 0.001);
+  Trajectory(const Path &path_,
+             const Eigen::VectorXd& max_velocity_,
+             const Eigen::VectorXd& max_acceleration_,
+             double timestep = 0.001);
 
-~Trajectory(void);
+  ~Trajectory(void);
 
-// Call this method after constructing the object to make sure the trajectory generation succeeded without errors.
-// If this method returns false, all other methods have undefined behavior.
-bool isValid() const;
+  // Returns the optimal duration of the trajectory
+  double Duration() const;
 
-// Returns the optimal duration of the trajectory
-double getDuration() const;
+  // Return the position vector and velocity vector of the
+  // robot for a given point in time within the trajectory.
+  // !!! NOT THREAD SAFE - MUTABLE CACHE INSIDE !!!
+  std::pair<Eigen::VectorXd, Eigen::VectorXd> GetPositionVelocity(
+      const double time) const;
 
-// Return the position/configuration or velocity vector of the robot for a given point in time within the trajectory.
-Eigen::VectorXd getPosition(double time) const;
-
-Eigen::VectorXd getVelocity(double time) const;
-
-// Outputs the phase trajectory and the velocity limit curve in 2 files for debugging purposes.
-void outputPhasePlaneTrajectory() const;
+  // Outputs the phase trajectory and the velocity limit curve
+  // in 2 files for debugging purposes.
+  void OutputPhasePlaneTrajectory() const;
 
 private:
 
-struct TrajectoryStep {
-  TrajectoryStep() {}
-  TrajectoryStep(double pathPos, double pathVel) :
-    pathPos(pathPos),
-    pathVel(pathVel)
-  {}
-  double pathPos;
-  double pathVel;
-  double time;
-};
+  struct TrajectoryStep
+  {
+    TrajectoryStep() {}
 
-bool getNextSwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
+    TrajectoryStep(double path_pos, double path_vel)
+      : path_pos_(path_pos), path_vel_(path_vel) {}
 
-bool getNextAccelerationSwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
+    double path_pos_;
+    double path_vel_;
+    double time_;
+  };
 
-bool getNextVelocitySwitchingPoint(double pathPos, TrajectoryStep &nextSwitchingPoint, double &beforeAcceleration, double &afterAcceleration);
+  bool GetNextSwitchingPoint(const double path_pos,
+                             TrajectoryStep& next_switching_point,
+                             double& before_acceleration,
+                             double& after_acceleration);
 
-bool integrateForward(std::list<TrajectoryStep> &trajectory, double acceleration);
+  bool GetNextAccelerationSwitchingPoint(const double path_pos,
+                                         TrajectoryStep& next_switching_point,
+                                         double& before_acceleration,
+                                         double& after_acceleration);
 
-void integrateBackward(std::list<TrajectoryStep> &startTrajectory, double pathPos, double pathVel, double acceleration);
+  bool GetNextVelocitySwitchingPoint(const double path_pos,
+                                     TrajectoryStep& next_switching_point,
+                                     double& before_acceleration,
+                                     double& after_acceleration);
 
-double getMinMaxPathAcceleration(double pathPosition, double pathVelocity, bool max);
+  bool IntegrateForward(std::list<TrajectoryStep>& trajectory,
+                        const double acceleration);
 
-double getMinMaxPhaseSlope(double pathPosition, double pathVelocity, bool max);
+  void IntegrateBackward(std::list<TrajectoryStep>& start_trajectory,
+                         const double path_pos,
+                         const double path_vel,
+                         const double acceleration);
 
-double getAccelerationMaxPathVelocity(double pathPos) const;
+  double GetMinMaxPathAcceleration(const double path_position,
+                                   const double path_velocity,
+                                   const bool max);
 
-double getVelocityMaxPathVelocity(double pathPos) const;
+  double GetMinMaxPhaseSlope(const double path_position,
+                             const double path_velocity,
+                             const bool max);
 
-double getAccelerationMaxPathVelocityDeriv(double pathPos);
+  double GetAccelerationMaxPathVelocity(const double path_pos) const;
 
-double getVelocityMaxPathVelocityDeriv(double pathPos);
+  double GetVelocityMaxPathVelocity(const double path_pos) const;
 
-std::list<TrajectoryStep>::const_iterator getTrajectorySegment(double time) const;
+  double GetAccelerationMaxPathVelocityDeriv(const double path_pos);
 
-Path path;
-Eigen::VectorXd maxVelocity;
-Eigen::VectorXd maxAcceleration;
-unsigned int n;
-bool valid;
-std::list<TrajectoryStep> trajectory;
-std::list<TrajectoryStep> endTrajectory; // non-empty only if the trajectory generation failed.
+  double GetVelocityMaxPathVelocityDeriv(const double path_pos);
 
-static const double eps;
-const double timeStep;
+  std::list<TrajectoryStep>::const_iterator GetTrajectorySegment(
+      const double time) const;
 
-mutable double cachedTime;
-mutable std::list<TrajectoryStep>::const_iterator cachedTrajectorySegment;
+  Path path_;
+  Eigen::VectorXd max_velocity_;
+  Eigen::VectorXd max_acceleration_;
+  unsigned int n_;
+  std::list<TrajectoryStep> trajectory_;
+
+  static const double eps;
+  const double time_step_;
+
+  mutable double cached_time_;
+  mutable std::list<TrajectoryStep>::const_iterator cached_trajectory_segment_;
 };
 }
 }
