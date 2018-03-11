@@ -84,9 +84,9 @@ uint64_t WSGRawStatusMessage::DeserializeSelf(
   const size_t checksum_size = 2;
   param_buffer_.clear();
   param_buffer_.insert(param_buffer_.end(),
-                       buffer.begin() + current_position,
-                       buffer.begin() + current_position
-                       + payload_size - checksum_size);
+                       buffer.begin() + (ssize_t)current_position,
+                       buffer.begin() + (ssize_t)current_position
+                       + (ssize_t)payload_size - (ssize_t)checksum_size);
   current_position += (payload_size - checksum_size);
   // Read the checksum
   const uint16_t read_checksum

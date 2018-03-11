@@ -31,12 +31,12 @@ constexpr uint64_t SerializedSizeIsometry3d()
 
 uint64_t SerializedDataSizeVectorXd(const Eigen::VectorXd& vec)
 {
-  return (uint64_t)(sizeof(double) * vec.size());
+  return (uint64_t)(sizeof(double) * (size_t)vec.size());
 }
 
 uint64_t SerializedSizeVectorXd(const Eigen::VectorXd& vec)
 {
-  return (uint64_t)(sizeof(uint64_t) * (sizeof(double) * vec.size()));
+  return (uint64_t)(sizeof(uint64_t) * (sizeof(double) * (size_t)vec.size()));
 }
 
 uint64_t SerializeVectorXd(const Eigen::VectorXd& value,

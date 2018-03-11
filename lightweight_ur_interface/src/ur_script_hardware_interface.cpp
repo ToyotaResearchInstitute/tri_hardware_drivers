@@ -104,9 +104,9 @@ protected:
       running_ = true;
     }
 
-    static int64_t Serialize(const ControlScriptCommand& command,
-                             const double float_conversion_ratio,
-                             std::vector<uint8_t>& buffer)
+    static uint64_t Serialize(const ControlScriptCommand& command,
+                              const double float_conversion_ratio,
+                              std::vector<uint8_t>& buffer)
     {
       return command.SerializeSelf(float_conversion_ratio, buffer);
     }
@@ -122,8 +122,8 @@ protected:
       return int32_vector;
     }
 
-    int64_t SerializeSelf(const double float_conversion_ratio,
-                          std::vector<uint8_t>& buffer) const
+    uint64_t SerializeSelf(const double float_conversion_ratio,
+                           std::vector<uint8_t>& buffer) const
     {
       const uint64_t start_buffer_size = buffer.size();
       // Serialize the contained items

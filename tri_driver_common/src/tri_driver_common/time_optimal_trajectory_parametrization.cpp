@@ -116,9 +116,9 @@ public:
   {
     std::list<double> switching_points;
     const size_t dim = (size_t)x_.size();
-    for(size_t i = 0; i < dim; i++)
+    for (size_t i = 0; i < dim; i++)
     {
-      double switching_angle = std::atan2(y_[i], x_[i]);
+      double switching_angle = std::atan2(y_[(ssize_t)i], x_[(ssize_t)i]);
       if(switching_angle < 0.0)
       {
         switching_angle += M_PI;

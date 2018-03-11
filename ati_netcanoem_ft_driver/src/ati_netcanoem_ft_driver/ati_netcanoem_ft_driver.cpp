@@ -30,33 +30,33 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
   ioctl(can_socket_fd_, SIOCGIFINDEX, &interface);
   // Set interface options - we filter only the CAN IDs we care about
   struct can_filter filter[14];
-  filter[0].can_id   = (sensor_base_can_id_ << 7) | 0x0;
+  filter[0].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x0;
   filter[0].can_mask = CAN_SFF_MASK;
-  filter[1].can_id   = (sensor_base_can_id_ << 7) | 0x1;
+  filter[1].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x1;
   filter[1].can_mask = CAN_SFF_MASK;
-  filter[2].can_id   = (sensor_base_can_id_ << 7) | 0x2;
+  filter[2].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x2;
   filter[2].can_mask = CAN_SFF_MASK;
-  filter[3].can_id   = (sensor_base_can_id_ << 7) | 0x3;
+  filter[3].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x3;
   filter[3].can_mask = CAN_SFF_MASK;
-  filter[4].can_id   = (sensor_base_can_id_ << 7) | 0x4;
+  filter[4].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x4;
   filter[4].can_mask = CAN_SFF_MASK;
-  filter[5].can_id   = (sensor_base_can_id_ << 7) | 0x5;
+  filter[5].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x5;
   filter[5].can_mask = CAN_SFF_MASK;
-  filter[6].can_id   = (sensor_base_can_id_ << 7) | 0x6;
+  filter[6].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x6;
   filter[6].can_mask = CAN_SFF_MASK;
-  filter[7].can_id   = (sensor_base_can_id_ << 7) | 0x7;
+  filter[7].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x7;
   filter[7].can_mask = CAN_SFF_MASK;
-  filter[8].can_id   = (sensor_base_can_id_ << 7) | 0x8;
+  filter[8].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x8;
   filter[8].can_mask = CAN_SFF_MASK;
-  filter[9].can_id   = (sensor_base_can_id_ << 7) | 0x9;
+  filter[9].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0x9;
   filter[9].can_mask = CAN_SFF_MASK;
-  filter[10].can_id   = (sensor_base_can_id_ << 7) | 0xc;
+  filter[10].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0xc;
   filter[10].can_mask = CAN_SFF_MASK;
-  filter[11].can_id   = (sensor_base_can_id_ << 7) | 0xd;
+  filter[11].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0xd;
   filter[11].can_mask = CAN_SFF_MASK;
-  filter[12].can_id   = (sensor_base_can_id_ << 7) | 0xe;
+  filter[12].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0xe;
   filter[12].can_mask = CAN_SFF_MASK;
-  filter[13].can_id   = (sensor_base_can_id_ << 7) | 0xf;
+  filter[13].can_id   = (uint32_t)(sensor_base_can_id_ << 7) | 0xf;
   filter[13].can_mask = CAN_SFF_MASK;
   // Apply the filters
   const int setsockopt_result = setsockopt(can_socket_fd_,
@@ -129,7 +129,7 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   }
   const uint16_t status_code
       = tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_1.Payload(), 0).first;
+        ::DeserializeMemcpyable<uint16_t>(response_msg_1.Payload(), 0).first;
   raw_values(0, 0)
       = (double)tri_driver_common::serialization
         ::DeserializeMemcpyable<int16_t>(response_msg_1.Payload(), 2).first;
@@ -490,7 +490,7 @@ AtiNetCanOemInterface::SendFrameAndAwaitResponse(
   const std::chrono::duration<double> timeout_duration(timeout);
   // Assemble into CAN frame
   struct can_frame frame;
-  frame.can_id = (sensor_base_can_id_ << 7) | command.Opcode();
+  frame.can_id = (uint32_t)(sensor_base_can_id_ << 7) | command.Opcode();
   const std::vector<uint8_t>& payload = command.Payload();
   frame.can_dlc = (uint8_t)payload.size();
   memcpy(frame.data, payload.data(), payload.size());

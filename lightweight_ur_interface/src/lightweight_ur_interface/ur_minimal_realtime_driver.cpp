@@ -162,7 +162,7 @@ URRealtimeInterface::URRealtimeInterface(
   robot_addr_.sin_family = AF_INET;
   bcopy((char *)nameserver->h_addr,
         (char *)&robot_addr_.sin_addr.s_addr,
-        nameserver->h_length);
+        (size_t)nameserver->h_length);
   robot_addr_.sin_port = htons(30003);
 }
 

@@ -44,7 +44,7 @@ public:
   {
     gripper_interface_ptr_->Log("Gripper interface running");
     ros::Rate rate(control_rate);
-    while (ros::ok());
+    while (ros::ok())
     {
       PublishGripperStatus();
       ros::spinOnce();

@@ -161,7 +161,7 @@ void WSGCANInterface::RecvFromGripper()
         {
           recv_buffer.erase(recv_buffer.begin(),
                             recv_buffer.begin()
-                            + deserialized_status_msg.second);
+                            + (ssize_t)deserialized_status_msg.second);
         }
         else
         {

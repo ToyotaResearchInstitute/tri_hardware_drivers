@@ -77,13 +77,13 @@ bool WSGUDPInterface::CommandGripper(const WSGRawCommandMessage& command)
 {
   std::vector<uint8_t> serialized_command_buffer;
   WSGRawCommandMessage::Serialize(command, serialized_command_buffer);
-  const size_t send_result = sendto(send_socket_fd_,
-                                    serialized_command_buffer.data(),
-                                    serialized_command_buffer.size(),
-                                    0,
-                                    (struct sockaddr*)&gripper_sockaddr_,
-                                    sizeof(gripper_sockaddr_));
-  if (send_result == serialized_command_buffer.size())
+  const ssize_t send_result = sendto(send_socket_fd_,
+                                     serialized_command_buffer.data(),
+                                     serialized_command_buffer.size(),
+                                     0,
+                                     (struct sockaddr*)&gripper_sockaddr_,
+                                     sizeof(gripper_sockaddr_));
+  if (send_result == (ssize_t)serialized_command_buffer.size())
   {
     return true;
   }

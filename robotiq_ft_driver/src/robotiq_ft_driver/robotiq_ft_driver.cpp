@@ -123,7 +123,8 @@ std::string RobotiqFTModbusRtuInterface::ReadSerialNumber()
     throw std::runtime_error(
           "Failed to read Serial Number registers with error: " + error_msg);
   }
-  const uint64_t raw_sn = (raw_sn_buffer[3] << 16) + raw_sn_buffer[2];
+  const uint64_t raw_sn 
+      = (uint64_t)(raw_sn_buffer[3] << 16) + (uint64_t)raw_sn_buffer[2];
   if (raw_sn > 0)
   {
     const int max_str_len = 128;

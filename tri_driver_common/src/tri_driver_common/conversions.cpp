@@ -343,7 +343,7 @@ Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(
   Eigen::Matrix3Xd eigen_matrix = Eigen::MatrixXd(3, vector_geom.size());
   for (size_t idx = 0; idx < vector_geom.size(); idx++)
   {
-    eigen_matrix.block<3,1>(0, idx)
+    eigen_matrix.block<3,1>(0, (ssize_t)idx)
         = GeometryPointToEigenVector3d(vector_geom[idx]);
   }
   return eigen_matrix;
@@ -352,11 +352,12 @@ Eigen::Matrix3Xd VectorGeometryPointToEigenMatrix3Xd(
 std::vector<geometry_msgs::Point> EigenMatrix3XdToVectorGeometryPoint(
     const Eigen::Matrix3Xd& eigen_matrix)
 {
-  std::vector<geometry_msgs::Point> vector_geom(eigen_matrix.cols());
+  std::vector<geometry_msgs::Point> vector_geom((size_t)eigen_matrix.cols());
   for (size_t idx = 0; idx < vector_geom.size(); idx++)
   {
     vector_geom[idx]
-        = EigenVector3dToGeometryPoint(eigen_matrix.block<3,1>(0,idx));
+        = EigenVector3dToGeometryPoint(
+            eigen_matrix.block<3,1>(0, (ssize_t)idx));
   }
   return vector_geom;
 }
