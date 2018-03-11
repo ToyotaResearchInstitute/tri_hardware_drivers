@@ -145,14 +145,14 @@ public:
         {
           const double elapsed_time
               = (ros::Time::now() - active_trajectory_start_time_).toSec();
-          if (elapsed_time <= active_trajectory_->getDuration())
+          if (elapsed_time <= active_trajectory_->Duration())
           {
+            const std::pair<Eigen::VectorXd, Eigen::VectorXd> current_pos_vel
+                = active_trajectory_->GetPositionVelocity(elapsed_time);
             const std::vector<double> current_target_position
-                = EigenVectorXdToStdVectorDouble(
-                    active_trajectory_->getPosition(elapsed_time));
+                = EigenVectorXdToStdVectorDouble(current_pos_vel.first);
             const std::vector<double> current_target_velocity
-                = EigenVectorXdToStdVectorDouble(
-                    active_trajectory_->getVelocity(elapsed_time));
+                = EigenVectorXdToStdVectorDouble(current_pos_vel.second);
             const std::vector<double> raw_config_correction
                 = ComputeRawNextStepTrajectory(current_config_,
                                                current_velocities_,
@@ -192,10 +192,11 @@ public:
                                 "Reached the end of the current trajectory"
                                 " @ %f seconds, switching to hold position",
                                 elapsed_time);
+            const std::pair<Eigen::VectorXd, Eigen::VectorXd> end_pos_vel
+                = active_trajectory_->GetPositionVelocity(
+                    active_trajectory_->Duration());
             const std::vector<double> current_target_position
-                = EigenVectorXdToStdVectorDouble(
-                    active_trajectory_->getPosition(
-                      active_trajectory_->getDuration()));
+                = EigenVectorXdToStdVectorDouble(end_pos_vel.first);
             const std::vector<double> raw_config_correction
                 = ComputeRawNextStepPosition(current_config_,
                                              current_target_position,
@@ -510,21 +511,21 @@ public:
             = StdVectorDoubleToEigenVectorXd(joint_acceleration_limits_);
         const double max_path_deviation = 0.01;
         const double timestep = 0.001;
-        std::shared_ptr<Trajectory> new_trajectory_ptr
-            = std::make_shared<Trajectory>(ordered_waypoints,
-                                           velocity_limits,
-                                           acceleration_limits,
-                                           max_path_deviation,
-                                           timestep);
-        if (new_trajectory_ptr->isValid())
+        try
         {
+          std::shared_ptr<Trajectory> new_trajectory_ptr
+              = std::make_shared<Trajectory>(ordered_waypoints,
+                                             velocity_limits,
+                                             acceleration_limits,
+                                             max_path_deviation,
+                                             timestep);
           ROS_INFO_NAMED(ros::this_node::getName(),
                          "Starting execution of new trajectory");
           active_trajectory_.reset();
           active_trajectory_ = new_trajectory_ptr;
           active_trajectory_start_time_ = ros::Time::now();
         }
-        else
+        catch (...)
         {
           ROS_WARN_NAMED(ros::this_node::getName(),
                          "New trajectory could not be parametrized");
