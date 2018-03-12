@@ -7,10 +7,6 @@ Lightweight ROS driver for Universal Robots platforms. Exclusively uses the real
 
 ROS provides the build system, Catkin, and IPC with the driver. May work with other ROS variants, but has not been tested outside of Ubuntu 16.04.* and ROS Kinetic.
 
-- [arc_utilities](https://github.com/ToyotaResearchInstitute/arc_utilities)
-
-`arc_utilities` provides helper functions used for math operations, data serialization/de-serialization, and smooth trajectory parametrization.
-
 ## Optional Dependencies (real or simulated robot hardware)
 
 - Universal Robots UR10, UR5, or UR3 robot
