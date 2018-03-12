@@ -181,9 +181,10 @@ public:
         }
         else if (current_state_valid_)
         {
+          previous_velocity_command.clear();
           previous_velocity_command.resize(joint_names_.size(), 0.0);
           PublishState(current_config_,
-                       std::vector<double>(),
+                       std::vector<double>(joint_names_.size(), 0.0),
                        current_config_,
                        current_velocities_);
         }
