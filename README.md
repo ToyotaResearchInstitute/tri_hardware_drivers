@@ -9,7 +9,11 @@ ROS provides the build system, Catkin, and IPC with the driver. May work with ot
 
 - [control_msgs](http://wiki.ros.org/control_msgs)
 
-ROS messages for robot control. Depending on your ROS installation type, you may need to install these separately.
+ROS messages for robot control. Depending on your ROS installation type (-base, -desktop, -desktop-full), you may need to install these separately.
+
+- [tf2_msgs](http://wiki.ros.org/tf2_msgs)
+
+ROS messages for the TF system. Depending on your ROS installation type (-base, -desktop, -desktop-full), you may need to install these separately.
 
 - [libmodbus](http://libmodbus.org)
 
