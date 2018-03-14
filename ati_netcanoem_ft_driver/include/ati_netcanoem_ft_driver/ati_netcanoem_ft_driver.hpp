@@ -25,7 +25,7 @@ namespace ati_netcanoem_ft_driver
 {
 class AtiNetCanOemInterface
 {
-protected:
+private:
 
   int can_socket_fd_;
   uint8_t sensor_base_can_id_;
@@ -64,7 +64,7 @@ protected:
 
   class DataElement
   {
-  protected:
+  private:
 
     uint8_t opcode_;
     std::vector<uint8_t> payload_;
@@ -151,7 +151,7 @@ public:
 
   std::pair<std::pair<uint8_t, uint8_t>, uint16_t> ReadFirmwareVersion();
 
-protected:
+private:
 
   std::vector<DataElement> SendFrameAndAwaitResponse(
       const DataElement& command,

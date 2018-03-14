@@ -13,7 +13,7 @@ namespace robotiq_2_finger_gripper_driver
 {
 class Robotiq2FingerDriver
 {
-protected:
+private:
 
   ros::NodeHandle nh_;
   ros::Publisher status_pub_;
@@ -82,7 +82,7 @@ public:
                    "Gripper interface shutting down");
   }
 
-protected:
+private:
 
   void CommandCB(Robotiq2FingerCommand command_msg)
   {

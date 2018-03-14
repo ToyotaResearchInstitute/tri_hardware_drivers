@@ -25,7 +25,7 @@ using tri_driver_common::conversions::GeometryPoseToEigenIsometry3d;
 
 class URCartesianController
 {
-protected:
+private:
 
   typedef Eigen::Matrix<double, 6, 1> Twist;
 

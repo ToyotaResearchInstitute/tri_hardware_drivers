@@ -13,7 +13,7 @@ namespace lightweight_ur_interface
 {
 class PIDParams
 {
-protected:
+private:
 
   double kp_;
   double ki_;
@@ -62,7 +62,7 @@ inline std::ostream& operator<<(std::ostream& strm, const PIDParams& params)
 
 class JointLimits
 {
-protected:
+private:
 
   double min_position_;
   double max_position_;

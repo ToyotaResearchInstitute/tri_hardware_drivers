@@ -35,7 +35,7 @@ using tri_driver_common::utility::GetKeys;
 
 class URPositionController
 {
-protected:
+private:
 
   std::vector<std::string> joint_names_;
   std::vector<std::pair<double, double>> joint_position_limits_;

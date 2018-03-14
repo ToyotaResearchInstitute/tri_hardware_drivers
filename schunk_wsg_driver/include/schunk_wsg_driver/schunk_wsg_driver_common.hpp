@@ -188,7 +188,7 @@ enum GraspingState : uint8_t
 
 class WSGRawStatusMessage
 {
-protected:
+private:
 
   uint8_t command_;
   uint16_t status_;
@@ -214,7 +214,7 @@ public:
 
 class WSGRawCommandMessage
 {
-protected:
+private:
 
   uint8_t command_;
   std::vector<uint8_t> param_buffer_;
@@ -253,7 +253,7 @@ public:
 
 class GripperMotionStatus
 {
-protected:
+private:
 
   double actual_position_;
   double actual_velocity_;
@@ -324,7 +324,7 @@ public:
 
 class PhysicalLimits
 {
-protected:
+private:
 
   double stroke_mm_;
   double min_speed_mm_per_s_;
@@ -387,7 +387,7 @@ public:
 
 class WSGInterface
 {
-protected:
+private:
 
   std::mutex status_mutex_;
   std::pair<PhysicalLimits, bool> maybe_physical_limits_;
@@ -429,7 +429,7 @@ protected:
 
   bool StopGripper();
 
-  enum HomeDirection : uint8_t {kDefault=0, 
+  enum HomeDirection : uint8_t {kDefault=0,
                                 kPositive=1,
                                 kNegative=2};
 

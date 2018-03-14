@@ -38,7 +38,7 @@ using tri_driver_common::utility::GetKeys;
 
 class URScriptHardwareInterface
 {
-protected:
+private:
 
   class ControlScriptCommand
   {
@@ -54,7 +54,7 @@ protected:
                                 MODE_DONT_CHANGE=2,
                                 MODE_KEEP_LIMITS=3 };
 
-  protected:
+  private:
 
     std::vector<double> speed_;
     std::vector<double> wrench_;

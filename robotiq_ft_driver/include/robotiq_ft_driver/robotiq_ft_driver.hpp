@@ -26,7 +26,7 @@ namespace robotiq_ft_driver
 {
 class RobotiqFTModbusRtuInterface
 {
-protected:
+private:
 
   modbus_t* modbus_interface_ptr_;
   std::function<void(const std::string&)> logging_fn_;
@@ -70,7 +70,7 @@ public:
 
   uint16_t ReadYearOfManufacture();
 
-protected:
+private:
 
   void ShutdownConnection();
 };

@@ -68,7 +68,7 @@ public:
                                  FINGERS_AT_REQUESTED=0x03,
                                  FINGERS_STOPPED=0x04 };
 
-protected:
+private:
 
   double target_position_;
   double actual_position_;

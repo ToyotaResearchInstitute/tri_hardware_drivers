@@ -19,7 +19,7 @@ namespace schunk_wsg_driver
 {
 class WSGUDPInterface : public WSGInterface
 {
-protected:
+private:
 
   int send_socket_fd_;
   int recv_socket_fd_;

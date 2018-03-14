@@ -35,7 +35,7 @@ using tri_driver_common::utility::GetKeys;
 
 class URMinimalHardwareInterface
 {
-protected:
+private:
 
   std::string base_frame_;
   std::string ee_frame_;

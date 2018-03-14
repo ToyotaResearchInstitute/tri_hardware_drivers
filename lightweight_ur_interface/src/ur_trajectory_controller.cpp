@@ -40,7 +40,7 @@ using tri_driver_common::time_optimal_trajectory_parametrization::Trajectory;
 
 class URTrajectoryController
 {
-protected:
+private:
 
   std::vector<std::string> joint_names_;
   std::vector<std::pair<double, double>> joint_position_limits_;

@@ -12,7 +12,7 @@ namespace robotiq_ft_driver
 {
 class RobotiqFTDriver
 {
-protected:
+private:
 
   ros::NodeHandle nh_;
   std::string sensor_frame_;
@@ -77,7 +77,7 @@ public:
     }
   }
 
-protected:
+private:
 
   void PublishWrench()
   {

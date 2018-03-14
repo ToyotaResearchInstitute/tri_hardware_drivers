@@ -14,7 +14,7 @@ namespace schunk_wsg_driver
 {
 class SchunkWSGDriver
 {
-protected:
+private:
 
   ros::NodeHandle nh_;
   ros::Subscriber command_sub_;
@@ -53,7 +53,7 @@ public:
     gripper_interface_ptr_->Log("Gripper interface shutting down");
   }
 
-protected:
+private:
 
   void CommandCB(WSGCommand command)
   {

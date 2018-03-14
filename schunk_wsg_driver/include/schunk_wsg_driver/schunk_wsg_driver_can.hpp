@@ -24,7 +24,7 @@ namespace schunk_wsg_driver
 {
 class WSGCANInterface : public WSGInterface
 {
-protected:
+private:
 
   int can_socket_fd_;
   uint32_t gripper_send_can_id_;
