@@ -1,11 +1,36 @@
 #include <ros/ros.h>
-#include <iostream>
+#include <sstream>
 #include <string>
 #include <tri_mocap_common/MocapState.h>
 #include <tf2_msgs/TFMessage.h>
 
 ros::Publisher g_transform_pub;
 bool g_override_timestamps;
+
+std::string MakeTfCompatibleName(const std::string& name)
+{
+  const std::pair<char, char> ascii_numbers(0x30, 0x39);
+  const std::pair<char, char> ascii_upper_case(0x41, 0x5a);
+  const std::pair<char, char> ascii_lower_case(0x61, 0x7a);
+  std::ostringstream strm;
+  for (size_t idx = 0; idx < name.size(); idx++)
+  {
+    const char character = name[idx];
+    if (character >= ascii_numbers.first && character <= ascii_numbers.second)
+    {
+      strm << character;
+    }
+    else if (character >= ascii_upper_case.first && character <= ascii_upper_case.second)
+    {
+      strm << character;
+    }
+    else if (character >= ascii_lower_case.first && character <= ascii_lower_case.second)
+    {
+      strm << character;
+    }
+  }
+  return strm.str();
+}
 
 void MocapMsgCB(tri_mocap_common::MocapState msg)
 {
@@ -26,8 +51,8 @@ void MocapMsgCB(tri_mocap_common::MocapState msg)
       {
         /* Get the full segment name */
         const std::string full_segment_name = mocap_name
-                                              + "_" + current_object.name
-                                              + "_" + current_segment.name;
+                                              + "_" + MakeTfCompatibleName(current_object.name)
+                                              + "_" + MakeTfCompatibleName(current_segment.name);
         geometry_msgs::TransformStamped segment_transform;
         segment_transform.header.stamp = transforms_time;
         segment_transform.header.frame_id = mocap_frame;
@@ -50,7 +75,7 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string tracker_topic = nhp.param(std::string("tracker_topic"),
-                                              std::string("mocap_tracking"));
+                                              std::string("mocap_state"));
   g_override_timestamps = nhp.param(std::string("override_timestamps"), false);
   const std::string tf_topic = nhp.param(std::string("tf_topic"),
                                          std::string("/tf"));
