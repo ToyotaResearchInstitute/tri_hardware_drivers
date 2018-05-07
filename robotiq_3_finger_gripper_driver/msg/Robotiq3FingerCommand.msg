@@ -1,0 +1,5 @@
+Robotiq3FingerActuatorCommand finger_a_command
+Robotiq3FingerActuatorCommand finger_b_command
+Robotiq3FingerActuatorCommand finger_c_command
+Robotiq3FingerActuatorCommand scissor_command
+std_msgs/Header header

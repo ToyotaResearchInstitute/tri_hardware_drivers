@@ -70,7 +70,7 @@ public:
 
   void Loop(const double control_rate)
   {
-    ROS_INFO_NAMED(ros::this_node::getName(), "Gripper interface running");;
+    ROS_INFO_NAMED(ros::this_node::getName(), "Gripper interface running");
     ros::Rate rate(control_rate);
     while (ros::ok())
     {

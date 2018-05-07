@@ -198,8 +198,8 @@ protected:
 public:
 
   Robotiq2FingerGripperCommand(const double target_position,
-                 const double target_speed,
-                 const double target_force)
+                               const double target_speed,
+                               const double target_force)
   {
     if (std::isinf(target_position) || std::isnan(target_position))
     {

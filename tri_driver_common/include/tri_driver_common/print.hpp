@@ -43,6 +43,11 @@ inline std::string Print(const bool& bool_to_print,
                          const std::string& separator);
 
 template<>
+inline std::string Print(const uint8_t& byte_to_print,
+                         const bool add_delimiters,
+                         const std::string& separator);
+
+template<>
 inline std::string Print(const Eigen::Vector2d& vector_to_print,
                          const bool add_delimiters,
                          const std::string& separator);
@@ -191,6 +196,16 @@ inline std::string Print(const bool& bool_to_print,
   {
     return "false";
   }
+}
+
+template<>
+inline std::string Print(const uint8_t& byte_to_print,
+                         const bool add_delimiters,
+                         const std::string& separator)
+{
+  UNUSED(add_delimiters);
+  UNUSED(separator);
+  return std::to_string((int32_t)byte_to_print);
 }
 
 template<>
