@@ -44,7 +44,7 @@ public:
     };
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Connecting to ATI F/T sensor with CAN base ID %hhx"
-                   "on socketcan interface %s...",
+                   " on socketcan interface %s...",
                    sensor_base_can_id,
                    can_interface.c_str());
     sensor_ptr_
