@@ -120,10 +120,12 @@ Eigen::Matrix<double, 6, 1> AtiNetCanOemInterface::GetCurrentForceTorque()
         = ReadRawStrainGaugeData();
     const uint16_t status_code = strain_gauge_data.first;
     ParseStatusCode(status_code);
-    const Eigen::Matrix<double, 6, 1> strain_gauge_values
+    const Eigen::Matrix<double, 6, 1>& strain_gauge_values
         = strain_gauge_data.second;
-    const Eigen::Matrix<double, 6, 1> wrench
+    const Eigen::Matrix<double, 6, 1> wrench_counts
         = active_calibration_matrix_ * strain_gauge_values;
+    const Eigen::Matrix<double, 6, 1> wrench
+        = wrench_counts.cwiseProduct(active_force_torque_counts_vector_);
     return wrench;
   }
   else
@@ -154,16 +156,20 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   }
   const uint16_t status_code
       = tri_driver_common::serialization
-        ::DeserializeMemcpyable<uint16_t>(response_msg_1.Payload(), 0).first;
+        ::DeserializeNetworkMemcpyable<uint16_t>(
+            response_msg_1.Payload(), 0).first;
   raw_values(0, 0)
       = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_1.Payload(), 2).first;
-  raw_values(1, 0)
-      = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_1.Payload(), 4).first;
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_1.Payload(), 2).first;
   raw_values(2, 0)
       = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_1.Payload(), 6).first;
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_1.Payload(), 4).first;
+  raw_values(4, 0)
+      = (double)tri_driver_common::serialization
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_1.Payload(), 6).first;
   const DataElement& response_msg_2 = response[1];
   if (response_msg_2.Opcode() != READ_SG_B)
   {
@@ -173,15 +179,18 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   {
     throw std::runtime_error("Invalid payload data for read strain gauges");
   }
+  raw_values(1, 0)
+      = (double)tri_driver_common::serialization
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_2.Payload(), 0).first;
   raw_values(3, 0)
       = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_2.Payload(), 0).first;
-  raw_values(4, 0)
-      = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_2.Payload(), 2).first;
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_2.Payload(), 2).first;
   raw_values(5, 0)
       = (double)tri_driver_common::serialization
-        ::DeserializeMemcpyable<int16_t>(response_msg_2.Payload(), 4).first;
+        ::DeserializeNetworkMemcpyable<int16_t>(
+            response_msg_2.Payload(), 4).first;
   return std::make_pair(status_code, raw_values);
 }
 
@@ -195,18 +204,13 @@ bool AtiNetCanOemInterface::LoadNewActiveCalibration(const uint8_t calibration)
     const std::pair<uint32_t, uint32_t> counts = ReadCountsPerUnit();
     const double counts_per_force = (double)counts.first;
     const double counts_per_torque = (double)counts.second;
-    active_calibration_matrix_.block<1, 6>(0, 0)
-        = raw_calibration_matrix.block<1, 6>(0, 0) / counts_per_force;
-    active_calibration_matrix_.block<1, 6>(1, 0)
-        = raw_calibration_matrix.block<1, 6>(1, 0) / counts_per_force;
-    active_calibration_matrix_.block<1, 6>(2, 0)
-        = raw_calibration_matrix.block<1, 6>(2, 0) / counts_per_force;
-    active_calibration_matrix_.block<1, 6>(3, 0)
-        = raw_calibration_matrix.block<1, 6>(3, 0) / counts_per_torque;
-    active_calibration_matrix_.block<1, 6>(4, 0)
-        = raw_calibration_matrix.block<1, 6>(4, 0) / counts_per_torque;
-    active_calibration_matrix_.block<1, 6>(5, 0)
-        = raw_calibration_matrix.block<1, 6>(5, 0) / counts_per_torque;
+    active_force_torque_counts_vector_(0, 0) = 1.0 / counts_per_force;
+    active_force_torque_counts_vector_(1, 0) = 1.0 / counts_per_force;
+    active_force_torque_counts_vector_(2, 0) = 1.0 / counts_per_force;
+    active_force_torque_counts_vector_(3, 0) = 1.0 / counts_per_torque;
+    active_force_torque_counts_vector_(4, 0) = 1.0 / counts_per_torque;
+    active_force_torque_counts_vector_(5, 0) = 1.0 / counts_per_torque;
+    active_calibration_matrix_ = raw_calibration_matrix;
     has_active_calibration_ = true;
     return true;
   }
@@ -256,10 +260,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 0)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_1.Payload(), 0).first;
   matrix_row(0, 1)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_1.Payload(), 4).first;
   const DataElement& response_msg_2 = response.at(1);
   if (response_msg_2.Opcode() != READ_MATRIX_ROW_B)
@@ -271,10 +275,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 2)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_2.Payload(), 0).first;
   matrix_row(0, 3)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_2.Payload(), 4).first;
   const DataElement& response_msg_3 = response.at(2);
   if (response_msg_3.Opcode() != READ_MATRIX_ROW_C)
@@ -286,10 +290,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 4)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_3.Payload(), 0).first;
   matrix_row(0, 5)
-      = tri_driver_common::serialization::DeserializeMemcpyable<float>(
+      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_3.Payload(), 4).first;
   return matrix_row;
 }
@@ -375,11 +379,13 @@ std::pair<uint32_t, uint32_t> AtiNetCanOemInterface::ReadCountsPerUnit()
     throw std::runtime_error("Invalid payload data for read counts per unit");
   }
   const uint32_t force_counts
-      = tri_driver_common::serialization::DeserializeMemcpyable<uint32_t>(
-          response_msg.Payload(), 0).first;
+      = tri_driver_common::serialization
+          ::DeserializeNetworkMemcpyable<uint32_t>(
+              response_msg.Payload(), 0).first;
   const uint32_t torque_counts
-      = tri_driver_common::serialization::DeserializeMemcpyable<uint32_t>(
-          response_msg.Payload(), 4).first;
+      = tri_driver_common::serialization
+          ::DeserializeNetworkMemcpyable<uint32_t>(
+              response_msg.Payload(), 4).first;
   return std::make_pair(force_counts, torque_counts);
 }
 
@@ -432,8 +438,9 @@ std::vector<uint16_t> AtiNetCanOemInterface::ReadDiagnosticADCVoltages()
       throw std::runtime_error("Invalid payload data for read ADC voltages");
     }
     const uint16_t adc_voltage
-        = tri_driver_common::serialization::DeserializeMemcpyable<uint16_t>(
-            response_msg.Payload(), 0).first;
+        = tri_driver_common::serialization
+            ::DeserializeNetworkMemcpyable<uint16_t>(
+                response_msg.Payload(), 0).first;
     adc_voltages.push_back(adc_voltage);
   }
   return adc_voltages;
@@ -511,7 +518,7 @@ AtiNetCanOemInterface::ReadFirmwareVersion()
   const uint8_t major_version = response_msg.Payload()[0];
   const uint8_t minor_version = response_msg.Payload()[1];
   const uint16_t build_number =
-      tri_driver_common::serialization::DeserializeMemcpyable<uint16_t>(
+      tri_driver_common::serialization::DeserializeNetworkMemcpyable<uint16_t>(
         response_msg.Payload(), 2).first;
   return std::make_pair(std::make_pair(major_version, minor_version),
                         build_number);
@@ -526,7 +533,8 @@ AtiNetCanOemInterface::SendFrameAndAwaitResponse(
   const std::chrono::duration<double> timeout_duration(timeout);
   // Assemble into CAN frame
   struct can_frame frame;
-  frame.can_id = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | command.Opcode();
+  frame.can_id =
+      (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | command.Opcode();
   const std::vector<uint8_t>& payload = command.Payload();
   frame.can_dlc = (uint8_t)payload.size();
   memcpy(frame.data, payload.data(), payload.size());

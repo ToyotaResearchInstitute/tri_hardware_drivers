@@ -33,6 +33,7 @@ private:
   std::function<void(const std::string&)> logging_fn_;
   bool has_active_calibration_;
   Eigen::Matrix<double, 6, 6> active_calibration_matrix_;
+  Eigen::Matrix<double, 6, 1> active_force_torque_counts_vector_;
 
   enum OPCODE : uint8_t { READ_SG_A=0x0,
                           READ_SG_B=0x1,
