@@ -105,6 +105,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
     throw std::runtime_error("Failed to bind socketcan socket");
   }
   Log("...bound to CAN interface");
+  ResetBias();
 }
 
 AtiNetCanOemInterface::~AtiNetCanOemInterface()
@@ -123,15 +124,26 @@ Eigen::Matrix<double, 6, 1> AtiNetCanOemInterface::GetCurrentForceTorque()
     const Eigen::Matrix<double, 6, 1>& strain_gauge_values
         = strain_gauge_data.second;
     const Eigen::Matrix<double, 6, 1> wrench_counts
-        = active_calibration_matrix_ * strain_gauge_values;
+        = active_calibration_matrix_ * (strain_gauge_values - active_bias_);
     const Eigen::Matrix<double, 6, 1> wrench
-        = wrench_counts.cwiseProduct(active_force_torque_counts_vector_);
+        = wrench_counts.cwiseProduct(active_force_torque_inv_counts_vector_);
     return wrench;
   }
   else
   {
     throw std::runtime_error("No active calibration to use");
   }
+}
+
+void AtiNetCanOemInterface::SetBias()
+{
+  const std::pair<uint16_t, Eigen::Matrix<double, 6, 1>> strain_gauge_data
+      = ReadRawStrainGaugeData();
+  const uint16_t status_code = strain_gauge_data.first;
+  ParseStatusCode(status_code);
+  const Eigen::Matrix<double, 6, 1>& strain_gauge_values
+      = strain_gauge_data.second;
+  active_bias_ = strain_gauge_values;
 }
 
 std::pair<uint16_t, Eigen::Matrix<double, 6, 1>>
@@ -204,12 +216,12 @@ bool AtiNetCanOemInterface::LoadNewActiveCalibration(const uint8_t calibration)
     const std::pair<uint32_t, uint32_t> counts = ReadCountsPerUnit();
     const double counts_per_force = (double)counts.first;
     const double counts_per_torque = (double)counts.second;
-    active_force_torque_counts_vector_(0, 0) = 1.0 / counts_per_force;
-    active_force_torque_counts_vector_(1, 0) = 1.0 / counts_per_force;
-    active_force_torque_counts_vector_(2, 0) = 1.0 / counts_per_force;
-    active_force_torque_counts_vector_(3, 0) = 1.0 / counts_per_torque;
-    active_force_torque_counts_vector_(4, 0) = 1.0 / counts_per_torque;
-    active_force_torque_counts_vector_(5, 0) = 1.0 / counts_per_torque;
+    active_force_torque_inv_counts_vector_(0, 0) = 1.0 / counts_per_force;
+    active_force_torque_inv_counts_vector_(1, 0) = 1.0 / counts_per_force;
+    active_force_torque_inv_counts_vector_(2, 0) = 1.0 / counts_per_force;
+    active_force_torque_inv_counts_vector_(3, 0) = 1.0 / counts_per_torque;
+    active_force_torque_inv_counts_vector_(4, 0) = 1.0 / counts_per_torque;
+    active_force_torque_inv_counts_vector_(5, 0) = 1.0 / counts_per_torque;
     active_calibration_matrix_ = raw_calibration_matrix;
     has_active_calibration_ = true;
     return true;

@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <ros/xmlrpc_manager.h>
+#include <std_srvs/SetBool.h>
 #include <signal.h>
 
 namespace ati_netcanoem_ft_driver
@@ -17,12 +18,14 @@ private:
   ros::NodeHandle nh_;
   std::string sensor_frame_;
   ros::Publisher status_pub_;
+  ros::ServiceServer reset_or_set_bias_service_;
   std::unique_ptr<AtiNetCanOemInterface> sensor_ptr_;
 
 public:
 
   AtiNetCanOemDriver(const ros::NodeHandle& nh,
                      const std::string& status_topic,
+                     const std::string& reset_or_set_bias_service,
                      const std::string& sensor_frame,
                      const std::string& can_interface,
                      const uint8_t sensor_base_can_id,
@@ -74,8 +77,11 @@ public:
                "Loaded calibration %hhu",
                sensor_calibration_index);
       status_pub_
-        = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic,
-                                1, false);
+          = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic, 1, false);
+      reset_or_set_bias_service_
+          = nh_.advertiseService(
+              reset_or_set_bias_service,
+              &AtiNetCanOemDriver::ResetOrSetBiasCallback, this);
     }
     else
     {
@@ -83,6 +89,20 @@ public:
               "Failed to load calibration %x",
               sensor_calibration_index);
     }
+  }
+
+  bool ResetOrSetBiasCallback(
+      std_srvs::SetBoolRequest& req, std_srvs::SetBoolResponse& res)
+  {
+    if (req.data) {
+      sensor_ptr_->ResetBias();
+      res.message = "Reset bias";
+    } else {
+      sensor_ptr_->SetBias();
+      res.message = "Set bias";
+    }
+    res.success = true;
+    return true;
   }
 
   void Loop(const double poll_rate)
@@ -124,6 +144,8 @@ int main(int argc, char** argv)
   // Default ROS params
   const double DEFAULT_POLL_RATE = 100.0;
   const std::string DEFAULT_STATUS_TOPIC("ati_ft_sensor");
+  const std::string DEFAULT_RESET_OR_SET_BIAS_SERVICE(
+      "ati_ft_sensor_reset_or_set_bias");
   const std::string DEFAULT_SENSOR_FRAME("ati_ft_sensor");
   const std::string DEFAULT_SOCKETCAN_INTERFACE("can0");
   const int32_t DEFAULT_SENSOR_BASE_CAN_ID = 0x00;
@@ -143,18 +165,18 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
   const std::string status_topic
       = nhp.param(std::string("status_topic"), DEFAULT_STATUS_TOPIC);
+  const std::string reset_or_set_bias_service
+      = nhp.param(std::string("reset_or_set_bias_service"),
+                  DEFAULT_RESET_OR_SET_BIAS_SERVICE);
   const std::string sensor_frame
       = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
   const uint8_t sensor_calibration_index
       = (uint8_t)nhp.param(std::string("sensor_calibration_index"),
                            DEFAULT_SENSOR_CALIBRATION);
   // Start the driver
-  ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(nh,
-                                                     status_topic,
-                                                     sensor_frame,
-                                                     can_interface,
-                                                     sensor_base_can_id,
-                                                     sensor_calibration_index);
+  ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(
+      nh, status_topic, reset_or_set_bias_service, sensor_frame, can_interface,
+      sensor_base_can_id, sensor_calibration_index);
   sensor.Loop(poll_rate);
   return 0;
 }

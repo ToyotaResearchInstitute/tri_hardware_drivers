@@ -4,6 +4,7 @@ project(ati_netcanoem_ft_driver)
 find_package(catkin REQUIRED COMPONENTS
              tri_driver_common
              geometry_msgs
+             std_srvs
              roscpp)
 find_package(Eigen3 REQUIRED)
 set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
@@ -15,6 +16,7 @@ catkin_package(INCLUDE_DIRS
                CATKIN_DEPENDS
                tri_driver_common
                geometry_msgs
+               std_srvs
                roscpp
                DEPENDS
                Eigen3)
