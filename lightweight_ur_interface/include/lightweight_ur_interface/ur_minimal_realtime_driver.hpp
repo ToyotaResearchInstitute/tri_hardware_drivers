@@ -14,8 +14,8 @@
 #include <atomic>
 #include <functional>
 #include <Eigen/Geometry>
-#include <tri_driver_common/print.hpp>
-#include <tri_driver_common/serialization.hpp>
+#include <common_robotics_utilities/print.hpp>
+#include <common_robotics_utilities/serialization.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -102,7 +102,7 @@ private:
   {
     return DeserializeKnownSizeVector<double, std::allocator<double>>(
       size, buffer, current,
-      tri_driver_common::serialization::DeserializeNetworkMemcpyable<double>);
+      common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<double>);
   }
 
   static inline Eigen::Isometry3d TcpVectorToTransform(

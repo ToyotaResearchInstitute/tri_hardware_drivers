@@ -13,15 +13,15 @@
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <tri_driver_common/print.hpp>
-#include <tri_driver_common/math.hpp>
-#include <tri_driver_common/conversions.hpp>
+#include <common_robotics_utilities/print.hpp>
+#include <common_robotics_utilities/math.hpp>
+#include <common_robotics_utilities/conversions.hpp>
 #include <lightweight_ur_interface/ur_robot_config.hpp>
 
 namespace lightweight_ur_interface
 {
-using tri_driver_common::utility::ClampValue;
-using tri_driver_common::conversions::GeometryPoseToEigenIsometry3d;
+using common_robotics_utilities::utility::ClampValue;
+using common_robotics_utilities::conversions::GeometryPoseToEigenIsometry3d;
 
 class URCartesianController
 {
@@ -183,7 +183,7 @@ public:
   inline Twist ComputePoseError(const Eigen::Isometry3d& current_pose,
                                 const Eigen::Isometry3d& target_pose) const
   {
-    return tri_driver_common::math::TwistBetweenTransforms(current_pose,
+    return common_robotics_utilities::math::TwistBetweenTransforms(current_pose,
                                                            target_pose);
   }
 

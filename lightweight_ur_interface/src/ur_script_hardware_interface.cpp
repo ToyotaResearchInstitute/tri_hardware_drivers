@@ -19,22 +19,23 @@
 #include <lightweight_ur_interface/ur_robot_config.hpp>
 #include <lightweight_ur_interface/ur_minimal_realtime_driver.hpp>
 #include <lightweight_ur_interface/VelocityCommand.h>
-#include <tri_driver_common/print.hpp>
-#include <tri_driver_common/math.hpp>
-#include <tri_driver_common/conversions.hpp>
-#include <tri_driver_common/serialization.hpp>
+#include <common_robotics_utilities/print.hpp>
+#include <common_robotics_utilities/math.hpp>
+#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/serialization.hpp>
 #include <control_program.hpp>
 
 namespace lightweight_ur_interface
 {
-using tri_driver_common::conversions::EigenIsometry3dToGeometryPoseStamped;
-using tri_driver_common::conversions::EigenVector3dToGeometryVector3;
-using tri_driver_common::math::RotateVectorReverse;
-using tri_driver_common::math::RotateVector;
-using tri_driver_common::utility::ClampValueAndWarn;
-using tri_driver_common::serialization::SerializeNetworkMemcpyable;
-using tri_driver_common::utility::SetsEqual;
-using tri_driver_common::utility::GetKeys;
+using common_robotics_utilities::conversions
+          ::EigenIsometry3dToGeometryPoseStamped;
+using common_robotics_utilities::conversions::EigenVector3dToGeometryVector3;
+using common_robotics_utilities::math::RotateVectorReverse;
+using common_robotics_utilities::math::RotateVector;
+using common_robotics_utilities::utility::ClampValueAndWarn;
+using common_robotics_utilities::serialization::SerializeNetworkMemcpyable;
+using common_robotics_utilities::utility::SetsEqual;
+using common_robotics_utilities::utility::GetKeys;
 
 class URScriptHardwareInterface
 {
@@ -730,8 +731,9 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Ignoring VelocityCommand since robot is in teach mode");
+          ROS_WARN_NAMED(
+              ros::this_node::getName(),
+              "Ignoring VelocityCommand since robot is in teach mode");
         }
       }
     }
@@ -920,10 +922,10 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("acceleration_limit_scaling"),
                            DEFAULT_ACCELERATION_LIMIT_SCALING));
   const double real_velocity_limit_scaling
-      = tri_driver_common::utility::ClampValueAndWarn(
+      = common_robotics_utilities::utility::ClampValueAndWarn(
           velocity_limit_scaling, 0.0, 1.0);
   const double real_acceleration_limit_scaling
-      = tri_driver_common::utility::ClampValueAndWarn(
+      = common_robotics_utilities::utility::ClampValueAndWarn(
           acceleration_limit_scaling, 0.0, 1.0);
   // Joint names in true order
   const std::vector<std::string> ordered_joint_names

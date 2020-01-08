@@ -1,5 +1,5 @@
 #include <ati_netcanoem_ft_driver/ati_netcanoem_ft_driver.hpp>
-#include <tri_driver_common/serialization.hpp>
+#include <common_robotics_utilities/serialization.hpp>
 
 namespace ati_netcanoem_ft_driver
 {
@@ -167,19 +167,19 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
     throw std::runtime_error("Invalid payload data for read strain gauges");
   }
   const uint16_t status_code
-      = tri_driver_common::serialization
+      = common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<uint16_t>(
             response_msg_1.Payload(), 0).first;
   raw_values(0, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_1.Payload(), 2).first;
   raw_values(2, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_1.Payload(), 4).first;
   raw_values(4, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_1.Payload(), 6).first;
   const DataElement& response_msg_2 = response[1];
@@ -192,15 +192,15 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
     throw std::runtime_error("Invalid payload data for read strain gauges");
   }
   raw_values(1, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_2.Payload(), 0).first;
   raw_values(3, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_2.Payload(), 2).first;
   raw_values(5, 0)
-      = (double)tri_driver_common::serialization
+      = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
             response_msg_2.Payload(), 4).first;
   return std::make_pair(status_code, raw_values);
@@ -272,10 +272,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 0)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_1.Payload(), 0).first;
   matrix_row(0, 1)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_1.Payload(), 4).first;
   const DataElement& response_msg_2 = response.at(1);
   if (response_msg_2.Opcode() != READ_MATRIX_ROW_B)
@@ -287,10 +287,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 2)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_2.Payload(), 0).first;
   matrix_row(0, 3)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_2.Payload(), 4).first;
   const DataElement& response_msg_3 = response.at(2);
   if (response_msg_3.Opcode() != READ_MATRIX_ROW_C)
@@ -302,10 +302,10 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 4)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_3.Payload(), 0).first;
   matrix_row(0, 5)
-      = tri_driver_common::serialization::DeserializeNetworkMemcpyable<float>(
+      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
           response_msg_3.Payload(), 4).first;
   return matrix_row;
 }
@@ -391,11 +391,11 @@ std::pair<uint32_t, uint32_t> AtiNetCanOemInterface::ReadCountsPerUnit()
     throw std::runtime_error("Invalid payload data for read counts per unit");
   }
   const uint32_t force_counts
-      = tri_driver_common::serialization
+      = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
               response_msg.Payload(), 0).first;
   const uint32_t torque_counts
-      = tri_driver_common::serialization
+      = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
               response_msg.Payload(), 4).first;
   return std::make_pair(force_counts, torque_counts);
@@ -450,7 +450,7 @@ std::vector<uint16_t> AtiNetCanOemInterface::ReadDiagnosticADCVoltages()
       throw std::runtime_error("Invalid payload data for read ADC voltages");
     }
     const uint16_t adc_voltage
-        = tri_driver_common::serialization
+        = common_robotics_utilities::serialization
             ::DeserializeNetworkMemcpyable<uint16_t>(
                 response_msg.Payload(), 0).first;
     adc_voltages.push_back(adc_voltage);
@@ -530,7 +530,7 @@ AtiNetCanOemInterface::ReadFirmwareVersion()
   const uint8_t major_version = response_msg.Payload()[0];
   const uint8_t minor_version = response_msg.Payload()[1];
   const uint16_t build_number =
-      tri_driver_common::serialization::DeserializeNetworkMemcpyable<uint16_t>(
+      common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<uint16_t>(
         response_msg.Payload(), 2).first;
   return std::make_pair(std::make_pair(major_version, minor_version),
                         build_number);
