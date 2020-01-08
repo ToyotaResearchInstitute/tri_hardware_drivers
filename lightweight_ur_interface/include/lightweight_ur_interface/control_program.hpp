@@ -5,12 +5,10 @@
 
 namespace lightweight_ur_driver
 {
-std::string MakeControlProgram(const std::string& our_ip_address,
-                               const int32_t control_port,
-                               const double float_conversion_ratio,
-                               const double stop_deceleration,
-                               const double speed_acceleration,
-                               const double speed_command_wait)
+inline std::string MakeControlProgram(
+    const std::string& our_ip_address, const int32_t control_port,
+    const double float_conversion_ratio, const double stop_deceleration,
+    const double speed_acceleration, const double speed_command_wait)
 {
   // URScript is whitespace- and indentation-sensitive
   // Do not modify to match C++ style!
