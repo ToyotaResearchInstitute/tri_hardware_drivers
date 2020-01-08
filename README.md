@@ -15,6 +15,10 @@ ROS messages for robot control. Depending on your ROS installation type (-base, 
 
 ROS messages for the TF system. Depending on your ROS installation type (-base, -desktop, -desktop-full), you may need to install these separately.
 
+- [common_robotics_utilities](https://github.com/ToyotaResearchInstitute/common_robotics_utilities)
+
+Common functions for math operations, trajectory parametrization, data de/serialization, and logging.
+
 - [libmodbus](http://libmodbus.org)
 
 libmodbus provides support for Modbus RTU and Modbus TCP communications.
