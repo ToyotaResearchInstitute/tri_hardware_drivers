@@ -17,26 +17,27 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <lightweight_ur_interface/ur_robot_config.hpp>
 #include <lightweight_ur_interface/VelocityCommand.h>
-#include <tri_driver_common/print.hpp>
-#include <tri_driver_common/math.hpp>
-#include <tri_driver_common/conversions.hpp>
-#include <tri_driver_common/time_optimal_trajectory_parametrization.hpp>
+#include <common_robotics_utilities/print.hpp>
+#include <common_robotics_utilities/math.hpp>
+#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/time_optimal_trajectory_parametrization.hpp>
 
 namespace lightweight_ur_interface
 {
-using tri_driver_common::print::Print;
-using tri_driver_common::utility::ClampValue;
-using tri_driver_common::utility::ClampValueAndWarn;
-using tri_driver_common::math::Add;
-using tri_driver_common::math::Sub;
-using tri_driver_common::math::Multiply;
-using tri_driver_common::math::Divide;
-using tri_driver_common::utility::IsSubset;
-using tri_driver_common::utility::SetsEqual;
-using tri_driver_common::utility::GetKeys;
-using tri_driver_common::conversions::StdVectorDoubleToEigenVectorXd;
-using tri_driver_common::conversions::EigenVectorXdToStdVectorDouble;
-using tri_driver_common::time_optimal_trajectory_parametrization::Trajectory;
+using common_robotics_utilities::print::Print;
+using common_robotics_utilities::utility::ClampValue;
+using common_robotics_utilities::utility::ClampValueAndWarn;
+using common_robotics_utilities::math::Add;
+using common_robotics_utilities::math::Sub;
+using common_robotics_utilities::math::Multiply;
+using common_robotics_utilities::math::Divide;
+using common_robotics_utilities::utility::IsSubset;
+using common_robotics_utilities::utility::SetsEqual;
+using common_robotics_utilities::utility::GetKeys;
+using common_robotics_utilities::conversions::StdVectorDoubleToEigenVectorXd;
+using common_robotics_utilities::conversions::EigenVectorXdToStdVectorDouble;
+using common_robotics_utilities::time_optimal_trajectory_parametrization
+          ::Trajectory;
 
 class URTrajectoryController
 {
@@ -650,10 +651,10 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("acceleration_limit_scaling"),
                            DEFAULT_ACCELERATION_LIMIT_SCALING));
   const double real_velocity_limit_scaling
-      = tri_driver_common::utility::ClampValueAndWarn(
+      = common_robotics_utilities::utility::ClampValueAndWarn(
           velocity_limit_scaling, 0.0, 1.0);
   const double real_acceleration_limit_scaling
-      = tri_driver_common::utility::ClampValueAndWarn(
+      = common_robotics_utilities::utility::ClampValueAndWarn(
           acceleration_limit_scaling, 0.0, 1.0);
   const double base_kp
       = std::abs(nhp.param(std::string("base_kp"), DEFAULT_BASE_KP));

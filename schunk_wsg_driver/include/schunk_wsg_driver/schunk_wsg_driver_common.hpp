@@ -13,7 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <functional>
-#include <tri_driver_common/serialization.hpp>
+#include <common_robotics_utilities/serialization.hpp>
 
 namespace schunk_wsg_driver
 {
@@ -238,7 +238,7 @@ public:
   void AppendParameterToBuffer(const T& parameter)
   {
     std::vector<uint8_t> temp_buffer;
-    tri_driver_common::serialization
+    common_robotics_utilities::serialization
         ::SerializeMemcpyable(parameter, temp_buffer);
     param_buffer_.insert(param_buffer_.end(),
                          temp_buffer.begin(),

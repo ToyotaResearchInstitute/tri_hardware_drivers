@@ -5,7 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
              message_generation
              geometry_msgs
              roscpp
-             tri_driver_common)
+             common_robotics_utilities)
 
 ## Generate messages in the 'msg' folder
 add_message_files(DIRECTORY
@@ -27,7 +27,7 @@ catkin_package(INCLUDE_DIRS
                geometry_msgs
                message_runtime
                roscpp
-               tri_driver_common)
+               common_robotics_utilities)
 
 ###########
 ## Build ##

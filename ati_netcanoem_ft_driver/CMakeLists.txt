@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ati_netcanoem_ft_driver)
 
 find_package(catkin REQUIRED COMPONENTS
-             tri_driver_common
+             common_robotics_utilities
              geometry_msgs
              std_srvs
              roscpp)
@@ -14,7 +14,7 @@ catkin_package(INCLUDE_DIRS
                LIBRARIES
                ${PROJECT_NAME}
                CATKIN_DEPENDS
-               tri_driver_common
+               common_robotics_utilities
                geometry_msgs
                std_srvs
                roscpp

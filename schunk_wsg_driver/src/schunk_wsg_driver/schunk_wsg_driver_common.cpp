@@ -2,7 +2,7 @@
 
 namespace schunk_wsg_driver
 {
-using tri_driver_common::serialization::DeserializeMemcpyable;
+using common_robotics_utilities::serialization::DeserializeMemcpyable;
 
 uint64_t WSGRawCommandMessage::Serialize(const WSGRawCommandMessage& message,
                                          std::vector<uint8_t>& buffer)

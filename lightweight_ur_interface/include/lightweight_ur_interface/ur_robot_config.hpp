@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 #include <iostream>
-#include <tri_driver_common/utility.hpp>
+#include <common_robotics_utilities/utility.hpp>
 
 namespace lightweight_ur_interface
 {
@@ -159,7 +159,7 @@ inline std::map<std::string, JointLimits> GetLimits(
       = GetDefaultLimits();
   std::map<std::string, JointLimits> joint_limits;
   const auto default_limit_pairs
-      = tri_driver_common::utility::GetKeysAndValues(default_joint_limits);
+      = common_robotics_utilities::utility::GetKeysAndValues(default_joint_limits);
   for (size_t idx = 0; idx < default_limit_pairs.size(); idx++)
   {
     const std::string& joint_name = default_limit_pairs[idx].first;

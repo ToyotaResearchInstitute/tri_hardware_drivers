@@ -1,6 +1,6 @@
 #include <robotiq_3_finger_gripper_driver/robotiq_3_finger_gripper_driver.hpp>
 #include <stdint.h>
-#include <tri_driver_common/print.hpp>
+#include <common_robotics_utilities/print.hpp>
 
 namespace robotiq_3_finger_gripper_driver
 {
@@ -340,7 +340,7 @@ Robotiq3FingerGripperModbusInterface::ReadRIGORegisters()
     throw std::runtime_error("Failed to read status registers with error: "
                              + error_msg);
   }
-  Log(tri_driver_common::print::Print(raw_status_buffer));
+  Log(common_robotics_utilities::print::Print(raw_status_buffer));
   std::vector<uint8_t> received_bytes(NUM_MODBUS_REGISTERS * 2, 0x00);
   for (size_t rdx = 0, bdx = 0; rdx < raw_status_buffer.size(); rdx++, bdx += 2)
   {
@@ -348,7 +348,7 @@ Robotiq3FingerGripperModbusInterface::ReadRIGORegisters()
     received_bytes[bdx + 1] = (uint8_t)((raw_register & 0xff00) >> 8);
     received_bytes[bdx + 0] = (uint8_t)(raw_register & 0x00ff);
   }
-  Log(tri_driver_common::print::Print(received_bytes));
+  Log(common_robotics_utilities::print::Print(received_bytes));
   return received_bytes;
 }
 

@@ -2,7 +2,7 @@
 
 namespace lightweight_ur_interface
 {
-using tri_driver_common::serialization::DeserializeNetworkMemcpyable;
+using common_robotics_utilities::serialization::DeserializeNetworkMemcpyable;
 
 uint64_t URRealtimeState::DeserializeSelf(const std::vector<uint8_t>& buffer,
                                           const uint64_t current)
