@@ -46,8 +46,8 @@ catkin_package(INCLUDE_DIRS
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include urscript SYSTEM ${catkin_INCLUDE_DIRS}
-                                            ${Eigen3_INCLUDE_DIRS})
+include_directories(include SYSTEM ${catkin_INCLUDE_DIRS}
+                                   ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
 add_compile_options(-std=c++11)
@@ -80,7 +80,7 @@ target_link_libraries(ur_minimal_hardware_interface
 
 ## Declare a C++ executable
 add_executable(ur_script_hardware_interface
-               urscript/control_program.hpp
+               include/${PROJECT_NAME}/control_program.hpp
                src/ur_script_hardware_interface.cpp)
 add_dependencies(ur_script_hardware_interface
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}

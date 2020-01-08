@@ -16,6 +16,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <lightweight_ur_interface/control_program.hpp>
 #include <lightweight_ur_interface/ur_robot_config.hpp>
 #include <lightweight_ur_interface/ur_minimal_realtime_driver.hpp>
 #include <lightweight_ur_interface/VelocityCommand.h>
@@ -23,7 +24,6 @@
 #include <common_robotics_utilities/math.hpp>
 #include <common_robotics_utilities/conversions.hpp>
 #include <common_robotics_utilities/serialization.hpp>
-#include <control_program.hpp>
 
 namespace lightweight_ur_interface
 {
