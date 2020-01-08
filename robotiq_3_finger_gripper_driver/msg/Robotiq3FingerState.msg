@@ -1,0 +1,45 @@
+Robotiq3FingerActuatorState finger_a_state
+Robotiq3FingerActuatorState finger_b_state
+Robotiq3FingerActuatorState finger_c_state
+Robotiq3FingerActuatorState scissor_state
+
+uint8 GRIPPER_RESET=0
+uint8 GRIPPER_ACTIVATION=1
+uint8 gripper_activation_state
+
+uint8 GRIPPER_MODE_BASIC=0
+uint8 GRIPPER_MODE_PINCH=1
+uint8 GRIPPER_MODE_WIDE=2
+uint8 GRIPPER_SCISSOR_MODE=3
+uint8 gripper_mode_state
+
+uint8 GRIPPER_STOPPED_OR_BUSY=0
+uint8 GRIPPER_GOTO=1
+uint8 gripper_action_state
+
+uint8 GRIPPER_RESET_OR_AUTO_RELEASE=0
+uint8 GRIPPER_ACTIVATION_IN_PROGRESS=1
+uint8 GRIPPER_MODE_CHANGE_IN_PROGRESS=2
+uint8 GRIPPER_ACTIVATION_MODE_CHANGE_COMPLETE=3
+uint8 gripper_system_state
+
+uint8 GRIPPER_IN_MOTION=0
+uint8 GRIPPER_ONE_OR_TWO_STOPPED_EARLY=1
+uint8 GRIPPER_ALL_STOPPED_EARLY=2
+uint8 GRIPPER_ALL_AT_REQUESTED=3
+uint8 GRIPPER_STOPPED_UNKNOWN=4
+uint8 gripper_motion_state
+
+uint8 NO_FAULTS=0
+uint8 PRIORITY_ACTIVATION_MUST_BE_SET=5
+uint8 PRIORITY_MODE_CHANGE_NEEDED=6
+uint8 PRIORITY_NEEDS_ACTIVATION=7
+uint8 MINOR_COMM_CHIP_NOT_READY=9
+uint8 MINOR_CHANGING_MODE_FAULT=10
+uint8 MINOR_AUTO_RELEASE_IN_PROGRESS=11
+uint8 MAJOR_ACTIVATION_FAULT=13
+uint8 MAJOR_CHANGING_MODE_FAULT=14
+uint8 MAJOR_AUTO_RELEASE_COMPLETE=15
+uint8 gripper_fault_state
+
+std_msgs/Header header

@@ -1,0 +1,4 @@
+std_msgs/Header header
+float64 target_percent_closed
+float64 actual_percent_closed
+float64 actual_percent_current

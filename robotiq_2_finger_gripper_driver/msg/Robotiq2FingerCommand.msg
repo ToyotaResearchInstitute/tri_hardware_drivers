@@ -1,0 +1,4 @@
+std_msgs/Header header
+float64 percent_closed
+float64 percent_speed
+float64 percent_effort

@@ -1,0 +1,7 @@
+std_msgs/Header header
+float64 actual_position
+float64 actual_velocity
+float64 actual_effort
+float64 target_position
+float64 max_speed
+float64 max_effort
