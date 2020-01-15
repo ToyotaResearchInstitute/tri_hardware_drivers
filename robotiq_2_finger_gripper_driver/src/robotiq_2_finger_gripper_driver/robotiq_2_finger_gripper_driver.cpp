@@ -7,19 +7,17 @@ Robotiq2FingerGripperModbusRtuInterface
 ::Robotiq2FingerGripperModbusRtuInterface(
     const std::function<void(const std::string&)>& logging_fn,
     const std::string& modbus_rtu_interface,
-    const int32_t gripper_baud_rate,
+    const int32_t modbus_rtu_baud_rate,
     const uint16_t gripper_slave_id)
-  : logging_fn_(logging_fn)
+  : Robotiq2FingerGripperModbusInterface(logging_fn)
 {
   const int data_bits = 8;
   const int stop_bits = 1;
   const char parity = 'N';
   modbus_interface_ptr_ = nullptr;
-  modbus_interface_ptr_ = modbus_new_rtu(modbus_rtu_interface.c_str(),
-                                         gripper_baud_rate,
-                                         parity,
-                                         data_bits,
-                                         stop_bits);
+  modbus_interface_ptr_ =
+      modbus_new_rtu(modbus_rtu_interface.c_str(), modbus_rtu_baud_rate, parity,
+                     data_bits, stop_bits);
   if (modbus_interface_ptr_ == nullptr)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -27,8 +25,39 @@ Robotiq2FingerGripperModbusRtuInterface
                              + modbus_rtu_interface
                              + " with error: " + error_msg);
   }
-  const int mss_ret = modbus_set_slave(modbus_interface_ptr_,
-                                       (int)gripper_slave_id);
+  ConfigureModbusConnection(gripper_slave_id);
+}
+
+Robotiq2FingerGripperModbusTcpInterface
+::Robotiq2FingerGripperModbusTcpInterface(
+    const std::function<void(const std::string&)>& logging_fn,
+    const std::string& modbus_tcp_address,
+    const int32_t modbus_tcp_port,
+    const uint16_t gripper_slave_id)
+  : Robotiq2FingerGripperModbusInterface(logging_fn)
+{
+  modbus_interface_ptr_ = nullptr;
+  modbus_interface_ptr_ =
+      modbus_new_tcp(modbus_tcp_address.c_str(), modbus_tcp_port);
+  if (modbus_interface_ptr_ == nullptr)
+  {
+    const std::string error_msg(modbus_strerror(errno));
+    throw std::runtime_error(
+        "Failed to create Modbus TCP interface to " + modbus_tcp_address + ":"
+        + std::to_string(modbus_tcp_port) + " with error: " + error_msg);
+  }
+  ConfigureModbusConnection(gripper_slave_id);
+}
+
+Robotiq2FingerGripperModbusInterface::Robotiq2FingerGripperModbusInterface(
+    const std::function<void(const std::string&)>& logging_fn)
+    : logging_fn_(logging_fn) {}
+
+void Robotiq2FingerGripperModbusInterface::ConfigureModbusConnection(
+    const uint16_t gripper_slave_id)
+{
+  const int mss_ret =
+      modbus_set_slave(modbus_interface_ptr_, (int)gripper_slave_id);
   if (mss_ret != 0)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -44,14 +73,14 @@ Robotiq2FingerGripperModbusRtuInterface
   }
 }
 
-Robotiq2FingerGripperModbusRtuInterface
-::~Robotiq2FingerGripperModbusRtuInterface()
+Robotiq2FingerGripperModbusInterface
+::~Robotiq2FingerGripperModbusInterface()
 {
   ShutdownConnection();
 }
 
 Robotiq2FingerGripperStatus
-Robotiq2FingerGripperModbusRtuInterface::GetGripperStatus()
+Robotiq2FingerGripperModbusInterface::GetGripperStatus()
 {
   std::vector<uint16_t> raw_status_buffer(3, 0x0000);
   const int ret = modbus_read_registers(modbus_interface_ptr_,
@@ -75,7 +104,7 @@ Robotiq2FingerGripperModbusRtuInterface::GetGripperStatus()
   return status;
 }
 
-bool Robotiq2FingerGripperModbusRtuInterface::SendGripperCommand(
+bool Robotiq2FingerGripperModbusInterface::SendGripperCommand(
     const Robotiq2FingerGripperCommand& command)
 {
   const Robotiq2FingerGripperStatus gripper_status = GetGripperStatus();
@@ -130,7 +159,7 @@ bool Robotiq2FingerGripperModbusRtuInterface::SendGripperCommand(
   }
 }
 
-bool Robotiq2FingerGripperModbusRtuInterface::CommandGripperBlocking(
+bool Robotiq2FingerGripperModbusInterface::CommandGripperBlocking(
     const Robotiq2FingerGripperCommand& command)
 {
   if (SendGripperCommand(command))
@@ -159,7 +188,7 @@ bool Robotiq2FingerGripperModbusRtuInterface::CommandGripperBlocking(
   }
 }
 
-bool Robotiq2FingerGripperModbusRtuInterface::ReactivateGripper()
+bool Robotiq2FingerGripperModbusInterface::ReactivateGripper()
 {
   Log("Reinitializing/activating the gripper...");
   // First, reset the gripper
@@ -202,7 +231,7 @@ bool Robotiq2FingerGripperModbusRtuInterface::ReactivateGripper()
   }
 }
 
-bool Robotiq2FingerGripperModbusRtuInterface::ActivateGripper()
+bool Robotiq2FingerGripperModbusInterface::ActivateGripper()
 {
   const Robotiq2FingerGripperStatus gripper_status = GetGripperStatus();
   if (gripper_status.IsActivated())
@@ -216,7 +245,7 @@ bool Robotiq2FingerGripperModbusRtuInterface::ActivateGripper()
   }
 }
 
-bool Robotiq2FingerGripperModbusRtuInterface::WriteMultipleRegisters(
+bool Robotiq2FingerGripperModbusInterface::WriteMultipleRegisters(
     const uint16_t start_register,
     const std::vector<uint16_t>& register_values)
 {
@@ -244,11 +273,15 @@ bool Robotiq2FingerGripperModbusRtuInterface::WriteMultipleRegisters(
   }
 }
 
-void Robotiq2FingerGripperModbusRtuInterface::ShutdownConnection()
+void Robotiq2FingerGripperModbusInterface::ShutdownConnection()
 {
   Log("Closing modbus connection...");
-  modbus_close(modbus_interface_ptr_);
-  modbus_free(modbus_interface_ptr_);
+  if (modbus_interface_ptr_ != nullptr)
+  {
+    modbus_close(modbus_interface_ptr_);
+    modbus_free(modbus_interface_ptr_);
+    modbus_interface_ptr_ = nullptr;
+  }
   Log("...finished cleanup");
 }
 }
