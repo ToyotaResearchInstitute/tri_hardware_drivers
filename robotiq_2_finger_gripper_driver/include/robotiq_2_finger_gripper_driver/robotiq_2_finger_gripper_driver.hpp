@@ -252,7 +252,7 @@ public:
   }
 };
 
-class Robotiq2FingerGripperModbusRtuInterface
+class Robotiq2FingerGripperModbusInterface
 {
 protected:
 
@@ -265,13 +265,10 @@ protected:
 
 public:
 
-  Robotiq2FingerGripperModbusRtuInterface(
-      const std::function<void(const std::string&)>& logging_fn,
-      const std::string& modbus_rtu_interface,
-      const int32_t gripper_baud_rate,
-      const uint16_t gripper_slave_id);
+  Robotiq2FingerGripperModbusInterface(
+      const std::function<void(const std::string&)>& logging_fn);
 
-  ~Robotiq2FingerGripperModbusRtuInterface();
+  virtual ~Robotiq2FingerGripperModbusInterface();
 
   inline void Log(const std::string& message) { logging_fn_(message); }
 
@@ -287,9 +284,35 @@ public:
 
 protected:
 
+  void ConfigureModbusConnection(const uint16_t gripper_slave_id);
+
   bool WriteMultipleRegisters(const uint16_t start_register,
                               const std::vector<uint16_t>& register_values);
 
   void ShutdownConnection();
+};
+
+class Robotiq2FingerGripperModbusRtuInterface
+    : public Robotiq2FingerGripperModbusInterface
+{
+public:
+
+  Robotiq2FingerGripperModbusRtuInterface(
+      const std::function<void(const std::string&)>& logging_fn,
+      const std::string& modbus_rtu_interface,
+      const int32_t modbus_rtu_baud_rate,
+      const uint16_t gripper_slave_id);
+};
+
+class Robotiq2FingerGripperModbusTcpInterface
+    : public Robotiq2FingerGripperModbusInterface
+{
+public:
+
+  Robotiq2FingerGripperModbusTcpInterface(
+      const std::function<void(const std::string&)>& logging_fn,
+      const std::string& modbus_tcp_address,
+      const int32_t modbus_tcp_port,
+      const uint16_t gripper_slave_id);
 };
 }
