@@ -159,6 +159,7 @@ int main(int argc, char** argv)
   const double DEFAULT_POLL_RATE = 10.0;
   const std::string DEFAULT_STATE_TOPIC("robotiq_2_finger_state");
   const std::string DEFAULT_COMMAND_TOPIC("robotiq_2_finger_command");
+  const int32_t DEFAULT_MODBUS_TCP_PORT = 502;
   const int32_t DEFAULT_GRIPPER_BAUD_RATE = 115200;
   const int32_t DEFAULT_GRIPPER_SLAVE_ID = 0x09;
   // Start ROS
@@ -169,7 +170,7 @@ int main(int argc, char** argv)
   const std::string modbus_tcp_address
       = nhp.param(std::string("modbus_tcp_address"), std::string(""));
   const int32_t modbus_tcp_port
-      = nhp.param(std::string("modbus_tcp_port"), 0);
+      = nhp.param(std::string("modbus_tcp_port"), DEFAULT_MODBUS_TCP_PORT);
   const std::string modbus_rtu_interface
       = nhp.param(std::string("modbus_rtu_interface"), std::string(""));
   const int32_t modbus_rtu_baud_rate
