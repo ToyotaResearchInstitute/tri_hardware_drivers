@@ -20,11 +20,13 @@ std::string MakeTfCompatibleName(const std::string& name)
     {
       strm << character;
     }
-    else if (character >= ascii_upper_case.first && character <= ascii_upper_case.second)
+    else if (character >= ascii_upper_case.first
+             && character <= ascii_upper_case.second)
     {
       strm << character;
     }
-    else if (character >= ascii_lower_case.first && character <= ascii_lower_case.second)
+    else if (character >= ascii_lower_case.first
+             && character <= ascii_lower_case.second)
     {
       strm << character;
     }
@@ -50,9 +52,9 @@ void MocapMsgCB(tri_mocap_common::MocapState msg)
       if (!current_segment.occluded)
       {
         /* Get the full segment name */
-        const std::string full_segment_name = mocap_name
-                                              + "_" + MakeTfCompatibleName(current_object.name)
-                                              + "_" + MakeTfCompatibleName(current_segment.name);
+        const std::string full_segment_name
+            = mocap_name + "_" + MakeTfCompatibleName(current_object.name)
+              + "_" + MakeTfCompatibleName(current_segment.name);
         geometry_msgs::TransformStamped segment_transform;
         segment_transform.header.stamp = transforms_time;
         segment_transform.header.frame_id = mocap_frame;

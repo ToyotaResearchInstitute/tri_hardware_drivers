@@ -29,36 +29,38 @@
 
 namespace lightweight_ur_interface
 {
-template<typename T, typename Allocator>
-inline std::pair<std::vector<T, Allocator>, uint64_t>
-DeserializeKnownSizeVector(const size_t size,
-                           const std::vector<uint8_t>& buffer,
-                           const uint64_t current,
-                           const std::function<std::pair<T, uint64_t>
-                             (const std::vector<uint8_t>&, const uint64_t)>&
-                               item_deserializer)
+template<typename T, typename Container=std::vector<T>>
+inline common_robotics_utilities::serialization::Deserialized<Container>
+DeserializeKnownSizeVector(
+    const size_t size,
+    const std::vector<uint8_t>& buffer,
+    const uint64_t starting_offset,
+    const common_robotics_utilities::serialization::Deserializer<T>&
+        item_deserializer)
 {
-  assert(current < buffer.size());
-  uint64_t current_position = current;
+  uint64_t current_position = starting_offset;
   // Deserialize the items
-  std::vector<T, Allocator> deserialized;
+  Container deserialized;
   deserialized.reserve(size);
   for (uint64_t idx = 0; idx < size; idx++)
   {
-    const std::pair<T, uint64_t> deserialized_item
-        = item_deserializer(buffer, current_position);
-    deserialized.push_back(deserialized_item.first);
-    current_position += deserialized_item.second;
+    const auto deserialized_item = item_deserializer(buffer, current_position);
+    deserialized.push_back(deserialized_item.Value());
+    current_position += deserialized_item.BytesRead();
   }
   deserialized.shrink_to_fit();
   // Figure out how many bytes were read
-  const uint64_t bytes_read = current_position - current;
-  return std::make_pair(deserialized, bytes_read);
+  const uint64_t bytes_read = current_position - starting_offset;
+  return common_robotics_utilities::serialization::MakeDeserialized(
+      deserialized, bytes_read);
 }
 
 class URRealtimeState
 {
 private:
+  using common_robotics_utilities::serialization::Deserialized;
+  using common_robotics_utilities::serialization::MakeDeserialized;
+  using common_robotics_utilities::serialization::DeserializeNetworkMemcpyable;
 
   std::vector<double> target_position_;
   std::vector<double> target_velocity_;
@@ -95,14 +97,13 @@ private:
   double mainboard_current_;
   bool initialized_;
 
-  static inline std::pair<std::vector<double>, uint64_t>
-  DeserializeKnownSizeDoubleVector(const size_t size,
-                                   const std::vector<uint8_t>& buffer,
-                                   const uint64_t current)
+  static inline Deserialized<std::vector<double>>
+  DeserializeKnownSizeDoubleVector(
+      const size_t size, const std::vector<uint8_t>& buffer,
+      const uint64_t starting_offset)
   {
-    return DeserializeKnownSizeVector<double, std::allocator<double>>(
-      size, buffer, current,
-      common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<double>);
+    return DeserializeKnownSizeVector<double, std::vector<double>>(
+      size, buffer, starting_offset, DeserializeNetworkMemcpyable<double>);
   }
 
   static inline Eigen::Isometry3d TcpVectorToTransform(
@@ -159,21 +160,21 @@ private:
   }
 
 public:
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   URRealtimeState() : initialized_(false) {}
 
-  inline static URRealtimeState Deserialize(const std::vector<uint8_t>& buffer,
-                                            const uint64_t current)
+  inline static Deserialized<URRealtimeState> Deserialize(
+      const std::vector<uint8_t>& buffer, const uint64_t starting_offset)
   {
     URRealtimeState deserialized_state;
-    deserialized_state.DeserializeSelf(buffer, current);
-    return deserialized_state;
+    const uint64_t bytes_read
+        = deserialized_state.DeserializeSelf(buffer, starting_offset);
+    return MakeDeserialized(deserialized_state, bytes_read);
   }
 
-  uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer,
-                           const uint64_t current);
+  uint64_t DeserializeSelf(
+      const std::vector<uint8_t>& buffer, const uint64_t starting_offset);
 
   inline bool Initialized() { return initialized_; }
 

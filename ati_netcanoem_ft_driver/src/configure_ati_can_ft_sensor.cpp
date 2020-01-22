@@ -24,12 +24,11 @@ int main(int argc, char** argv)
                                 can_interface,
                                 sensor_base_can_id);
     const std::string serial_num = sensor.ReadSerialNumber();
-    const std::pair<std::pair<uint8_t, uint8_t>, uint16_t> firmware_version
-      = sensor.ReadFirmwareVersion();
+    const auto firmware_version = sensor.ReadFirmwareVersion();
     std::cout << "Connected to sensor with serial # " << serial_num
-              << " and firmware version "  << firmware_version.first.first
-              << " (major version) " << firmware_version.first.second
-              << " (minor version) " << firmware_version.second
+              << " and firmware version "  << firmware_version.MajorVersion()
+              << " (major version) " << firmware_version.MinorVersion()
+              << " (minor version) " << firmware_version.BuildNumber()
               << " (build)" << std::endl;
     std::cout << "Setting sensor CAN base ID to "
               << new_sensor_base_can_id << std::endl;

@@ -13,6 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <functional>
+#include <common_robotics_utilities/maybe.hpp>
 #include <common_robotics_utilities/serialization.hpp>
 
 namespace schunk_wsg_driver
@@ -189,6 +190,7 @@ enum GraspingState : uint8_t
 class WSGRawStatusMessage
 {
 private:
+  using common_robotics_utilities::serialization::Deserialized;
 
   uint8_t command_;
   uint16_t status_;
@@ -205,7 +207,7 @@ public:
   inline const std::vector<uint8_t>& ParamBuffer() const
   { return param_buffer_; }
 
-  static std::pair<WSGRawStatusMessage, uint64_t> Deserialize(
+  static Deserialized<WSGRawStatusMessage> Deserialize(
       const std::vector<uint8_t>& buffer, const uint64_t current);
 
   uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer,
@@ -388,9 +390,10 @@ public:
 class WSGInterface
 {
 private:
+  using common_robotics_utilities::OwningMaybe;
 
   std::mutex status_mutex_;
-  std::pair<PhysicalLimits, bool> maybe_physical_limits_;
+  OwningMaybe<PhysicalLimits> maybe_physical_limits_;
   GripperMotionStatus motion_status_;
   std::function<void(const std::string&)> logging_fn_;
 
@@ -424,7 +427,7 @@ protected:
   double GetCommandEffortN(const double target_effort,
                            const PhysicalLimits& limits);
 
-  std::pair<WSGRawStatusMessage, bool> SendCommandAndAwaitStatus(
+  OwningMaybe<WSGRawStatusMessage> SendCommandAndAwaitStatus(
       const WSGRawCommandMessage& command, const double timeout);
 
   bool StopGripper();

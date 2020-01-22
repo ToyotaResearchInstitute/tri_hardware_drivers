@@ -20,13 +20,13 @@ WSGUDPInterface::WSGUDPInterface(
   send_socket_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
   if (send_socket_fd_ <= 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("Failed to create send socket");
   }
   recv_socket_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
   if (recv_socket_fd_ <= 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("Failed to create recv socket");
   }
   // Make the local sockaddr
@@ -43,7 +43,7 @@ WSGUDPInterface::WSGUDPInterface(
                                sizeof(local_sockaddr_));
   if (bind_result != 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("Failed to bind recv socket");
   }
   // Start receive thread

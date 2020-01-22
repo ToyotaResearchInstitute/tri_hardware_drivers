@@ -135,8 +135,14 @@ std::string RobotiqFTModbusRtuInterface::ReadSerialNumber()
                                  (char)(raw_sn_buffer[0] >> 8),
                                  (char)(raw_sn_buffer[0] & 0xff),
                                  (char)(raw_sn_buffer[1] >> 8), raw_sn);
-    assert(written > 0);
-    assert(written < max_str_len);
+    if (written <= 0)
+    {
+      throw std::runtime_error("written <= 0");
+    }
+    else if (written >= max_str_len)
+    {
+      throw std::runtime_error("written >= max_str_len");
+    }
     return std::string(sn_str_buffer);
   }
   else
@@ -169,8 +175,14 @@ std::string RobotiqFTModbusRtuInterface::ReadFirmwareVersion()
                  (char)(raw_fw_buffer[1] & 0xff),
                  (char)(raw_fw_buffer[2] >> 8),
                  (char)(raw_fw_buffer[2] & 0xff));
-  assert(written > 0);
-  assert(written < max_str_len);
+  if (written <= 0)
+  {
+    throw std::runtime_error("written <= 0");
+  }
+  else if (written >= max_str_len)
+  {
+    throw std::runtime_error("written >= max_str_len");
+  }
   return std::string(fw_str_buffer);
 }
 

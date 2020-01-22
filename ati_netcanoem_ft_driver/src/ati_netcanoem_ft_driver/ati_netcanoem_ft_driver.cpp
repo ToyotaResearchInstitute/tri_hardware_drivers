@@ -21,7 +21,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
   can_socket_fd_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (can_socket_fd_ <= 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("Failed to create socketcan socket");
   }
   Log("...CAN socket opened");
@@ -72,7 +72,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
                                            sizeof(filter));
   if (setsockopt_result != 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("setsockopt failed");
   }
   Log("...set CAN ID filters");
@@ -88,7 +88,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
                    sizeof(read_timeout));
   if (setsockopt_timeout_result != 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("setsockopt timeout configuration failed");
   }
   Log("...socket timeout set");
@@ -169,19 +169,19 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   const uint16_t status_code
       = common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<uint16_t>(
-            response_msg_1.Payload(), 0).first;
+            response_msg_1.Payload(), 0).Value();
   raw_values(0, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 2).first;
+            response_msg_1.Payload(), 2).Value();
   raw_values(2, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 4).first;
+            response_msg_1.Payload(), 4).Value();
   raw_values(4, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 6).first;
+            response_msg_1.Payload(), 6).Value();
   const DataElement& response_msg_2 = response[1];
   if (response_msg_2.Opcode() != READ_SG_B)
   {
@@ -194,15 +194,15 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   raw_values(1, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 0).first;
+            response_msg_2.Payload(), 0).Value();
   raw_values(3, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 2).first;
+            response_msg_2.Payload(), 2).Value();
   raw_values(5, 0)
       = (double)common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 4).first;
+            response_msg_2.Payload(), 4).Value();
   return std::make_pair(status_code, raw_values);
 }
 
@@ -272,11 +272,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 0)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_1.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_1.Payload(), 0).Value();
   matrix_row(0, 1)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_1.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_1.Payload(), 4).Value();
   const DataElement& response_msg_2 = response.at(1);
   if (response_msg_2.Opcode() != READ_MATRIX_ROW_B)
   {
@@ -287,11 +289,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 2)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_2.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_2.Payload(), 0).Value();
   matrix_row(0, 3)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_2.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_2.Payload(), 4).Value();
   const DataElement& response_msg_3 = response.at(2);
   if (response_msg_3.Opcode() != READ_MATRIX_ROW_C)
   {
@@ -302,11 +306,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 4)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_3.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_3.Payload(), 0).Value();
   matrix_row(0, 5)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_3.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_3.Payload(), 4).Value();
   return matrix_row;
 }
 
@@ -393,11 +399,11 @@ std::pair<uint32_t, uint32_t> AtiNetCanOemInterface::ReadCountsPerUnit()
   const uint32_t force_counts
       = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
-              response_msg.Payload(), 0).first;
+              response_msg.Payload(), 0).Value();
   const uint32_t torque_counts
       = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
-              response_msg.Payload(), 4).first;
+              response_msg.Payload(), 4).Value();
   return std::make_pair(force_counts, torque_counts);
 }
 
@@ -452,7 +458,7 @@ std::vector<uint16_t> AtiNetCanOemInterface::ReadDiagnosticADCVoltages()
     const uint16_t adc_voltage
         = common_robotics_utilities::serialization
             ::DeserializeNetworkMemcpyable<uint16_t>(
-                response_msg.Payload(), 0).first;
+                response_msg.Payload(), 0).Value();
     adc_voltages.push_back(adc_voltage);
   }
   return adc_voltages;
@@ -506,8 +512,7 @@ bool AtiNetCanOemInterface::SetSensorCanRate(const uint8_t rate_divisor)
   return true;
 }
 
-std::pair<std::pair<uint8_t, uint8_t>, uint16_t>
-AtiNetCanOemInterface::ReadFirmwareVersion()
+AtiNetCanOemFirmwareVersion AtiNetCanOemInterface::ReadFirmwareVersion()
 {
   Log("Trying to read firmware version...");
   const DataElement read_firmware(READ_FIRMWARE_VERSION);
@@ -527,13 +532,14 @@ AtiNetCanOemInterface::ReadFirmwareVersion()
   {
     throw std::runtime_error("Invalid payload data for read firmware version");
   }
-  const uint8_t major_version = response_msg.Payload()[0];
-  const uint8_t minor_version = response_msg.Payload()[1];
+  const uint8_t major_version = response_msg.Payload().at(0);
+  const uint8_t minor_version = response_msg.Payload().at(1);
   const uint16_t build_number =
-      common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<uint16_t>(
-        response_msg.Payload(), 2).first;
-  return std::make_pair(std::make_pair(major_version, minor_version),
-                        build_number);
+      common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<uint16_t>(
+              response_msg.Payload(), 2).Value();
+  return AtiNetCanOemFirmwareVersion(
+      build_number, major_version, minor_version);
 }
 
 std::vector<AtiNetCanOemInterface::DataElement>

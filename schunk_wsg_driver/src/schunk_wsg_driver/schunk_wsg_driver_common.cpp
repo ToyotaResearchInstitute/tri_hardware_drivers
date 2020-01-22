@@ -35,12 +35,12 @@ uint64_t WSGRawCommandMessage::SerializeSelf(std::vector<uint8_t>& buffer) const
   return bytes_written;
 }
 
-std::pair<WSGRawStatusMessage, uint64_t> WSGRawStatusMessage::Deserialize(
+Deserialized<WSGRawStatusMessage> WSGRawStatusMessage::Deserialize(
     const std::vector<uint8_t>& buffer, const uint64_t current)
 {
   WSGRawStatusMessage status_message;
   const uint64_t bytes_read = status_message.DeserializeSelf(buffer, current);
-  return std::make_pair(status_message, bytes_read);
+  return Deserialized<WSGRawStatusMessage>(status_message, bytes_read);
 }
 
 uint64_t WSGRawStatusMessage::DeserializeSelf(
@@ -123,7 +123,7 @@ std::string PhysicalLimits::Print() const
 
 // Internal implementation
 
-std::pair<WSGRawStatusMessage, bool>
+OwningMaybe<WSGRawStatusMessage>
 WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
                                         const double timeout)
 {
@@ -134,9 +134,8 @@ WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
   {
     throw std::runtime_error("Failed to send command");
   }
-  std::pair<WSGRawStatusMessage, bool> response
-      = std::make_pair(WSGRawStatusMessage(), false);
-  while (!response.second)
+  OwningMaybe<WSGRawStatusMessage> response;
+  while (!response.HasValue())
   {
     std::vector<WSGRawStatusMessage> status_queue = GetStatusQueue();
     for (size_t idx = 0; idx < status_queue.size(); idx++)
@@ -144,7 +143,7 @@ WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
       const WSGRawStatusMessage& candidate_response = status_queue[idx];
       if (candidate_response.Command() != command.Command())
       {
-        ;
+        continue;
       }
       else if (candidate_response.Status() == E_CMD_PENDING)
       {
@@ -153,8 +152,7 @@ WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
       }
       else
       {
-        response.first = candidate_response;
-        response.second = true;
+        response = OwningMaybe<WSGRawStatusMessage>(candidate_response);
         if (candidate_response.Status() != E_SUCCESS)
         {
           const std::string msg = "Non-success response: "
@@ -170,7 +168,7 @@ WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
       break;
     }
   }
-  if (!response.second)
+  if (!response.HasValue())
   {
     Log("Failed to receive response in timeout period");
   }
@@ -187,11 +185,10 @@ bool WSGInterface::StopGripper()
 bool WSGInterface::Home(const HomeDirection direction)
 {
   const WSGRawCommandMessage home_command(kHome, {direction});
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
-      = SendCommandAndAwaitStatus(home_command, 4.0);
-  if (maybe_response.second)
+  const auto maybe_response = SendCommandAndAwaitStatus(home_command, 4.0);
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Homed successfully");
       return true;
@@ -211,16 +208,15 @@ bool WSGInterface::Home(const HomeDirection direction)
 bool WSGInterface::Tare()
 {
   const WSGRawCommandMessage tare_command(kTareForceSensor);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
-      = SendCommandAndAwaitStatus(tare_command, 4.0);
-  if (maybe_response.second)
+  const auto maybe_response = SendCommandAndAwaitStatus(tare_command, 4.0);
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Homed successfully");
       return true;
     }
-    else if (maybe_response.first.Status() == E_NOT_AVAILABLE)
+    else if (maybe_response.Value().Status() == E_NOT_AVAILABLE)
     {
       Log("Tare not available, ignoring");
       return true;
@@ -242,11 +238,10 @@ bool WSGInterface::Grasp(const double width_mm, const double speed_mm_per_s)
   WSGRawCommandMessage grasp_command(kGrasp);
   grasp_command.AppendParameterToBuffer((float)width_mm);
   grasp_command.AppendParameterToBuffer((float)speed_mm_per_s);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
-      = SendCommandAndAwaitStatus(grasp_command, 6.0);
-  if (maybe_response.second)
+  const auto maybe_response = SendCommandAndAwaitStatus(grasp_command, 6.0);
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Grasp successful");
       return true;
@@ -267,11 +262,11 @@ bool WSGInterface::SetForceLimit(const double force)
 {
   WSGRawCommandMessage force_limit_command(kSetForceLimit);
   force_limit_command.AppendParameterToBuffer((float)force);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(force_limit_command, 0.1);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Set force limit (blocking) successfully");
       return true;
@@ -300,11 +295,11 @@ bool WSGInterface::SetAcceleration(const double acceleration_mm_per_s)
 {
   WSGRawCommandMessage acceleration_command(kSetAccel);
   acceleration_command.AppendParameterToBuffer((float)acceleration_mm_per_s);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(acceleration_command, 0.1);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Set acceleration successfully");
       return true;
@@ -324,11 +319,11 @@ bool WSGInterface::SetAcceleration(const double acceleration_mm_per_s)
 bool WSGInterface::ClearSoftLimits()
 {
   const WSGRawCommandMessage clear_limits_command(kClearSoftLimits);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(clear_limits_command, 4.0);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Cleared soft limits successfully");
       return true;
@@ -352,11 +347,11 @@ bool WSGInterface::EnableRecurringStatus(const GripperCommand command,
   WSGRawCommandMessage recurring_status_command(command);
   recurring_status_command.AppendParameterToBuffer((uint8_t)0x01);
   recurring_status_command.AppendParameterToBuffer(update_period_ms);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(recurring_status_command, timeout);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Enabled recurring status successfully");
       return true;
@@ -379,11 +374,11 @@ bool WSGInterface::DisableRecurringStatus(const GripperCommand command,
   WSGRawCommandMessage recurring_status_command(command);
   recurring_status_command.AppendParameterToBuffer((uint8_t)0x00);
   recurring_status_command.AppendParameterToBuffer((uint16_t)0x00);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(recurring_status_command, timeout);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("Disabled recurring status successfully");
       return true;
@@ -421,11 +416,11 @@ bool WSGInterface::PrePosition(const PrePositionStopMode stop_mode,
 {
   const WSGRawCommandMessage preposition_command
       = MakePrePositionCommand(stop_mode, move_mode, width_mm, speed_mm_per_s);
-  const std::pair<WSGRawStatusMessage, bool> maybe_response
+  const auto maybe_response
       = SendCommandAndAwaitStatus(preposition_command, 6.0);
-  if (maybe_response.second)
+  if (maybe_response)
   {
-    if (maybe_response.first.Status() == E_SUCCESS)
+    if (maybe_response.Value().Status() == E_SUCCESS)
     {
       Log("PrePositioned (blocking) successfully");
       return true;
@@ -457,29 +452,29 @@ PhysicalLimits WSGInterface::GetGripperPhysicalLimits()
 {
   Log("Getting gripper physical limits...");
   const WSGRawCommandMessage physical_limits_command(kGetSystemLimits);
-  const std::pair<WSGRawStatusMessage, bool> maybe_status
+  const auto maybe_status
       = SendCommandAndAwaitStatus(physical_limits_command, 0.1);
-  if (maybe_status.second == false)
+  if (!maybe_status)
   {
     throw std::runtime_error("Did not receive status in timeout limit");
   }
-  const std::vector<uint8_t>& param_buffer = maybe_status.first.ParamBuffer();
+  const std::vector<uint8_t>& param_buffer = maybe_status.Value().ParamBuffer();
   const double stroke_mm
-      = DeserializeMemcpyable<float>(param_buffer, 0).first;
+      = DeserializeMemcpyable<float>(param_buffer, 0).Value();
   const double min_speed_mm_per_s
-      = DeserializeMemcpyable<float>(param_buffer, 4).first;
+      = DeserializeMemcpyable<float>(param_buffer, 4).Value();
   const double max_speed_mm_per_s
-      = DeserializeMemcpyable<float>(param_buffer, 8).first;
+      = DeserializeMemcpyable<float>(param_buffer, 8).Value();
   const double min_acc_mm_per_ss
-      = DeserializeMemcpyable<float>(param_buffer, 12).first;
+      = DeserializeMemcpyable<float>(param_buffer, 12).Value();
   const double max_acc_mm_per_ss
-      = DeserializeMemcpyable<float>(param_buffer, 16).first;
+      = DeserializeMemcpyable<float>(param_buffer, 16).Value();
   const double min_force
-      = DeserializeMemcpyable<float>(param_buffer, 20).first;
+      = DeserializeMemcpyable<float>(param_buffer, 20).Value();
   const double nominal_force
-      = DeserializeMemcpyable<float>(param_buffer, 24).first;
+      = DeserializeMemcpyable<float>(param_buffer, 24).Value();
   const double overdrive_force
-      = DeserializeMemcpyable<float>(param_buffer, 28).first;
+      = DeserializeMemcpyable<float>(param_buffer, 28).Value();
   Log("...loaded physical limits from gripper");
   return PhysicalLimits(stroke_mm,
                         min_speed_mm_per_s,
@@ -569,8 +564,7 @@ bool WSGInterface::InitializeGripper()
     throw std::runtime_error("Failed to SetAcceleration");
   }
   std::lock_guard<std::mutex> status_lock(status_mutex_);
-  maybe_physical_limits_.first = limits;
-  maybe_physical_limits_.second = true;
+  maybe_physical_limits_ = OwningMaybe<PhysicalLimits>(limits);
   return success;
 }
 
@@ -709,11 +703,11 @@ bool WSGInterface::SetTargetPositionSpeedEffort(const double target_position,
   const double force_deadband = 5.0;
   const GripperMotionStatus current_status = GetGripperStatus();
   status_mutex_.lock();
-  if (maybe_physical_limits_.second == false)
+  if (!maybe_physical_limits_)
   {
     throw std::runtime_error("Physical limits are not available");
   }
-  const PhysicalLimits physical_limits = maybe_physical_limits_.first;
+  const PhysicalLimits physical_limits = maybe_physical_limits_.Value();
   status_mutex_.unlock();
   bool is_new_command = false;
   if (std::abs(max_effort - current_status.ActualEffort()) > force_deadband)
@@ -785,20 +779,20 @@ void WSGInterface::RefreshGripperStatus()
     if (message.Command() == kGetOpeningWidth)
     {
       const double opening_width_mm
-          = DeserializeMemcpyable<float>(param_buffer, 0).first;
+          = DeserializeMemcpyable<float>(param_buffer, 0).Value();
       const double opening_width = opening_width_mm * 0.001;
       motion_status_.UpdateActualPosition(opening_width);
     }
     else if (message.Command() == kGetForce)
     {
       const double force
-          = DeserializeMemcpyable<float>(param_buffer, 0).first;
+          = DeserializeMemcpyable<float>(param_buffer, 0).Value();
       motion_status_.UpdateActualEffort(force);
     }
     else if (message.Command() == kGetSpeed)
     {
       const double speed_mm_s
-          = DeserializeMemcpyable<float>(param_buffer, 0).first;
+          = DeserializeMemcpyable<float>(param_buffer, 0).Value();
       const double speed = speed_mm_s * 0.001;
       motion_status_.UpdateActualVelocity(speed);
     }

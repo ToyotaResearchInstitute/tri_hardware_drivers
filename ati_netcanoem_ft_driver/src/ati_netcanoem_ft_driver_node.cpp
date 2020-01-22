@@ -56,16 +56,15 @@ public:
                                       can_interface,
                                       sensor_base_can_id));
     const std::string serial_num = sensor_ptr_->ReadSerialNumber();
-    const std::pair<std::pair<uint8_t, uint8_t>, uint16_t> firmware_version
-        = sensor_ptr_->ReadFirmwareVersion();
+    const auto firmware_version = sensor_ptr_->ReadFirmwareVersion();
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Connected to sensor with serial # %s and firmware"
                    " version %hhu (major version) %hhu (minor version)"
                    " %hu (build)",
                    serial_num.c_str(),
-                   firmware_version.first.first,
-                   firmware_version.first.second,
-                   firmware_version.second);
+                   firmware_version.MajorVersion(),
+                   firmware_version.MinorVersion(),
+                   firmware_version.BuildNumber());
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Attempting to load active calibration %hhu...",
                    sensor_calibration_index);

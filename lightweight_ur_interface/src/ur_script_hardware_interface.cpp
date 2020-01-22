@@ -435,7 +435,7 @@ public:
                                             buffer.size());
         if (bytes_written != (ssize_t)buffer.size())
         {
-          perror(NULL);
+          perror(nullptr);
           ROS_ERROR_NAMED(ros::this_node::getName(),
                           "Failed to send command with %zu bytes, "
                           "sent %zd instead", buffer.size(), bytes_written);
@@ -473,7 +473,7 @@ public:
                                         buffer.size());
     if (bytes_written != (ssize_t)buffer.size())
     {
-      perror(NULL);
+      perror(nullptr);
       ROS_ERROR_NAMED(ros::this_node::getName(),
                       "Failed to send command with %zu bytes, sent %zd instead",
                       buffer.size(),
