@@ -58,9 +58,9 @@ DeserializeKnownSizeVector(
 class URRealtimeState
 {
 private:
-  using common_robotics_utilities::serialization::Deserialized;
-  using common_robotics_utilities::serialization::MakeDeserialized;
-  using common_robotics_utilities::serialization::DeserializeNetworkMemcpyable;
+  template<typename T>
+  using Deserialized
+      = common_robotics_utilities::serialization::Deserialized<T>;
 
   std::vector<double> target_position_;
   std::vector<double> target_velocity_;
@@ -103,7 +103,9 @@ private:
       const uint64_t starting_offset)
   {
     return DeserializeKnownSizeVector<double, std::vector<double>>(
-      size, buffer, starting_offset, DeserializeNetworkMemcpyable<double>);
+      size, buffer, starting_offset,
+      common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<double>);
   }
 
   static inline Eigen::Isometry3d TcpVectorToTransform(
@@ -170,7 +172,8 @@ public:
     URRealtimeState deserialized_state;
     const uint64_t bytes_read
         = deserialized_state.DeserializeSelf(buffer, starting_offset);
-    return MakeDeserialized(deserialized_state, bytes_read);
+    return common_robotics_utilities::serialization::MakeDeserialized(
+        deserialized_state, bytes_read);
   }
 
   uint64_t DeserializeSelf(

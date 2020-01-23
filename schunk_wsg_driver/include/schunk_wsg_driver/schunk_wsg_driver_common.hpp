@@ -190,7 +190,9 @@ enum GraspingState : uint8_t
 class WSGRawStatusMessage
 {
 private:
-  using common_robotics_utilities::serialization::Deserialized;
+  template<typename T>
+  using Deserialized
+      = common_robotics_utilities::serialization::Deserialized<T>;
 
   uint8_t command_;
   uint16_t status_;
@@ -390,7 +392,8 @@ public:
 class WSGInterface
 {
 private:
-  using common_robotics_utilities::OwningMaybe;
+  template<typename T>
+  using OwningMaybe = common_robotics_utilities::OwningMaybe<T>;
 
   std::mutex status_mutex_;
   OwningMaybe<PhysicalLimits> maybe_physical_limits_;

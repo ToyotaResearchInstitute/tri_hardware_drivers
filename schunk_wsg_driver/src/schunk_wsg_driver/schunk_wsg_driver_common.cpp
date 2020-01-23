@@ -35,7 +35,8 @@ uint64_t WSGRawCommandMessage::SerializeSelf(std::vector<uint8_t>& buffer) const
   return bytes_written;
 }
 
-Deserialized<WSGRawStatusMessage> WSGRawStatusMessage::Deserialize(
+WSGRawStatusMessage::Deserialized<WSGRawStatusMessage>
+WSGRawStatusMessage::Deserialize(
     const std::vector<uint8_t>& buffer, const uint64_t current)
 {
   WSGRawStatusMessage status_message;
@@ -123,7 +124,7 @@ std::string PhysicalLimits::Print() const
 
 // Internal implementation
 
-OwningMaybe<WSGRawStatusMessage>
+WSGInterface::OwningMaybe<WSGRawStatusMessage>
 WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
                                         const double timeout)
 {

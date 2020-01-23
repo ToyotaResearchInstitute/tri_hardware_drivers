@@ -136,7 +136,7 @@ void WSGUDPInterface::RecvFromGripper()
                                 recv_buffer.begin(),
                                 recv_buffer.begin() + read_size);
       const WSGRawStatusMessage status_msg
-          = WSGRawStatusMessage::Deserialize(serialized_message, 0).first;
+          = WSGRawStatusMessage::Deserialize(serialized_message, 0).Value();
       std::lock_guard<std::mutex> lock(status_mutex_);
       status_queue_.push_back(status_msg);
     }

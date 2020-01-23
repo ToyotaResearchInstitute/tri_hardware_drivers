@@ -21,13 +21,14 @@
 #include <lightweight_ur_interface/VelocityCommand.h>
 #include <common_robotics_utilities/print.hpp>
 #include <common_robotics_utilities/math.hpp>
-#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/ros_conversions.hpp>
 
 namespace lightweight_ur_interface
 {
-using common_robotics_utilities::conversions
+using common_robotics_utilities::ros_conversions
           ::EigenIsometry3dToGeometryPoseStamped;
-using common_robotics_utilities::conversions::EigenVector3dToGeometryVector3;
+using common_robotics_utilities::ros_conversions
+          ::EigenVector3dToGeometryVector3;
 using common_robotics_utilities::math::RotateVectorReverse;
 using common_robotics_utilities::math::RotateVector;
 using common_robotics_utilities::utility::ClampValueAndWarn;

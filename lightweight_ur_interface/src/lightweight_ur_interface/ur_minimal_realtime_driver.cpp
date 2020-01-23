@@ -303,7 +303,7 @@ void URRealtimeInterface::RecvLoop()
       try
       {
         const URRealtimeState latest_state
-            = URRealtimeState::Deserialize(recv_buffer, 0);
+            = URRealtimeState::Deserialize(recv_buffer, 0).Value();
         state_received_callback_fn_(latest_state);
       }
       catch (std::runtime_error ex)
