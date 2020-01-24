@@ -200,7 +200,7 @@ void Robotiq3FingerGripperModbusInterface
                              + " with error: " + error_msg);
   }
   const int mss_ret = modbus_set_slave(modbus_interface_ptr_,
-                                       (int)gripper_slave_id);
+                                       static_cast<int>(gripper_slave_id));
   if (mss_ret != 0)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -241,7 +241,7 @@ void Robotiq3FingerGripperModbusInterface
                              + " with error: " + error_msg);
   }
   const int mss_ret = modbus_set_slave(modbus_interface_ptr_,
-                                       (int)gripper_slave_id);
+                                       static_cast<int>(gripper_slave_id));
   if (mss_ret != 0)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -260,7 +260,9 @@ void Robotiq3FingerGripperModbusInterface
 
 uint16_t MakeRegisterValue(const uint8_t low_byte, const uint8_t high_byte)
 {
-  return (uint16_t)((uint16_t)low_byte | (uint16_t)((uint16_t)high_byte << 8));
+  return static_cast<uint16_t>(
+      static_cast<uint16_t>(low_byte)
+      | static_cast<uint16_t>(static_cast<uint16_t>(high_byte) << 8));
 }
 
 bool Robotiq3FingerGripperModbusInterface::WriteROGIRegisters(
@@ -290,7 +292,7 @@ bool Robotiq3FingerGripperModbusInterface::WriteROGIRegisters(
   modbus_register_values[7]
       = MakeRegisterValue(register_values[14], 0x00);
   // Send
-  const int num_registers = (int)modbus_register_values.size();
+  const int num_registers = static_cast<int>(modbus_register_values.size());
   const int registers_written
       = modbus_write_registers(modbus_interface_ptr_,
                                rogi_first_register_,
@@ -345,8 +347,10 @@ Robotiq3FingerGripperModbusInterface::ReadRIGORegisters()
   for (size_t rdx = 0, bdx = 0; rdx < raw_status_buffer.size(); rdx++, bdx += 2)
   {
     const uint16_t raw_register = raw_status_buffer[rdx];
-    received_bytes[bdx + 1] = (uint8_t)((raw_register & 0xff00) >> 8);
-    received_bytes[bdx + 0] = (uint8_t)(raw_register & 0x00ff);
+    received_bytes[bdx + 1]
+        = static_cast<uint8_t>((raw_register & 0xff00) >> 8);
+    received_bytes[bdx + 0]
+        = static_cast<uint8_t>(raw_register & 0x00ff);
   }
   Log(common_robotics_utilities::print::Print(received_bytes));
   return received_bytes;

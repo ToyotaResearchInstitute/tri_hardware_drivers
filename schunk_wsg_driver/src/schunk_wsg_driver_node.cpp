@@ -133,10 +133,11 @@ int main(int argc, char** argv)
         = nhp.param(std::string("gripper_ip_address"),
                     DEFAULT_GRIPPER_IP_ADDRESS);
     const uint16_t gripper_port
-        = (uint16_t)nhp.param(std::string("gripper_port"),
-                              DEFAULT_GRIPPER_PORT);
+        = static_cast<uint16_t>(
+            nhp.param(std::string("gripper_port"), DEFAULT_GRIPPER_PORT));
     const uint16_t local_port
-        = (uint16_t)nhp.param(std::string("local_port"), DEFAULT_LOCAL_PORT);
+        = static_cast<uint16_t>(
+            nhp.param(std::string("local_port"), DEFAULT_LOCAL_PORT));
     std::shared_ptr<schunk_wsg_driver::WSGUDPInterface> gripper_interface(
           new schunk_wsg_driver::WSGUDPInterface(logging_fn,
                                                  gripper_ip_address,
@@ -154,8 +155,9 @@ int main(int argc, char** argv)
         = nhp.param(std::string("socketcan_interface"),
                     DEFAULT_SOCKETCAN_INTERFACE);
     const uint32_t gripper_send_can_id
-        = (uint32_t)nhp.param(std::string("gripper_base_can_id"),
-                              DEFAULT_GRIPPER_BASE_CAN_ID);
+        = static_cast<uint32_t>(
+            nhp.param(std::string("gripper_base_can_id"),
+                      DEFAULT_GRIPPER_BASE_CAN_ID));
     std::shared_ptr<schunk_wsg_driver::WSGCANInterface> gripper_interface(
           new schunk_wsg_driver::WSGCANInterface(logging_fn,
                                                  can_interface,

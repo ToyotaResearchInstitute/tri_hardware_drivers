@@ -62,9 +62,9 @@ WSGCANInterface::WSGCANInterface(
   struct sockaddr_can can_interface;
   can_interface.can_family = AF_CAN;
   can_interface.can_ifindex = interface.ifr_ifindex;
-  const int bind_result = bind(can_socket_fd_,
-                               (struct sockaddr *)&can_interface,
-                               sizeof(can_interface));
+  const int bind_result = bind(
+      can_socket_fd_, reinterpret_cast<struct sockaddr*>(&can_interface),
+      sizeof(can_interface));
   if (bind_result != 0)
   {
     perror(nullptr);
@@ -102,19 +102,22 @@ bool WSGCANInterface::CommandGripper(const WSGRawCommandMessage& command)
   WSGRawCommandMessage::Serialize(command, serialized_command_buffer);
   // Diagnostic info
   const size_t serialized_command_size = serialized_command_buffer.size();
-  const size_t num_frames = (size_t)ceil((double)serialized_command_size
-                                         / (double)CAN_MAX_DLEN);
+  const size_t num_frames
+      = static_cast<size_t>(
+          ceil(static_cast<double>(serialized_command_size)
+                  / static_cast<double>(CAN_MAX_DLEN)));
   struct can_frame frame;
   frame.can_id = gripper_send_can_id_;
   for (size_t frame_num = 0; frame_num < num_frames; frame_num++)
   {
     // Zero the frame data
-    memset(frame.data, 0, (size_t)CAN_MAX_DLEN);
-    const size_t starting_offset = frame_num * (size_t)CAN_MAX_DLEN;
+    memset(frame.data, 0, static_cast<size_t>(CAN_MAX_DLEN));
+    const size_t starting_offset
+        = frame_num * static_cast<size_t>(CAN_MAX_DLEN);
     const size_t bytes_to_write
-        = std::min((size_t)CAN_MAX_DLEN,
+        = std::min(static_cast<size_t>(CAN_MAX_DLEN),
                    serialized_command_size - starting_offset);
-    frame.can_dlc = (uint8_t)bytes_to_write;
+    frame.can_dlc = static_cast<uint8_t>(bytes_to_write);
     memcpy(frame.data,
            serialized_command_buffer.data() + starting_offset,
            bytes_to_write);
@@ -159,9 +162,10 @@ void WSGCANInterface::RecvFromGripper()
             = WSGRawStatusMessage::Deserialize(recv_buffer, 0);
         if (deserialized_status_msg.BytesRead() < recv_buffer.size())
         {
-          recv_buffer.erase(recv_buffer.begin(),
-                            recv_buffer.begin()
-                            + (ssize_t)deserialized_status_msg.BytesRead());
+          recv_buffer.erase(
+              recv_buffer.begin(),
+              recv_buffer.begin()
+                  + static_cast<ssize_t>(deserialized_status_msg.BytesRead()));
         }
         else
         {

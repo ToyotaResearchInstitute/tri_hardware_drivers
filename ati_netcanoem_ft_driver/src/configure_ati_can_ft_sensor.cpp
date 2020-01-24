@@ -9,11 +9,11 @@ int main(int argc, char** argv)
   {
     const std::string can_interface(argv[1]);
     const uint8_t sensor_base_can_id
-      = (uint8_t)std::atoi(argv[2]);
+      = static_cast<uint8_t>(std::atoi(argv[2]));
     const uint8_t new_sensor_base_can_id
-      = (uint8_t)std::atoi(argv[3]);
+      = static_cast<uint8_t>(std::atoi(argv[3]));
     const uint8_t new_sensor_can_baud_rate_divisor
-      = (uint8_t)std::atoi(argv[4]);
+      = static_cast<uint8_t>(std::atoi(argv[4]));
     std::cout << "Connecting to ATI F/T sensor with CAN base ID "
               << sensor_base_can_id << " on socketcan interface "
               << can_interface << std::endl;

@@ -18,17 +18,17 @@ uint64_t WSGRawCommandMessage::SerializeSelf(std::vector<uint8_t>& buffer) const
   buffer.push_back(0xaa);
   buffer.push_back(0xaa);
   buffer.push_back(command_);
-  const uint16_t payload_size = (uint16_t)param_buffer_.size();
-  buffer.push_back((uint8_t)(payload_size & 0xff));
-  buffer.push_back((uint8_t)((payload_size >> 8) & 0xff));
+  const uint16_t payload_size = static_cast<uint16_t>(param_buffer_.size());
+  buffer.push_back(static_cast<uint8_t>(payload_size & 0xff));
+  buffer.push_back(static_cast<uint8_t>((payload_size >> 8) & 0xff));
   // Copy the payload buffer
   buffer.insert(buffer.end(), param_buffer_.begin(), param_buffer_.end());
   // Compute the checksum
   const uint16_t checksum
       = ComputeCRC(buffer, start_buffer_size, buffer.size());
   // Add the checksum
-  buffer.push_back((uint8_t)(checksum & 0xff));
-  buffer.push_back((uint8_t)((checksum >> 8) & 0xff));
+  buffer.push_back(static_cast<uint8_t>(checksum & 0xff));
+  buffer.push_back(static_cast<uint8_t>((checksum >> 8) & 0xff));
   // Figure out how many bytes were written
   const uint64_t end_buffer_size = buffer.size();
   const uint64_t bytes_written = end_buffer_size - start_buffer_size;
@@ -65,15 +65,16 @@ uint64_t WSGRawStatusMessage::DeserializeSelf(
   // Load the command
   command_ = buffer[current_position + 3];
   // Load the payload size
-  size_t payload_size = (size_t)buffer[current_position + 4]
-                        + ((size_t)buffer[current_position + 5] << 8);
+  size_t payload_size
+      = static_cast<size_t>(buffer[current_position + 4])
+          + (static_cast<size_t>(buffer[current_position + 5]) << 8);
   if (payload_size < 2)
   {
     throw std::runtime_error("Invalid message payload size < 2");
   }
   // Load the status code
-  status_ = (uint16_t)(buffer[current_position + 6]
-            + (buffer[current_position + 7] << 8));
+  status_ = static_cast<uint16_t>(
+      buffer[current_position + 6] + (buffer[current_position + 7] << 8));
   // Update current position
   current_position += 8;
   // Check to make sure the buffer is large enough, now that we know the size
@@ -84,15 +85,16 @@ uint64_t WSGRawStatusMessage::DeserializeSelf(
   // Copy over the payload buffer
   const size_t checksum_size = 2;
   param_buffer_.clear();
-  param_buffer_.insert(param_buffer_.end(),
-                       buffer.begin() + (ssize_t)current_position,
-                       buffer.begin() + (ssize_t)current_position
-                       + (ssize_t)payload_size - (ssize_t)checksum_size);
+  param_buffer_.insert(
+      param_buffer_.end(),
+      buffer.begin() + static_cast<ssize_t>(current_position),
+      buffer.begin() + static_cast<ssize_t>(current_position)
+          + static_cast<ssize_t>(payload_size)
+          - static_cast<ssize_t>(checksum_size));
   current_position += (payload_size - checksum_size);
   // Read the checksum
-  const uint16_t read_checksum
-      = (uint16_t)(buffer[current_position]
-                   + (buffer[current_position + 1] << 8));
+  const uint16_t read_checksum = static_cast<uint16_t>(
+      buffer[current_position] + (buffer[current_position + 1] << 8));
   // Validate the checksum
   const uint16_t computed_checksum
       = ComputeCRC(buffer, current, current_position);
@@ -237,8 +239,8 @@ bool WSGInterface::Tare()
 bool WSGInterface::Grasp(const double width_mm, const double speed_mm_per_s)
 {
   WSGRawCommandMessage grasp_command(kGrasp);
-  grasp_command.AppendParameterToBuffer((float)width_mm);
-  grasp_command.AppendParameterToBuffer((float)speed_mm_per_s);
+  grasp_command.AppendParameterToBuffer(static_cast<float>(width_mm));
+  grasp_command.AppendParameterToBuffer(static_cast<float>(speed_mm_per_s));
   const auto maybe_response = SendCommandAndAwaitStatus(grasp_command, 6.0);
   if (maybe_response)
   {
@@ -262,7 +264,7 @@ bool WSGInterface::Grasp(const double width_mm, const double speed_mm_per_s)
 bool WSGInterface::SetForceLimit(const double force)
 {
   WSGRawCommandMessage force_limit_command(kSetForceLimit);
-  force_limit_command.AppendParameterToBuffer((float)force);
+  force_limit_command.AppendParameterToBuffer(static_cast<float>(force));
   const auto maybe_response
       = SendCommandAndAwaitStatus(force_limit_command, 0.1);
   if (maybe_response)
@@ -287,7 +289,7 @@ bool WSGInterface::SetForceLimit(const double force)
 bool WSGInterface::SetForceLimitNonBlocking(const double force)
 {
   WSGRawCommandMessage force_limit_command(kSetForceLimit);
-  force_limit_command.AppendParameterToBuffer((float)force);
+  force_limit_command.AppendParameterToBuffer(static_cast<float>(force));
   const bool result = CommandGripper(force_limit_command);
   return result;
 }
@@ -295,7 +297,8 @@ bool WSGInterface::SetForceLimitNonBlocking(const double force)
 bool WSGInterface::SetAcceleration(const double acceleration_mm_per_s)
 {
   WSGRawCommandMessage acceleration_command(kSetAccel);
-  acceleration_command.AppendParameterToBuffer((float)acceleration_mm_per_s);
+  acceleration_command.AppendParameterToBuffer(
+      static_cast<float>(acceleration_mm_per_s));
   const auto maybe_response
       = SendCommandAndAwaitStatus(acceleration_command, 0.1);
   if (maybe_response)
@@ -346,7 +349,7 @@ bool WSGInterface::EnableRecurringStatus(const GripperCommand command,
                                          const double timeout)
 {
   WSGRawCommandMessage recurring_status_command(command);
-  recurring_status_command.AppendParameterToBuffer((uint8_t)0x01);
+  recurring_status_command.AppendParameterToBuffer(static_cast<uint8_t>(0x01));
   recurring_status_command.AppendParameterToBuffer(update_period_ms);
   const auto maybe_response
       = SendCommandAndAwaitStatus(recurring_status_command, timeout);
@@ -373,8 +376,8 @@ bool WSGInterface::DisableRecurringStatus(const GripperCommand command,
                                           const double timeout)
 {
   WSGRawCommandMessage recurring_status_command(command);
-  recurring_status_command.AppendParameterToBuffer((uint8_t)0x00);
-  recurring_status_command.AppendParameterToBuffer((uint16_t)0x00);
+  recurring_status_command.AppendParameterToBuffer(static_cast<uint8_t>(0x00));
+  recurring_status_command.AppendParameterToBuffer(static_cast<uint16_t>(0x00));
   const auto maybe_response
       = SendCommandAndAwaitStatus(recurring_status_command, timeout);
   if (maybe_response)
@@ -405,8 +408,9 @@ WSGRawCommandMessage WSGInterface::MakePrePositionCommand(
   WSGRawCommandMessage preposition_command(kPrePosition);
   const uint8_t flags = stop_mode | move_mode;
   preposition_command.AppendParameterToBuffer(flags);
-  preposition_command.AppendParameterToBuffer((float)width_mm);
-  preposition_command.AppendParameterToBuffer((float)speed_mm_per_s);
+  preposition_command.AppendParameterToBuffer(static_cast<float>(width_mm));
+  preposition_command.AppendParameterToBuffer(
+      static_cast<float>(speed_mm_per_s));
   return preposition_command;
 }
 

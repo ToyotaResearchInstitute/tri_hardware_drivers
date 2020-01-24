@@ -484,7 +484,8 @@ public:
                 = ClampValueAndWarn(position,
                                     joint_position_limit.first,
                                     joint_position_limit.second);
-            ordered_trajectory_point((ssize_t)idx) = limited_position;
+            ordered_trajectory_point(static_cast<ssize_t>(idx))
+                = limited_position;
           }
           else
           {

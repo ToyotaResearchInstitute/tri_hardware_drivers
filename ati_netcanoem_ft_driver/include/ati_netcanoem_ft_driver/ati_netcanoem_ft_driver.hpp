@@ -137,6 +137,7 @@ private:
   };
 
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   AtiNetCanOemInterface(
       const std::function<void(const std::string&)>& logging_fn,

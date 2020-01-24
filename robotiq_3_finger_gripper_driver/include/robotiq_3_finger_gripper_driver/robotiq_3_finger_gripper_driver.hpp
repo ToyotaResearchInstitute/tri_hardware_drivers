@@ -57,13 +57,13 @@ public:
                                       const uint8_t raw_actual_current,
                                       const uint8_t raw_object_status,
                                       const bool gto)
-    : target_position_((double)raw_target_position / 255.0),
-      actual_position_((double)raw_actual_position / 255.0),
-      actual_current_((double)raw_actual_current / 255.0)
+    : target_position_(static_cast<double>(raw_target_position) / 255.0),
+      actual_position_(static_cast<double>(raw_actual_position) / 255.0),
+      actual_current_(static_cast<double>(raw_actual_current) / 255.0)
   {
     if (gto)
     {
-      object_status_ = (OBJECT_STATUS)raw_object_status;
+      object_status_ = static_cast<OBJECT_STATUS>(raw_object_status);
     }
     else
     {
@@ -86,7 +86,7 @@ public:
   inline std::string Print() const
   {
     std::ostringstream strm;
-    strm << "OBJECT_STATUS: " << (int32_t)object_status_
+    strm << "OBJECT_STATUS: " << static_cast<int32_t>(object_status_)
          << " Target position: " << target_position_
          << " Actual position: " << actual_position_
          << " Actual current: " << actual_current_;
@@ -201,36 +201,36 @@ public:
     }
     const uint8_t gripper_status_byte = received_bytes[0];
     gripper_activation_status_
-        = (GRIPPER_ACTIVATION_STATUS)(
+        = static_cast<GRIPPER_ACTIVATION_STATUS>(
             (gripper_status_byte & GACT_MASK) >> GACT_OFFSET);
     gripper_mode_status_
-        = (GRIPPER_MODE_STATUS)(
+        = static_cast<GRIPPER_MODE_STATUS>(
             (gripper_status_byte & GMOD_MASK) >> GMOD_OFFSET);
     gripper_action_status_
-        = (GRIPPER_ACTION_STATUS)(
+        = static_cast<GRIPPER_ACTION_STATUS>(
             (gripper_status_byte & GGTO_MASK) >> GGTO_OFFSET);
     gripper_system_status_
-        = (GRIPPER_SYSTEM_STATUS)(
+        = static_cast<GRIPPER_SYSTEM_STATUS>(
             (gripper_status_byte & GIMC_MASK) >> GIMC_OFFSET);
     gripper_motion_status_
-        = (GRIPPER_MOTION_STATUS)(
+        = static_cast<GRIPPER_MOTION_STATUS>(
             (gripper_status_byte & GSTA_MASK) >> GSTA_OFFSET);
     const bool gto = (gripper_action_status_ == GRIPPER_GOTO);
     // Gripper fault status
     const uint8_t raw_fault_status_byte = received_bytes[2];
     gripper_fault_status_
-        = (GRIPPER_FAULT_STATUS)(
+        = static_cast<GRIPPER_FAULT_STATUS>(
             (raw_fault_status_byte & GFLT_MASK) >> GFLT_OFFSET);
     // Per-finger object status
     const uint8_t object_status_byte = received_bytes[1];
     const uint8_t gdta
-        = (uint8_t)((object_status_byte & GDTA_MASK) >> GDTA_OFFSET);
+        = static_cast<uint8_t>((object_status_byte & GDTA_MASK) >> GDTA_OFFSET);
     const uint8_t gdtb
-        = (uint8_t)((object_status_byte & GDTB_MASK) >> GDTB_OFFSET);
+        = static_cast<uint8_t>((object_status_byte & GDTB_MASK) >> GDTB_OFFSET);
     const uint8_t gdtc
-        = (uint8_t)((object_status_byte & GDTC_MASK) >> GDTC_OFFSET);
+        = static_cast<uint8_t>((object_status_byte & GDTC_MASK) >> GDTC_OFFSET);
     const uint8_t gdts
-        = (uint8_t)((object_status_byte & GDTS_MASK) >> GDTS_OFFSET);
+        = static_cast<uint8_t>((object_status_byte & GDTS_MASK) >> GDTS_OFFSET);
     // Per-finger status
     finger_a_status_ = Robotiq3FingerGripperActuatorStatus(received_bytes[3],
                                                            received_bytes[4],
@@ -320,12 +320,18 @@ public:
   inline std::string Print() const
   {
     std::ostringstream strm;
-    strm << "GRIPPER_ACTIVATION_STATUS: " << (int32_t)gripper_activation_status_
-         << " GRIPPER_MODE_STATUS: " << (int32_t)gripper_mode_status_
-         << " GRIPPER_ACTION_STATUS: " << (int32_t)gripper_action_status_
-         << " GRIPPER_SYSTEM_STATUS: " << (int32_t)gripper_system_status_
-         << " GRIPPER_MOTION_STATUS: " << (int32_t)gripper_motion_status_
-         << " GRIPPER_FAULT_STATUS: " << (int32_t)gripper_fault_status_
+    strm << "GRIPPER_ACTIVATION_STATUS: "
+         << static_cast<int32_t>(gripper_activation_status_)
+         << " GRIPPER_MODE_STATUS: "
+         << static_cast<int32_t>(gripper_mode_status_)
+         << " GRIPPER_ACTION_STATUS: "
+         << static_cast<int32_t>(gripper_action_status_)
+         << " GRIPPER_SYSTEM_STATUS: "
+         << static_cast<int32_t>(gripper_system_status_)
+         << " GRIPPER_MOTION_STATUS: "
+         << static_cast<int32_t>(gripper_motion_status_)
+         << " GRIPPER_FAULT_STATUS: "
+         << static_cast<int32_t>(gripper_fault_status_)
          << " Finger A: " << finger_a_status_.Print()
          << " Finger B: " << finger_b_status_.Print()
          << " Finger C: " << finger_c_status_.Print()
@@ -388,17 +394,17 @@ public:
 
   inline uint8_t PositionCommand() const
   {
-    return (uint8_t)(255.0 * target_position_);
+    return static_cast<uint8_t>(255.0 * target_position_);
   }
 
   inline uint8_t SpeedCommand() const
   {
-    return (uint8_t)(255.0 * target_speed_);
+    return static_cast<uint8_t>(255.0 * target_speed_);
   }
 
   inline uint8_t ForceCommand() const
   {
-    return (uint8_t)(255.0 * target_force_);
+    return static_cast<uint8_t>(255.0 * target_force_);
   }
 };
 
@@ -446,8 +452,10 @@ public:
 
   const size_t NUM_ROBOTIQ_REGISTERS = 15;
 
-  Robotiq3FingerGripperInterface(
+  explicit Robotiq3FingerGripperInterface(
       const std::function<void(const std::string&)>& logging_fn);
+
+  virtual ~Robotiq3FingerGripperInterface() {}
 
   inline void Log(const std::string& message) { logging_fn_(message); }
 
@@ -461,7 +469,7 @@ public:
 
   bool ActivateGripper();
 
-private:
+protected:
 
   virtual bool WriteROGIRegisters(
       const std::vector<uint8_t>& register_values) = 0;
@@ -485,7 +493,7 @@ private:
 
 public:
 
-  Robotiq3FingerGripperModbusInterface(
+  explicit Robotiq3FingerGripperModbusInterface(
       const std::function<void(const std::string&)>& logging_fn);
 
   ~Robotiq3FingerGripperModbusInterface();

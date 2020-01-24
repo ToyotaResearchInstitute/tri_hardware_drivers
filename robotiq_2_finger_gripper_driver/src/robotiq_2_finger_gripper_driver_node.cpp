@@ -177,8 +177,8 @@ int main(int argc, char** argv)
       = nhp.param(std::string("modbus_rtu_baud_rate"),
                   DEFAULT_GRIPPER_BAUD_RATE);
   const uint16_t gripper_slave_id
-      = (uint16_t)nhp.param(std::string("gripper_slave_id"),
-                            DEFAULT_GRIPPER_SLAVE_ID);
+      = static_cast<uint16_t>(nhp.param(std::string("gripper_slave_id"),
+                                        DEFAULT_GRIPPER_SLAVE_ID));
   const double poll_rate
       = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
   const std::string status_topic

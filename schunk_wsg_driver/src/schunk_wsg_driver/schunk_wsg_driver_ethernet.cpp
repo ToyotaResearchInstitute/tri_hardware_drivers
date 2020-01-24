@@ -38,9 +38,9 @@ WSGUDPInterface::WSGUDPInterface(
   gripper_sockaddr_.sin_family = AF_INET;
   gripper_sockaddr_.sin_port = htons(gripper_port);
   // Bind the local socket
-  const int bind_result = bind(recv_socket_fd_,
-                               (struct sockaddr *)&local_sockaddr_,
-                               sizeof(local_sockaddr_));
+  const int bind_result = bind(
+      recv_socket_fd_, reinterpret_cast<struct sockaddr*>(&local_sockaddr_),
+      sizeof(local_sockaddr_));
   if (bind_result != 0)
   {
     perror(nullptr);
@@ -77,13 +77,12 @@ bool WSGUDPInterface::CommandGripper(const WSGRawCommandMessage& command)
 {
   std::vector<uint8_t> serialized_command_buffer;
   WSGRawCommandMessage::Serialize(command, serialized_command_buffer);
-  const ssize_t send_result = sendto(send_socket_fd_,
-                                     serialized_command_buffer.data(),
-                                     serialized_command_buffer.size(),
-                                     0,
-                                     (struct sockaddr*)&gripper_sockaddr_,
-                                     sizeof(gripper_sockaddr_));
-  if (send_result == (ssize_t)serialized_command_buffer.size())
+  const ssize_t send_result = sendto(
+      send_socket_fd_, serialized_command_buffer.data(),
+      serialized_command_buffer.size(), 0,
+      reinterpret_cast<struct sockaddr*>(&gripper_sockaddr_),
+      sizeof(gripper_sockaddr_));
+  if (send_result == static_cast<ssize_t>(serialized_command_buffer.size()))
   {
     return true;
   }
@@ -108,12 +107,10 @@ void WSGUDPInterface::RecvFromGripper()
   socklen_t source_sockaddr_len = sizeof(source_sockaddr);
   while (active_.load())
   {
-    const ssize_t read_size = recvfrom(recv_socket_fd_,
-                                       recv_buffer.data(),
-                                       recv_buffer.size(),
-                                       MSG_DONTWAIT,
-                                       (struct sockaddr*)&source_sockaddr,
-                                       &source_sockaddr_len);
+    const ssize_t read_size = recvfrom(
+        recv_socket_fd_, recv_buffer.data(), recv_buffer.size(), MSG_DONTWAIT,
+        reinterpret_cast<struct sockaddr*>(&source_sockaddr),
+        &source_sockaddr_len);
     if (read_size < 0)
     {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
@@ -125,7 +122,7 @@ void WSGUDPInterface::RecvFromGripper()
         throw std::runtime_error("Error in recv");
       }
     }
-    else if (read_size == (ssize_t)recv_buffer.size())
+    else if (read_size == static_cast<ssize_t>(recv_buffer.size()))
     {
       throw std::runtime_error("Received message larger than recv buffer");
     }

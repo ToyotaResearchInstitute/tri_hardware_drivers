@@ -12,7 +12,7 @@ uint64_t URRealtimeState::DeserializeSelf(const std::vector<uint8_t>& buffer,
       = DeserializeNetworkMemcpyable<int32_t>(buffer, current_offset);
   const int32_t message_length = deser_length.Value();
   current_offset += deser_length.BytesRead();
-  if ((buffer.size() - current_offset) < (uint64_t)message_length)
+  if ((buffer.size() - current_offset) < static_cast<uint64_t>(message_length))
   {
     throw std::runtime_error("Insufficient buffer to deserialize message:"
                              " buffer.size()=" + std::to_string(buffer.size())
@@ -158,11 +158,11 @@ URRealtimeInterface::URRealtimeInterface(
     throw std::runtime_error("Failed to find robot at " + robot_host);
   }
   Log("Connecting to robot at " + robot_host);
-  bzero((char*)&robot_addr_, sizeof(robot_addr_));
+  bzero(reinterpret_cast<char*>(&robot_addr_), sizeof(robot_addr_));
   robot_addr_.sin_family = AF_INET;
-  bcopy((char *)nameserver->h_addr,
-        (char *)&robot_addr_.sin_addr.s_addr,
-        (size_t)nameserver->h_length);
+  bcopy(reinterpret_cast<char*>(nameserver->h_addr),
+        reinterpret_cast<char*>(&robot_addr_.sin_addr.s_addr),
+        static_cast<size_t>(nameserver->h_length));
   robot_addr_.sin_port = htons(30003);
 }
 
@@ -175,34 +175,32 @@ void URRealtimeInterface::ConnectToRobot()
     throw std::runtime_error("Failed to create socket");
   }
   const int enable_flag = 1;
-  const int setnodelay_res = setsockopt(socket_fd_,
-                                        IPPROTO_TCP,
-                                        TCP_NODELAY,
-                                        (char *)&enable_flag, sizeof(int));
+  const int setnodelay_res
+      = setsockopt(socket_fd_, IPPROTO_TCP, TCP_NODELAY,
+                   reinterpret_cast<const void*>(&enable_flag), sizeof(int));
   if (setnodelay_res != 0)
   {
     perror(nullptr);
     throw std::runtime_error("Failed to enable TCP_NODELAY");
   }
-  const int setquickack_res = setsockopt(socket_fd_,
-                                         IPPROTO_TCP,
-                                         TCP_QUICKACK,
-                                         (char *)&enable_flag, sizeof(int));
+  const int setquickack_res
+      = setsockopt(socket_fd_, IPPROTO_TCP, TCP_QUICKACK,
+                   reinterpret_cast<const void*>(&enable_flag), sizeof(int));
   if (setquickack_res != 0)
   {
     perror(nullptr);
     throw std::runtime_error("Failed to enable TCP_QUICKACK");
   }
-  const int setreuseaddr_res = setsockopt(socket_fd_,
-                                          SOL_SOCKET,
-                                          SO_REUSEADDR,
-                                          (char *)&enable_flag, sizeof(int));
+  const int setreuseaddr_res
+      = setsockopt(socket_fd_, SOL_SOCKET, SO_REUSEADDR,
+                   reinterpret_cast<const void*>(&enable_flag), sizeof(int));
   if (setreuseaddr_res != 0)
   {
     perror(nullptr);
     throw std::runtime_error("Failed to enable SO_REUSEADDR");
   }
-  connect(socket_fd_, (struct sockaddr *)&robot_addr_, sizeof(robot_addr_));
+  connect(socket_fd_, reinterpret_cast<struct sockaddr*>(&robot_addr_),
+          sizeof(robot_addr_));
   // Since the socket is nonblocking
   // we must select() on it to make sure it works
   fd_set writefds;
@@ -211,11 +209,8 @@ void URRealtimeInterface::ConnectToRobot()
   struct timeval timeout;
   timeout.tv_sec = 10;
   timeout.tv_usec = 0;
-  const int select_res = select(socket_fd_ + 1,
-                                nullptr,
-                                &writefds,
-                                nullptr,
-                                &timeout);
+  const int select_res
+      = select(socket_fd_ + 1, nullptr, &writefds, nullptr, &timeout);
   if (select_res <= 0)
   {
     perror(nullptr);
@@ -223,10 +218,8 @@ void URRealtimeInterface::ConnectToRobot()
   }
   int so_error_flag = 0;
   unsigned int flag_len = 0;
-  const int getsockopt_res = getsockopt(socket_fd_,
-                                        SOL_SOCKET,
-                                        SO_ERROR,
-                                        &so_error_flag, &flag_len);
+  const int getsockopt_res
+      = getsockopt(socket_fd_, SOL_SOCKET, SO_ERROR, &so_error_flag, &flag_len);
   if (so_error_flag < 0)
   {
     perror(nullptr);
@@ -273,27 +266,21 @@ void URRealtimeInterface::RecvLoop()
   {
     timeout.tv_sec = 0; // Do this each loop as select modifies timeout
     timeout.tv_usec = 500000; // Set timeout of 0.5 sec
-    const int select_res = select(socket_fd_ + 1,
-                                  &readfds,
-                                  nullptr,
-                                  nullptr,
-                                  &timeout);
+    const int select_res
+        = select(socket_fd_ + 1, &readfds, nullptr, nullptr, &timeout);
     if (select_res <= 0)
     {
       perror(nullptr);
       throw std::runtime_error("Failed to select");
     }
-    const ssize_t bytes_read = read(socket_fd_,
-                                    recv_buffer.data(),
-                                    recv_buffer.size());
+    const ssize_t bytes_read
+        = read(socket_fd_, recv_buffer.data(), recv_buffer.size());
     if (bytes_read > 0)
     {
       const int enable_flag = 1;
-      const int setquickack_res = setsockopt(socket_fd_,
-                                             IPPROTO_TCP,
-                                             TCP_QUICKACK,
-                                             (char *)&enable_flag,
-                                             sizeof(int));
+      const int setquickack_res = setsockopt(
+          socket_fd_, IPPROTO_TCP, TCP_QUICKACK,
+          reinterpret_cast<const void*>(&enable_flag), sizeof(int));
       if (setquickack_res != 0)
       {
         connected_.store(false);
@@ -337,16 +324,15 @@ void URRealtimeInterface::RecvLoop()
 bool URRealtimeInterface::SendURScriptCommand(const std::string& command)
 {
   const char command_end = '\n';
-  const char last_command_char = (command.size() > 0) ? (char)(command.back())
-                                                      : '\0';
+  const char last_command_char
+      = (command.size() > 0) ? static_cast<char>(command.back()) : '\0';
   const bool valid_command_format = (last_command_char == command_end);
   const bool connected = connected_.load();
   if (valid_command_format && connected)
   {
-    const ssize_t bytes_written = write(socket_fd_,
-                                        command.c_str(),
-                                        command.size());
-    if (bytes_written == (ssize_t)command.size())
+    const ssize_t bytes_written
+        = write(socket_fd_, command.c_str(), command.size());
+    if (bytes_written == static_cast<ssize_t>(command.size()))
     {
       return true;
     }

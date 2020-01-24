@@ -27,7 +27,7 @@ RobotiqFTModbusRtuInterface::RobotiqFTModbusRtuInterface(
                              + error_msg);
   }
   const int mss_ret = modbus_set_slave(modbus_interface_ptr_,
-                                       (int)sensor_slave_id);
+                                       static_cast<int>(sensor_slave_id));
   if (mss_ret != 0)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -74,12 +74,12 @@ Eigen::Matrix<double, 6, 1> RobotiqFTModbusRtuInterface::GetCurrentForceTorque()
   memcpy(&raw_ty, &raw_ft_buffer[4], sizeof(int16_t));
   memcpy(&raw_tz, &raw_ft_buffer[5], sizeof(int16_t));
   Eigen::Matrix<double, 6, 1> ft;
-  ft(0, 0) = (double)raw_fx / 100.0;
-  ft(1, 0) = (double)raw_fy / 100.0;
-  ft(2, 0) = (double)raw_fz / 100.0;
-  ft(3, 0) = (double)raw_tx / 1000.0;
-  ft(4, 0) = (double)raw_ty / 1000.0;
-  ft(5, 0) = (double)raw_tz / 1000.0;
+  ft(0, 0) = static_cast<double>(raw_fx) / 100.0;
+  ft(1, 0) = static_cast<double>(raw_fy) / 100.0;
+  ft(2, 0) = static_cast<double>(raw_fz) / 100.0;
+  ft(3, 0) = static_cast<double>(raw_tx) / 1000.0;
+  ft(4, 0) = static_cast<double>(raw_ty) / 1000.0;
+  ft(5, 0) = static_cast<double>(raw_tz) / 1000.0;
   return ft;
 }
 
@@ -103,9 +103,9 @@ Eigen::Vector3d RobotiqFTModbusRtuInterface::GetCurrentAcceleration()
   memcpy(&raw_ay, &raw_acc_buffer[1], sizeof(int16_t));
   memcpy(&raw_az, &raw_acc_buffer[2], sizeof(int16_t));
   Eigen::Vector3d acc;
-  acc.x() = (double)raw_ax / 1000.0;
-  acc.y() = (double)raw_ay / 1000.0;
-  acc.z() = (double)raw_az / 1000.0;
+  acc.x() = static_cast<double>(raw_ax) / 1000.0;
+  acc.y() = static_cast<double>(raw_ay) / 1000.0;
+  acc.z() = static_cast<double>(raw_az) / 1000.0;
   acc = acc * 9.806;
   return acc;
 }
@@ -123,18 +123,18 @@ std::string RobotiqFTModbusRtuInterface::ReadSerialNumber()
     throw std::runtime_error(
           "Failed to read Serial Number registers with error: " + error_msg);
   }
-  const uint64_t raw_sn 
-      = (uint64_t)(raw_sn_buffer[3] << 16) + (uint64_t)raw_sn_buffer[2];
+  const uint64_t raw_sn
+      = static_cast<uint64_t>(raw_sn_buffer[3] << 16)
+          + static_cast<uint64_t>(raw_sn_buffer[2]);
   if (raw_sn > 0)
   {
     const int max_str_len = 128;
     char sn_str_buffer[max_str_len];
-    const int written = snprintf(sn_str_buffer,
-                                 max_str_len - 1,
-                                 "%c%c%c-%.4lu",
-                                 (char)(raw_sn_buffer[0] >> 8),
-                                 (char)(raw_sn_buffer[0] & 0xff),
-                                 (char)(raw_sn_buffer[1] >> 8), raw_sn);
+    const int written
+        = snprintf(sn_str_buffer, max_str_len - 1, "%c%c%c-%.4lu",
+                   static_cast<char>(raw_sn_buffer[0] >> 8),
+                   static_cast<char>(raw_sn_buffer[0] & 0xff),
+                   static_cast<char>(raw_sn_buffer[1] >> 8), raw_sn);
     if (written <= 0)
     {
       throw std::runtime_error("written <= 0");
@@ -167,14 +167,13 @@ std::string RobotiqFTModbusRtuInterface::ReadFirmwareVersion()
   const int max_str_len = 128;
   char fw_str_buffer[max_str_len];
   const int written
-      = snprintf(fw_str_buffer, max_str_len - 1,
-                 "%c%c%c-%hhu.%hhu.%hhu",
-                 (char)(raw_fw_buffer[0] >> 8),
-                 (char)(raw_fw_buffer[0] & 0xff),
-                 (char)(raw_fw_buffer[1] >> 8),
-                 (char)(raw_fw_buffer[1] & 0xff),
-                 (char)(raw_fw_buffer[2] >> 8),
-                 (char)(raw_fw_buffer[2] & 0xff));
+      = snprintf(fw_str_buffer, max_str_len - 1, "%c%c%c-%hhu.%hhu.%hhu",
+                 static_cast<char>(raw_fw_buffer[0] >> 8),
+                 static_cast<char>(raw_fw_buffer[0] & 0xff),
+                 static_cast<char>(raw_fw_buffer[1] >> 8),
+                 static_cast<char>(raw_fw_buffer[1] & 0xff),
+                 static_cast<char>(raw_fw_buffer[2] >> 8),
+                 static_cast<char>(raw_fw_buffer[2] & 0xff));
   if (written <= 0)
   {
     throw std::runtime_error("written <= 0");

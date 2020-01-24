@@ -158,8 +158,8 @@ int main(int argc, char** argv)
       = nhp.param(std::string("socketcan_interface"),
                   DEFAULT_SOCKETCAN_INTERFACE);
   const uint8_t sensor_base_can_id
-      = (uint8_t)nhp.param(std::string("sensor_base_can_id"),
-                           DEFAULT_SENSOR_BASE_CAN_ID);
+      = static_cast<uint8_t>(nhp.param(std::string("sensor_base_can_id"),
+                                       DEFAULT_SENSOR_BASE_CAN_ID));
   const double poll_rate
       = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
   const std::string status_topic
@@ -170,8 +170,8 @@ int main(int argc, char** argv)
   const std::string sensor_frame
       = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
   const uint8_t sensor_calibration_index
-      = (uint8_t)nhp.param(std::string("sensor_calibration_index"),
-                           DEFAULT_SENSOR_CALIBRATION);
+      = static_cast<uint8_t>(nhp.param(std::string("sensor_calibration_index"),
+                                       DEFAULT_SENSOR_CALIBRATION));
   // Start the driver
   ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(
       nh, status_topic, reset_or_set_bias_service, sensor_frame, can_interface,

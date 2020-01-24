@@ -114,8 +114,8 @@ int main(int argc, char** argv)
       = nhp.param(std::string("modbus_rtu_interface"),
                   DEFAULT_MODBUS_RTU_INTERFACE);
   const uint16_t sensor_slave_id
-      = (uint16_t)nhp.param(std::string("sensor_slave_id"),
-                            DEFAULT_SENSOR_SLAVE_ID);
+      = static_cast<uint16_t>(nhp.param(std::string("sensor_slave_id"),
+                                        DEFAULT_SENSOR_SLAVE_ID));
   const double poll_rate
       = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
   const std::string status_topic
