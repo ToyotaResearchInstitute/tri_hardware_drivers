@@ -33,7 +33,7 @@ using common_robotics_utilities::math::Multiply;
 using common_robotics_utilities::math::Divide;
 using common_robotics_utilities::utility::IsSubset;
 using common_robotics_utilities::utility::SetsEqual;
-using common_robotics_utilities::utility::GetKeys;
+using common_robotics_utilities::utility::GetKeysFromMapLike;
 using common_robotics_utilities::conversions::StdVectorDoubleToEigenVectorXd;
 using common_robotics_utilities::conversions::EigenVectorXdToStdVectorDouble;
 using common_robotics_utilities::time_optimal_trajectory_parametrization
@@ -84,7 +84,7 @@ public:
     current_config_valid_ = false;
     current_config_ = std::vector<double>();
     current_velocities_ = std::vector<double>();
-    joint_names_ = GetKeys(joint_limits);
+    joint_names_ = GetKeysFromMapLike<std::string, JointLimits>(joint_limits);
     position_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
     last_position_errors_ = std::vector<double>(joint_names_.size(), 0.0);
     joint_position_limits_.resize(joint_names_.size());
