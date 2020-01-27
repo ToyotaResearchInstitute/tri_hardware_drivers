@@ -24,6 +24,27 @@
 
 namespace ati_netcanoem_ft_driver
 {
+class AtiNetCanOemFirmwareVersion
+{
+private:
+  uint16_t build_number_ = 0;
+  uint8_t major_version_ = 0;
+  uint8_t minor_version_ = 0;
+
+public:
+  AtiNetCanOemFirmwareVersion(
+      const uint16_t build_number, const uint8_t major_version,
+      const uint8_t minor_version)
+      : build_number_(build_number), major_version_(major_version),
+        minor_version_(minor_version) {}
+
+  uint16_t BuildNumber() const { return build_number_; }
+
+  uint8_t MajorVersion() const { return major_version_; }
+
+  uint8_t MinorVersion() const { return minor_version_; }
+};
+
 class AtiNetCanOemInterface
 {
 private:
@@ -116,6 +137,7 @@ private:
   };
 
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   AtiNetCanOemInterface(
       const std::function<void(const std::string&)>& logging_fn,
@@ -156,7 +178,7 @@ public:
 
   bool SetSensorCanRate(const uint8_t rate_divisor);
 
-  std::pair<std::pair<uint8_t, uint8_t>, uint16_t> ReadFirmwareVersion();
+  AtiNetCanOemFirmwareVersion ReadFirmwareVersion();
 
 private:
 

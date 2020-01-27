@@ -56,16 +56,15 @@ public:
                                       can_interface,
                                       sensor_base_can_id));
     const std::string serial_num = sensor_ptr_->ReadSerialNumber();
-    const std::pair<std::pair<uint8_t, uint8_t>, uint16_t> firmware_version
-        = sensor_ptr_->ReadFirmwareVersion();
+    const auto firmware_version = sensor_ptr_->ReadFirmwareVersion();
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Connected to sensor with serial # %s and firmware"
                    " version %hhu (major version) %hhu (minor version)"
                    " %hu (build)",
                    serial_num.c_str(),
-                   firmware_version.first.first,
-                   firmware_version.first.second,
-                   firmware_version.second);
+                   firmware_version.MajorVersion(),
+                   firmware_version.MinorVersion(),
+                   firmware_version.BuildNumber());
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Attempting to load active calibration %hhu...",
                    sensor_calibration_index);
@@ -159,8 +158,8 @@ int main(int argc, char** argv)
       = nhp.param(std::string("socketcan_interface"),
                   DEFAULT_SOCKETCAN_INTERFACE);
   const uint8_t sensor_base_can_id
-      = (uint8_t)nhp.param(std::string("sensor_base_can_id"),
-                           DEFAULT_SENSOR_BASE_CAN_ID);
+      = static_cast<uint8_t>(nhp.param(std::string("sensor_base_can_id"),
+                                       DEFAULT_SENSOR_BASE_CAN_ID));
   const double poll_rate
       = std::abs(nhp.param(std::string("poll_rate"), DEFAULT_POLL_RATE));
   const std::string status_topic
@@ -171,8 +170,8 @@ int main(int argc, char** argv)
   const std::string sensor_frame
       = nhp.param(std::string("sensor_frame"), DEFAULT_SENSOR_FRAME);
   const uint8_t sensor_calibration_index
-      = (uint8_t)nhp.param(std::string("sensor_calibration_index"),
-                           DEFAULT_SENSOR_CALIBRATION);
+      = static_cast<uint8_t>(nhp.param(std::string("sensor_calibration_index"),
+                                       DEFAULT_SENSOR_CALIBRATION));
   // Start the driver
   ati_netcanoem_ft_driver::AtiNetCanOemDriver sensor(
       nh, status_topic, reset_or_set_bias_service, sensor_frame, can_interface,

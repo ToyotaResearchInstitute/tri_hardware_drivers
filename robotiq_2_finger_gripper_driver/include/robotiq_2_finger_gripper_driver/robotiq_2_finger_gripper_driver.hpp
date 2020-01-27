@@ -89,26 +89,30 @@ public:
     }
     const uint8_t raw_gripper_status_byte = received_bytes[0];
     gripper_activation_
-        = (GRIPPER_ACTIVATION)(raw_gripper_status_byte & GACT_MASK);
+        = static_cast<GRIPPER_ACTIVATION>(raw_gripper_status_byte & GACT_MASK);
     action_status_
-        = (ACTION_STATUS)((raw_gripper_status_byte & GGTO_MASK) >> 3);
+        = static_cast<ACTION_STATUS>(
+            (raw_gripper_status_byte & GGTO_MASK) >> 3);
     gripper_status_
-        = (GRIPPER_STATUS)((raw_gripper_status_byte & GSTA_MASK) >> 4);
+        = static_cast<GRIPPER_STATUS>(
+            (raw_gripper_status_byte & GSTA_MASK) >> 4);
     object_status_
-        = (OBJECT_STATUS)((raw_gripper_status_byte & GOBJ_MASK) >> 6);
+        = static_cast<OBJECT_STATUS>(
+            (raw_gripper_status_byte & GOBJ_MASK) >> 6);
     if ((object_status_ == FINGERS_IN_MOTION)
         && (action_status_ == GRIPPER_STOPPED))
     {
       object_status_ = FINGERS_STOPPED;
     }
     const uint8_t raw_fault_status_byte = received_bytes[2];
-    fault_status_ = (FAULT_STATUS)(raw_fault_status_byte & GFLT_MASK);
+    fault_status_
+        = static_cast<FAULT_STATUS>(raw_fault_status_byte & GFLT_MASK);
     const uint8_t raw_target_position = received_bytes[3];
     const uint8_t raw_actual_position = received_bytes[4];
     const uint8_t raw_actual_current = received_bytes[5];
-    target_position_ = (double)raw_target_position / 255.0;
-    actual_position_ = (double)raw_actual_position / 255.0;
-    actual_current_ = (double)raw_actual_current / 255.0;
+    target_position_ = static_cast<double>(raw_target_position) / 255.0;
+    actual_position_ = static_cast<double>(raw_actual_position) / 255.0;
+    actual_current_ = static_cast<double>(raw_actual_current) / 255.0;
   }
 
   inline GRIPPER_ACTIVATION GripperActivation() const
@@ -238,17 +242,17 @@ public:
 
   inline uint8_t PositionCommand() const
   {
-    return (uint8_t)(255.0 * target_position_);
+    return static_cast<uint8_t>(255.0 * target_position_);
   }
 
   inline uint8_t SpeedCommand() const
   {
-    return (uint8_t)(255.0 * target_speed_);
+    return static_cast<uint8_t>(255.0 * target_speed_);
   }
 
   inline uint8_t ForceCommand() const
   {
-    return (uint8_t)(255.0 * target_force_);
+    return static_cast<uint8_t>(255.0 * target_force_);
   }
 };
 
@@ -265,7 +269,7 @@ protected:
 
 public:
 
-  Robotiq2FingerGripperModbusInterface(
+  explicit Robotiq2FingerGripperModbusInterface(
       const std::function<void(const std::string&)>& logging_fn);
 
   virtual ~Robotiq2FingerGripperModbusInterface();

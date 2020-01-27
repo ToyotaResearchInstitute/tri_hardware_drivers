@@ -21,7 +21,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
   can_socket_fd_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (can_socket_fd_ <= 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("Failed to create socketcan socket");
   }
   Log("...CAN socket opened");
@@ -35,33 +35,47 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
   ioctl(can_socket_fd_, SIOCGIFINDEX, &interface);
   // Set interface options - we filter only the CAN IDs we care about
   struct can_filter filter[14];
-  filter[0].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x0;
+  filter[0].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x0;
   filter[0].can_mask = CAN_SFF_MASK;
-  filter[1].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x1;
+  filter[1].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x1;
   filter[1].can_mask = CAN_SFF_MASK;
-  filter[2].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x2;
+  filter[2].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x2;
   filter[2].can_mask = CAN_SFF_MASK;
-  filter[3].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x3;
+  filter[3].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x3;
   filter[3].can_mask = CAN_SFF_MASK;
-  filter[4].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x4;
+  filter[4].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x4;
   filter[4].can_mask = CAN_SFF_MASK;
-  filter[5].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x5;
+  filter[5].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x5;
   filter[5].can_mask = CAN_SFF_MASK;
-  filter[6].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x6;
+  filter[6].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x6;
   filter[6].can_mask = CAN_SFF_MASK;
-  filter[7].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x7;
+  filter[7].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x7;
   filter[7].can_mask = CAN_SFF_MASK;
-  filter[8].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x8;
+  filter[8].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x8;
   filter[8].can_mask = CAN_SFF_MASK;
-  filter[9].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0x9;
+  filter[9].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0x9;
   filter[9].can_mask = CAN_SFF_MASK;
-  filter[10].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0xc;
+  filter[10].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0xc;
   filter[10].can_mask = CAN_SFF_MASK;
-  filter[11].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0xd;
+  filter[11].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0xd;
   filter[11].can_mask = CAN_SFF_MASK;
-  filter[12].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0xe;
+  filter[12].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0xe;
   filter[12].can_mask = CAN_SFF_MASK;
-  filter[13].can_id   = (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | 0xf;
+  filter[13].can_id
+      = static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS) | 0xf;
   filter[13].can_mask = CAN_SFF_MASK;
   // Apply the filters
   Log("Setting CAN ID filters...");
@@ -72,7 +86,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
                                            sizeof(filter));
   if (setsockopt_result != 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("setsockopt failed");
   }
   Log("...set CAN ID filters");
@@ -88,7 +102,7 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
                    sizeof(read_timeout));
   if (setsockopt_timeout_result != 0)
   {
-    perror(NULL);
+    perror(nullptr);
     throw std::runtime_error("setsockopt timeout configuration failed");
   }
   Log("...socket timeout set");
@@ -97,9 +111,9 @@ AtiNetCanOemInterface::AtiNetCanOemInterface(
   can_interface.can_family = AF_CAN;
   can_interface.can_ifindex = interface.ifr_ifindex;
   Log("Binding to CAN interface...");
-  const int bind_result = bind(can_socket_fd_,
-                               (struct sockaddr *)&can_interface,
-                               sizeof(can_interface));
+  const int bind_result = bind(
+      can_socket_fd_, reinterpret_cast<struct sockaddr *>(&can_interface),
+      sizeof(can_interface));
   if (bind_result != 0)
   {
     throw std::runtime_error("Failed to bind socketcan socket");
@@ -169,19 +183,19 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
   const uint16_t status_code
       = common_robotics_utilities::serialization
         ::DeserializeNetworkMemcpyable<uint16_t>(
-            response_msg_1.Payload(), 0).first;
+            response_msg_1.Payload(), 0).Value();
   raw_values(0, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 2).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_1.Payload(), 2).Value());
   raw_values(2, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 4).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_1.Payload(), 4).Value());
   raw_values(4, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_1.Payload(), 6).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_1.Payload(), 6).Value());
   const DataElement& response_msg_2 = response[1];
   if (response_msg_2.Opcode() != READ_SG_B)
   {
@@ -192,17 +206,17 @@ AtiNetCanOemInterface::ReadRawStrainGaugeData()
     throw std::runtime_error("Invalid payload data for read strain gauges");
   }
   raw_values(1, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 0).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_2.Payload(), 0).Value());
   raw_values(3, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 2).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_2.Payload(), 2).Value());
   raw_values(5, 0)
-      = (double)common_robotics_utilities::serialization
-        ::DeserializeNetworkMemcpyable<int16_t>(
-            response_msg_2.Payload(), 4).first;
+      = static_cast<double>(common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<int16_t>(
+              response_msg_2.Payload(), 4).Value());
   return std::make_pair(status_code, raw_values);
 }
 
@@ -214,8 +228,8 @@ bool AtiNetCanOemInterface::LoadNewActiveCalibration(const uint8_t calibration)
     const Eigen::Matrix<double, 6, 6> raw_calibration_matrix
         = ReadActiveCalibrationMatrix();
     const std::pair<uint32_t, uint32_t> counts = ReadCountsPerUnit();
-    const double counts_per_force = (double)counts.first;
-    const double counts_per_torque = (double)counts.second;
+    const double counts_per_force = static_cast<double>(counts.first);
+    const double counts_per_torque = static_cast<double>(counts.second);
     active_force_torque_inv_counts_vector_(0, 0) = 1.0 / counts_per_force;
     active_force_torque_inv_counts_vector_(1, 0) = 1.0 / counts_per_force;
     active_force_torque_inv_counts_vector_(2, 0) = 1.0 / counts_per_force;
@@ -272,11 +286,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 0)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_1.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_1.Payload(), 0).Value();
   matrix_row(0, 1)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_1.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_1.Payload(), 4).Value();
   const DataElement& response_msg_2 = response.at(1);
   if (response_msg_2.Opcode() != READ_MATRIX_ROW_B)
   {
@@ -287,11 +303,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 2)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_2.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_2.Payload(), 0).Value();
   matrix_row(0, 3)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_2.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_2.Payload(), 4).Value();
   const DataElement& response_msg_3 = response.at(2);
   if (response_msg_3.Opcode() != READ_MATRIX_ROW_C)
   {
@@ -302,11 +320,13 @@ AtiNetCanOemInterface::ReadActiveCalibrationMatrixRow(const uint8_t row)
     throw std::runtime_error("Invalid data for read calibration matrix row");
   }
   matrix_row(0, 4)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_3.Payload(), 0).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_3.Payload(), 0).Value();
   matrix_row(0, 5)
-      = common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<float>(
-          response_msg_3.Payload(), 4).first;
+      = common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<float>(
+              response_msg_3.Payload(), 4).Value();
   return matrix_row;
 }
 
@@ -393,11 +413,11 @@ std::pair<uint32_t, uint32_t> AtiNetCanOemInterface::ReadCountsPerUnit()
   const uint32_t force_counts
       = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
-              response_msg.Payload(), 0).first;
+              response_msg.Payload(), 0).Value();
   const uint32_t torque_counts
       = common_robotics_utilities::serialization
           ::DeserializeNetworkMemcpyable<uint32_t>(
-              response_msg.Payload(), 4).first;
+              response_msg.Payload(), 4).Value();
   return std::make_pair(force_counts, torque_counts);
 }
 
@@ -452,7 +472,7 @@ std::vector<uint16_t> AtiNetCanOemInterface::ReadDiagnosticADCVoltages()
     const uint16_t adc_voltage
         = common_robotics_utilities::serialization
             ::DeserializeNetworkMemcpyable<uint16_t>(
-                response_msg.Payload(), 0).first;
+                response_msg.Payload(), 0).Value();
     adc_voltages.push_back(adc_voltage);
   }
   return adc_voltages;
@@ -506,8 +526,7 @@ bool AtiNetCanOemInterface::SetSensorCanRate(const uint8_t rate_divisor)
   return true;
 }
 
-std::pair<std::pair<uint8_t, uint8_t>, uint16_t>
-AtiNetCanOemInterface::ReadFirmwareVersion()
+AtiNetCanOemFirmwareVersion AtiNetCanOemInterface::ReadFirmwareVersion()
 {
   Log("Trying to read firmware version...");
   const DataElement read_firmware(READ_FIRMWARE_VERSION);
@@ -527,13 +546,14 @@ AtiNetCanOemInterface::ReadFirmwareVersion()
   {
     throw std::runtime_error("Invalid payload data for read firmware version");
   }
-  const uint8_t major_version = response_msg.Payload()[0];
-  const uint8_t minor_version = response_msg.Payload()[1];
+  const uint8_t major_version = response_msg.Payload().at(0);
+  const uint8_t minor_version = response_msg.Payload().at(1);
   const uint16_t build_number =
-      common_robotics_utilities::serialization::DeserializeNetworkMemcpyable<uint16_t>(
-        response_msg.Payload(), 2).first;
-  return std::make_pair(std::make_pair(major_version, minor_version),
-                        build_number);
+      common_robotics_utilities::serialization
+          ::DeserializeNetworkMemcpyable<uint16_t>(
+              response_msg.Payload(), 2).Value();
+  return AtiNetCanOemFirmwareVersion(
+      build_number, major_version, minor_version);
 }
 
 std::vector<AtiNetCanOemInterface::DataElement>
@@ -544,16 +564,18 @@ AtiNetCanOemInterface::SendFrameAndAwaitResponse(
 {
   const std::chrono::duration<double> timeout_duration(timeout);
   // Assemble into CAN frame
-  struct can_frame frame;
-  frame.can_id =
-      (uint32_t)(sensor_base_can_id_ << OPCODE_BITS) | command.Opcode();
-  const std::vector<uint8_t>& payload = command.Payload();
-  frame.can_dlc = (uint8_t)payload.size();
-  memcpy(frame.data, payload.data(), payload.size());
+  struct can_frame out_frame;
+  out_frame.can_id =
+      static_cast<uint32_t>(sensor_base_can_id_ << OPCODE_BITS)
+      | command.Opcode();
+  const std::vector<uint8_t>& out_payload = command.Payload();
+  out_frame.can_dlc = static_cast<uint8_t>(out_payload.size());
+  memcpy(out_frame.data, out_payload.data(), out_payload.size());
   // Send the frame
-  const ssize_t bytes_sent = write(can_socket_fd_, &frame, sizeof(frame));
+  const ssize_t bytes_sent
+      = write(can_socket_fd_, &out_frame, sizeof(out_frame));
   // Check that the frame was sent
-  if (bytes_sent != sizeof(frame))
+  if (bytes_sent != sizeof(out_frame))
   {
     throw std::runtime_error("Failure to send CAN frame");
   }
@@ -564,25 +586,25 @@ AtiNetCanOemInterface::SendFrameAndAwaitResponse(
     std::vector<DataElement> response_frames;
     while (response_frames.size() < num_response_frames)
     {
-      struct can_frame frame;
-      const ssize_t read_size = read(can_socket_fd_, &frame, CAN_MTU);
+      struct can_frame in_frame;
+      const ssize_t read_size = read(can_socket_fd_, &in_frame, CAN_MTU);
       if (read_size == CAN_MTU)
       {
-        if (frame.can_dlc <= CAN_MAX_DLEN)
+        if (in_frame.can_dlc <= CAN_MAX_DLEN)
         {
-          const uint8_t opcode = (uint8_t)frame.can_id & 0xF;
-          std::vector<uint8_t> payload;
-          if (frame.can_dlc > 0)
+          const uint8_t opcode = static_cast<uint8_t>(in_frame.can_id) & 0xF;
+          std::vector<uint8_t> in_payload;
+          if (in_frame.can_dlc > 0)
           {
-            payload.insert(payload.end(),
-                           frame.data,
-                           frame.data + frame.can_dlc);
+            in_payload.insert(in_payload.end(),
+                              in_frame.data,
+                              in_frame.data + in_frame.can_dlc);
           }
-          response_frames.push_back(DataElement(opcode, payload));
+          response_frames.push_back(DataElement(opcode, in_payload));
         }
         else
         {
-          throw std::runtime_error("Invalid frame.can_dlc size");
+          throw std::runtime_error("Invalid in_frame.can_dlc size");
         }
       }
       else if (read_size < 0)
