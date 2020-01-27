@@ -31,7 +31,7 @@ using common_robotics_utilities::math::Sub;
 using common_robotics_utilities::math::Multiply;
 using common_robotics_utilities::math::Divide;
 using common_robotics_utilities::utility::IsSubset;
-using common_robotics_utilities::utility::GetKeys;
+using common_robotics_utilities::utility::GetKeysFromMapLike;
 
 class URPositionController
 {
@@ -83,7 +83,7 @@ public:
     target_config_ = std::vector<double>();
     current_config_ = std::vector<double>();
     current_velocities_ = std::vector<double>();
-    joint_names_ = GetKeys(joint_limits);
+    joint_names_ = GetKeysFromMapLike<std::string, JointLimits>(joint_limits);
     config_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
     last_config_errors_ = std::vector<double>(joint_names_.size(), 0.0);
     joint_position_limits_.resize(joint_names_.size());

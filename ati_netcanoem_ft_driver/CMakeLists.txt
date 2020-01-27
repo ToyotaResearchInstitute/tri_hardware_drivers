@@ -36,8 +36,13 @@ add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
 add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
 add_compile_options(-O3)
 add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}

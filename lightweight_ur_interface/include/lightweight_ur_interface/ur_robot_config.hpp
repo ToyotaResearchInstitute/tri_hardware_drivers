@@ -159,7 +159,8 @@ inline std::map<std::string, JointLimits> GetLimits(
       = GetDefaultLimits();
   std::map<std::string, JointLimits> joint_limits;
   const auto default_limit_pairs
-      = common_robotics_utilities::utility::GetKeysAndValues(default_joint_limits);
+      = common_robotics_utilities::utility
+          ::GetKeysAndValues<std::string, JointLimits>(default_joint_limits);
   for (size_t idx = 0; idx < default_limit_pairs.size(); idx++)
   {
     const std::string& joint_name = default_limit_pairs[idx].first;

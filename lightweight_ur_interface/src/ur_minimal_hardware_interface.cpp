@@ -21,18 +21,19 @@
 #include <lightweight_ur_interface/VelocityCommand.h>
 #include <common_robotics_utilities/print.hpp>
 #include <common_robotics_utilities/math.hpp>
-#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/ros_conversions.hpp>
 
 namespace lightweight_ur_interface
 {
-using common_robotics_utilities::conversions
+using common_robotics_utilities::ros_conversions
           ::EigenIsometry3dToGeometryPoseStamped;
-using common_robotics_utilities::conversions::EigenVector3dToGeometryVector3;
+using common_robotics_utilities::ros_conversions
+          ::EigenVector3dToGeometryVector3;
 using common_robotics_utilities::math::RotateVectorReverse;
 using common_robotics_utilities::math::RotateVector;
 using common_robotics_utilities::utility::ClampValueAndWarn;
 using common_robotics_utilities::utility::SetsEqual;
-using common_robotics_utilities::utility::GetKeys;
+using common_robotics_utilities::utility::GetKeysFromMapLike;
 
 class URMinimalHardwareInterface
 {
@@ -86,7 +87,9 @@ public:
     {
       throw std::invalid_argument("There must be exactly 6 joints");
     }
-    if (SetsEqual(joint_names_, GetKeys(joint_limits)) == false)
+    if (SetsEqual(joint_names_,
+                  GetKeysFromMapLike<std::string, JointLimits>(joint_limits))
+        == false)
     {
       throw std::invalid_argument(
             "Ordered joint names do not match names provided with limits");

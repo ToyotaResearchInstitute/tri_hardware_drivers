@@ -22,20 +22,21 @@
 #include <lightweight_ur_interface/VelocityCommand.h>
 #include <common_robotics_utilities/print.hpp>
 #include <common_robotics_utilities/math.hpp>
-#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/ros_conversions.hpp>
 #include <common_robotics_utilities/serialization.hpp>
 
 namespace lightweight_ur_interface
 {
-using common_robotics_utilities::conversions
+using common_robotics_utilities::ros_conversions
           ::EigenIsometry3dToGeometryPoseStamped;
-using common_robotics_utilities::conversions::EigenVector3dToGeometryVector3;
+using common_robotics_utilities::ros_conversions
+          ::EigenVector3dToGeometryVector3;
 using common_robotics_utilities::math::RotateVectorReverse;
 using common_robotics_utilities::math::RotateVector;
 using common_robotics_utilities::utility::ClampValueAndWarn;
 using common_robotics_utilities::serialization::SerializeNetworkMemcpyable;
 using common_robotics_utilities::utility::SetsEqual;
-using common_robotics_utilities::utility::GetKeys;
+using common_robotics_utilities::utility::GetKeysFromMapLike;
 
 class URScriptHardwareInterface
 {
@@ -119,7 +120,8 @@ private:
       std::vector<int32_t> int32_vector(vector.size());
       for (size_t idx = 0; idx < vector.size(); idx++)
       {
-        int32_vector[idx] = (int32_t)(vector[idx] * float_conversion_ratio);
+        int32_vector[idx]
+            = static_cast<int32_t>(vector[idx] * float_conversion_ratio);
       }
       return int32_vector;
     }
@@ -137,8 +139,10 @@ private:
             ConvertToInt32Vector(force_mode_limits_,
                                  float_conversion_ratio), buffer);
       SerializeKnownSizeInt32Vector(force_mode_selection_vector_, buffer);
-      SerializeNetworkMemcpyable<int32_t>((int32_t)control_mode_, buffer);
-      SerializeNetworkMemcpyable<int32_t>((int32_t)force_mode_, buffer);
+      SerializeNetworkMemcpyable<int32_t>(
+          static_cast<int32_t>(control_mode_), buffer);
+      SerializeNetworkMemcpyable<int32_t>(
+          static_cast<int32_t>(force_mode_), buffer);
       if (running_)
       {
         SerializeNetworkMemcpyable<int32_t>(1, buffer);
@@ -332,7 +336,9 @@ public:
     {
       throw std::invalid_argument("There must be exactly 6 joints");
     }
-    if (SetsEqual(joint_names_, GetKeys(joint_limits)) == false)
+    if (SetsEqual(joint_names_,
+                  GetKeysFromMapLike<std::string, JointLimits>(joint_limits))
+        == false)
     {
       throw std::invalid_argument(
             "Ordered joint names do not match names provided with limits");
@@ -406,15 +412,16 @@ public:
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Started robot realtime interface");
     // Start control program interface
-    const std::pair<int32_t, int32_t> control_program_socket_fds
+    const std::pair<int32_t, int32_t> initial_control_program_socket_fds
         = StartControlProgram(our_ip_address_,
                               control_port_,
                               FLOAT_CONVERSION_RATIO,
                               STOP_DECELERATION,
                               SPEED_ACCELERATION,
                               SPEED_COMMAND_WAIT);
-    int32_t control_program_incoming_sock_fd = control_program_socket_fds.first;
-    int32_t control_program_sock_fd = control_program_socket_fds.second;
+    int32_t control_program_incoming_sock_fd
+        = initial_control_program_socket_fds.first;
+    int32_t control_program_sock_fd = initial_control_program_socket_fds.second;
     ROS_INFO_NAMED(ros::this_node::getName(),
                    "Started robot control interface with fds %d, %d",
                    control_program_incoming_sock_fd,
@@ -433,9 +440,9 @@ public:
         const ssize_t bytes_written = write(control_program_sock_fd,
                                             buffer.data(),
                                             buffer.size());
-        if (bytes_written != (ssize_t)buffer.size())
+        if (bytes_written != static_cast<ssize_t>(buffer.size()))
         {
-          perror(NULL);
+          perror(nullptr);
           ROS_ERROR_NAMED(ros::this_node::getName(),
                           "Failed to send command with %zu bytes, "
                           "sent %zd instead", buffer.size(), bytes_written);
@@ -445,15 +452,16 @@ public:
           close(control_program_sock_fd);
           close(control_program_incoming_sock_fd);
           exit(1);
-          const std::pair<int32_t, int32_t> control_program_socket_fds
+          const std::pair<int32_t, int32_t> new_control_program_socket_fds
               = StartControlProgram(our_ip_address_,
                                     control_port_,
                                     FLOAT_CONVERSION_RATIO,
                                     STOP_DECELERATION,
                                     SPEED_ACCELERATION,
                                     SPEED_COMMAND_WAIT);
-          control_program_incoming_sock_fd = control_program_socket_fds.first;
-          control_program_sock_fd = control_program_socket_fds.second;
+          control_program_incoming_sock_fd
+              = new_control_program_socket_fds.first;
+          control_program_sock_fd = new_control_program_socket_fds.second;
           ROS_INFO_NAMED(ros::this_node::getName(),
                          "Restarted/reconnected robot control interface with"
                          " fds %d, %d",
@@ -471,9 +479,9 @@ public:
     const ssize_t bytes_written = write(control_program_sock_fd,
                                         buffer.data(),
                                         buffer.size());
-    if (bytes_written != (ssize_t)buffer.size())
+    if (bytes_written != static_cast<ssize_t>(buffer.size()))
     {
-      perror(NULL);
+      perror(nullptr);
       ROS_ERROR_NAMED(ros::this_node::getName(),
                       "Failed to send command with %zu bytes, sent %zd instead",
                       buffer.size(),
@@ -521,24 +529,18 @@ public:
                      "Opened socket for control program communication");
     }
     struct sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    bzero(reinterpret_cast<char*>(&serv_addr), sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(control_port);
     int flag = 1;
-    setsockopt(incoming_sock_fd,
-               IPPROTO_TCP, TCP_NODELAY,
-               (char *) &flag,
-               sizeof(int));
-    setsockopt(incoming_sock_fd,
-               SOL_SOCKET,
-               SO_REUSEADDR,
-               &flag,
-               sizeof(int));
-    if (bind(incoming_sock_fd,
-             (struct sockaddr *)
-             &serv_addr,
-             sizeof(serv_addr)) < 0)
+    setsockopt(
+        incoming_sock_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));
+    setsockopt(
+        incoming_sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int));
+    if (bind(incoming_sock_fd, reinterpret_cast<struct sockaddr*>(&serv_addr),
+             sizeof(serv_addr))
+        < 0)
     {
       throw std::runtime_error(
             "ERROR on binding socket for control program communication");
@@ -552,10 +554,9 @@ public:
     struct sockaddr_in cli_addr;
     socklen_t clilen;
     clilen = sizeof(cli_addr);
-    int new_sock_fd = accept(incoming_sock_fd,
-                             (struct sockaddr *)
-                             &cli_addr,
-                             &clilen);
+    int new_sock_fd = accept(
+        incoming_sock_fd, reinterpret_cast<struct sockaddr*>(&cli_addr),
+        &clilen);
     if (new_sock_fd < 0)
     {
       throw std::runtime_error(

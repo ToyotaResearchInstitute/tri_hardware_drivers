@@ -15,13 +15,13 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <common_robotics_utilities/print.hpp>
 #include <common_robotics_utilities/math.hpp>
-#include <common_robotics_utilities/conversions.hpp>
+#include <common_robotics_utilities/ros_conversions.hpp>
 #include <lightweight_ur_interface/ur_robot_config.hpp>
 
 namespace lightweight_ur_interface
 {
 using common_robotics_utilities::utility::ClampValue;
-using common_robotics_utilities::conversions::GeometryPoseToEigenIsometry3d;
+using common_robotics_utilities::ros_conversions::GeometryPoseToEigenIsometry3d;
 
 class URCartesianController
 {

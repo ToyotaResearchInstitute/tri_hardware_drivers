@@ -13,6 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <functional>
+#include <common_robotics_utilities/maybe.hpp>
 #include <common_robotics_utilities/serialization.hpp>
 
 namespace schunk_wsg_driver
@@ -69,7 +70,7 @@ inline uint16_t ComputeCRC(const std::vector<uint8_t>& buffer,
   for (size_t idx = start_idx; idx < end_idx; idx++)
   {
     const uint16_t index =  (crc ^ buffer[idx]) & 0x00FF;
-    crc = (uint16_t)(CRC_TABLE[index] ^ (crc >> 8));
+    crc = static_cast<uint16_t>(CRC_TABLE[index] ^ (crc >> 8));
   }
   return crc;
 }
@@ -189,6 +190,9 @@ enum GraspingState : uint8_t
 class WSGRawStatusMessage
 {
 private:
+  template<typename T>
+  using Deserialized
+      = common_robotics_utilities::serialization::Deserialized<T>;
 
   uint8_t command_;
   uint16_t status_;
@@ -205,7 +209,7 @@ public:
   inline const std::vector<uint8_t>& ParamBuffer() const
   { return param_buffer_; }
 
-  static std::pair<WSGRawStatusMessage, uint64_t> Deserialize(
+  static Deserialized<WSGRawStatusMessage> Deserialize(
       const std::vector<uint8_t>& buffer, const uint64_t current);
 
   uint64_t DeserializeSelf(const std::vector<uint8_t>& buffer,
@@ -286,13 +290,19 @@ public:
       max_effort_(0.0) {}
 
   inline void UpdateActualPosition(const double actual_position)
-  { actual_position_ = actual_position; }
+  {
+    actual_position_ = actual_position;
+  }
 
   inline void UpdateActualVelocity(const double actual_velocity)
-  { actual_velocity_ = actual_velocity; }
+  {
+    actual_velocity_ = actual_velocity;
+  }
 
   inline void UpdateActualEffort(const double actual_effort)
-  { actual_effort_ = actual_effort; }
+  {
+    actual_effort_ = actual_effort;
+  }
 
   inline void UpdateTargetPositionSpeedEffort(const double target_position,
                                               const double max_speed,
@@ -303,23 +313,17 @@ public:
     max_effort_ = max_effort;
   }
 
-  inline double ActualPosition() const
-  { return actual_position_; }
+  inline double ActualPosition() const { return actual_position_; }
 
-  inline double ActualVelocity() const
-  { return actual_velocity_; }
+  inline double ActualVelocity() const { return actual_velocity_; }
 
-  inline double ActualEffort() const
-  { return actual_effort_; }
+  inline double ActualEffort() const { return actual_effort_; }
 
-  inline double TargetPosition() const
-  { return target_position_; }
+  inline double TargetPosition() const { return target_position_; }
 
-  inline double MaxSpeed() const
-  { return max_speed_; }
+  inline double MaxSpeed() const { return max_speed_; }
 
-  inline double MaxEffort() const
-  { return max_effort_; }
+  inline double MaxEffort() const { return max_effort_; }
 };
 
 class PhysicalLimits
@@ -364,23 +368,23 @@ public:
       nominal_force_(0.0),
       overdrive_force_(0.0) {}
 
-  inline double StrokeMM() const
-  { return stroke_mm_; }
+  inline double StrokeMM() const { return stroke_mm_; }
 
   inline std::pair<double, double> MinMaxSpeedMMPerS() const
-  { return std::make_pair(min_speed_mm_per_s_, max_speed_mm_per_s_); }
+  {
+    return std::make_pair(min_speed_mm_per_s_, max_speed_mm_per_s_);
+  }
 
   inline std::pair<double, double> MinMaxAccelMMPerSS() const
-  { return std::make_pair(min_acc_mm_per_ss_, max_acc_mm_per_ss_); }
+  {
+    return std::make_pair(min_acc_mm_per_ss_, max_acc_mm_per_ss_);
+  }
 
-  inline double MinForce() const
-  { return min_force_; }
+  inline double MinForce() const { return min_force_; }
 
-  inline double NominalForce() const
-  { return nominal_force_; }
+  inline double NominalForce() const { return nominal_force_; }
 
-  inline double OverdriveForce() const
-  { return overdrive_force_; }
+  inline double OverdriveForce() const { return overdrive_force_; }
 
   std::string Print() const;
 };
@@ -388,9 +392,11 @@ public:
 class WSGInterface
 {
 private:
+  template<typename T>
+  using OwningMaybe = common_robotics_utilities::OwningMaybe<T>;
 
   std::mutex status_mutex_;
-  std::pair<PhysicalLimits, bool> maybe_physical_limits_;
+  OwningMaybe<PhysicalLimits> maybe_physical_limits_;
   GripperMotionStatus motion_status_;
   std::function<void(const std::string&)> logging_fn_;
 
@@ -398,6 +404,8 @@ public:
 
   WSGInterface(const std::function<void(const std::string&)>& logging_fn)
     : logging_fn_(logging_fn) {}
+
+  virtual ~WSGInterface() {}
 
   inline void Log(const std::string& message) { logging_fn_(message); }
 
@@ -424,7 +432,7 @@ protected:
   double GetCommandEffortN(const double target_effort,
                            const PhysicalLimits& limits);
 
-  std::pair<WSGRawStatusMessage, bool> SendCommandAndAwaitStatus(
+  OwningMaybe<WSGRawStatusMessage> SendCommandAndAwaitStatus(
       const WSGRawCommandMessage& command, const double timeout);
 
   bool StopGripper();

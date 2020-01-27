@@ -72,7 +72,7 @@ private:
     finger_state.target_percent_closed = status.TargetPosition();
     finger_state.actual_percent_closed = status.ActualPosition();
     finger_state.actual_percent_current = status.ActualCurrent();
-    finger_state.object_status = (uint8_t)status.ObjectStatus();
+    finger_state.object_status = static_cast<uint8_t>(status.ObjectStatus());
     return finger_state;
   }
 
@@ -111,12 +111,17 @@ private:
     state_msg.finger_c_state = ConvertActuatorStatus(status.FingerCStatus());
     state_msg.scissor_state = ConvertActuatorStatus(status.ScissorStatus());
     state_msg.gripper_activation_state
-        = (uint8_t)status.GripperActivationStatus();
-    state_msg.gripper_mode_state = (uint8_t)status.GripperModeStatus();
-    state_msg.gripper_action_state = (uint8_t)status.GripperActionStatus();
-    state_msg.gripper_system_state = (uint8_t)status.GripperSystemStatus();
-    state_msg.gripper_motion_state = (uint8_t)status.GripperMotionStatus();
-    state_msg.gripper_fault_state = (uint8_t)status.GripperFaultStatus();
+        = static_cast<uint8_t>(status.GripperActivationStatus());
+    state_msg.gripper_mode_state
+        = static_cast<uint8_t>(status.GripperModeStatus());
+    state_msg.gripper_action_state
+        = static_cast<uint8_t>(status.GripperActionStatus());
+    state_msg.gripper_system_state
+        = static_cast<uint8_t>(status.GripperSystemStatus());
+    state_msg.gripper_motion_state
+        = static_cast<uint8_t>(status.GripperMotionStatus());
+    state_msg.gripper_fault_state
+        = static_cast<uint8_t>(status.GripperFaultStatus());
     state_msg.header.stamp = ros::Time::now();
     status_pub_.publish(state_msg);
   }
@@ -170,8 +175,8 @@ int main(int argc, char** argv)
         = nhp.param(std::string("gripper_port"),
                     DEFAULT_GRIPPER_PORT);
     const uint16_t gripper_slave_id
-        = (uint16_t)nhp.param(std::string("gripper_slave_id"),
-                              DEFAULT_GRIPPER_SLAVE_ID);
+        = static_cast<uint16_t>(nhp.param(std::string("gripper_slave_id"),
+                                          DEFAULT_GRIPPER_SLAVE_ID));
     // Make the interface
     std::shared_ptr<Robotiq3FingerGripperModbusInterface> gripper_interface_ptr(
           new Robotiq3FingerGripperModbusInterface(logging_fn));
@@ -196,8 +201,8 @@ int main(int argc, char** argv)
         = nhp.param(std::string("gripper_baud_rate"),
                     DEFAULT_GRIPPER_BAUD_RATE);
     const uint16_t gripper_slave_id
-        = (uint16_t)nhp.param(std::string("gripper_slave_id"),
-                              DEFAULT_GRIPPER_SLAVE_ID);
+        = static_cast<uint16_t>(nhp.param(std::string("gripper_slave_id"),
+                                          DEFAULT_GRIPPER_SLAVE_ID));
     // Make the interface
     std::shared_ptr<Robotiq3FingerGripperModbusInterface> gripper_interface_ptr(
           new Robotiq3FingerGripperModbusInterface(logging_fn));

@@ -56,8 +56,8 @@ Robotiq2FingerGripperModbusInterface::Robotiq2FingerGripperModbusInterface(
 void Robotiq2FingerGripperModbusInterface::ConfigureModbusConnection(
     const uint16_t gripper_slave_id)
 {
-  const int mss_ret =
-      modbus_set_slave(modbus_interface_ptr_, (int)gripper_slave_id);
+  const int mss_ret = modbus_set_slave(
+      modbus_interface_ptr_, static_cast<int>(gripper_slave_id));
   if (mss_ret != 0)
   {
     const std::string error_msg(modbus_strerror(errno));
@@ -94,12 +94,12 @@ Robotiq2FingerGripperModbusInterface::GetGripperStatus()
                              + error_msg);
   }
   const std::vector<uint8_t> received_bytes
-      = {(uint8_t)((raw_status_buffer[0] & 0xff00) >> 8),
-         (uint8_t)(raw_status_buffer[0] & 0x00ff),
-         (uint8_t)((raw_status_buffer[1] & 0xff00) >> 8),
-         (uint8_t)(raw_status_buffer[1] & 0x00ff),
-         (uint8_t)((raw_status_buffer[2] & 0xff00) >> 8),
-         (uint8_t)(raw_status_buffer[2] & 0x00ff)};
+      = {static_cast<uint8_t>((raw_status_buffer[0] & 0xff00) >> 8),
+         static_cast<uint8_t>(raw_status_buffer[0] & 0x00ff),
+         static_cast<uint8_t>((raw_status_buffer[1] & 0xff00) >> 8),
+         static_cast<uint8_t>(raw_status_buffer[1] & 0x00ff),
+         static_cast<uint8_t>((raw_status_buffer[2] & 0xff00) >> 8),
+         static_cast<uint8_t>(raw_status_buffer[2] & 0x00ff)};
   const Robotiq2FingerGripperStatus status(received_bytes);
   return status;
 }
@@ -128,8 +128,10 @@ bool Robotiq2FingerGripperModbusInterface::SendGripperCommand(
     // Force request
     const uint16_t byte_3 = command.ForceCommand();
     // Assemble
-    const uint16_t command_register_1 = byte_1 | (uint16_t)(byte_0 << 8);
-    const uint16_t command_register_2 = byte_3 | (uint16_t)(byte_2 << 8);
+    const uint16_t command_register_1
+        = byte_1 | static_cast<uint16_t>(byte_0 << 8);
+    const uint16_t command_register_2
+        = byte_3 | static_cast<uint16_t>(byte_2 << 8);
     // Send
     const std::vector<uint16_t> set_command = {0x0100,
                                                command_register_1,
@@ -249,7 +251,7 @@ bool Robotiq2FingerGripperModbusInterface::WriteMultipleRegisters(
     const uint16_t start_register,
     const std::vector<uint16_t>& register_values)
 {
-  const int num_registers = (int)register_values.size();
+  const int num_registers = static_cast<int>(register_values.size());
   const int registers_written = modbus_write_registers(modbus_interface_ptr_,
                                                        start_register,
                                                        num_registers,
