@@ -423,7 +423,7 @@ public:
   {
     if ((config_feedback.name.size() == config_feedback.position.size())
         && (config_feedback.name.size() == config_feedback.velocity.size())
-        && IsSubset(config_feedback.name, joint_names_))
+        && IsSubset<std::string>(config_feedback.name, joint_names_))
     {
       // Push the joint state into a map
       std::map<std::string, std::pair<double, double>> joint_state_map;

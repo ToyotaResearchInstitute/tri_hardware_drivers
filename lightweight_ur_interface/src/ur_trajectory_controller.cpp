@@ -32,7 +32,7 @@ using common_robotics_utilities::math::Sub;
 using common_robotics_utilities::math::Multiply;
 using common_robotics_utilities::math::Divide;
 using common_robotics_utilities::utility::IsSubset;
-using common_robotics_utilities::utility::SetsEqual;
+using common_robotics_utilities::utility::CollectionsEqual;
 using common_robotics_utilities::utility::GetKeysFromMapLike;
 using common_robotics_utilities::conversions::StdVectorDoubleToEigenVectorXd;
 using common_robotics_utilities::conversions::EigenVectorXdToStdVectorDouble;
@@ -437,7 +437,8 @@ public:
                      "Received empty trajectory, aborting current trajectory");
       active_trajectory_.reset();
     }
-    else if (SetsEqual(trajectory.joint_names, joint_names_))
+    else if (CollectionsEqual<std::string>(
+                 trajectory.joint_names, joint_names_))
     {
       std::list<Eigen::VectorXd> ordered_waypoints;
       // Always add the current config to the beginning of the new trajectory
@@ -557,7 +558,7 @@ public:
   {
     if ((config_feedback.name.size() == config_feedback.position.size())
         && (config_feedback.name.size() == config_feedback.velocity.size())
-        && IsSubset(config_feedback.name, joint_names_))
+        && IsSubset<std::string>(config_feedback.name, joint_names_))
     {
       // Push the joint state into a map
       std::map<std::string, std::pair<double, double>> joint_state_map;
