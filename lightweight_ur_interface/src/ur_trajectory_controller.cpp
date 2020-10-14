@@ -32,7 +32,7 @@ using common_robotics_utilities::math::Sub;
 using common_robotics_utilities::math::Multiply;
 using common_robotics_utilities::math::Divide;
 using common_robotics_utilities::utility::IsSubset;
-using common_robotics_utilities::utility::SetsEqual;
+using common_robotics_utilities::utility::CollectionsEqual;
 using common_robotics_utilities::utility::GetKeysFromMapLike;
 using common_robotics_utilities::conversions::StdVectorDoubleToEigenVectorXd;
 using common_robotics_utilities::conversions::EigenVectorXdToStdVectorDouble;
@@ -154,35 +154,35 @@ public:
                 = EigenVectorXdToStdVectorDouble(current_pos_vel.first);
             const std::vector<double> current_target_velocity
                 = EigenVectorXdToStdVectorDouble(current_pos_vel.second);
-            const std::vector<double> raw_config_correction
-                = ComputeRawNextStepTrajectory(current_config_,
-                                               current_velocities_,
-                                               current_target_position,
-                                               current_target_velocity,
-                                               control_interval);
-            const std::vector<double> velocity_limited_config_correction
-                = LimitCorrectionVelocities(raw_config_correction);
+            const std::vector<double> raw_command
+                = ComputeRawCommandTrajectory(current_config_,
+                                              current_velocities_,
+                                              current_target_position,
+                                              current_target_velocity,
+                                              control_interval);
+            const std::vector<double> velocity_limited_command
+                = LimitCommandVelocities(raw_command);
             if (limit_acceleration_)
             {
-              const std::vector<double> acceleration_limited_config_correction
-                  = LimitCorrectionAccelerations(
-                      velocity_limited_config_correction,
+              const std::vector<double> acceleration_limited_command
+                  = LimitCommandAccelerations(
+                      velocity_limited_command,
                       previous_velocity_command,
                       control_interval);
-              CommandVelocities(acceleration_limited_config_correction);
+              CommandVelocities(acceleration_limited_command);
               previous_velocity_command
-                  = acceleration_limited_config_correction;
+                  = acceleration_limited_command;
               PublishState(current_target_position,
-                           acceleration_limited_config_correction,
+                           acceleration_limited_command,
                            current_config_,
                            current_velocities_);
             }
             else
             {
-              CommandVelocities(velocity_limited_config_correction);
-              previous_velocity_command = velocity_limited_config_correction;
+              CommandVelocities(velocity_limited_command);
+              previous_velocity_command = velocity_limited_command;
               PublishState(current_target_position,
-                           velocity_limited_config_correction,
+                           velocity_limited_command,
                            current_config_,
                            current_velocities_);
             }
@@ -198,33 +198,33 @@ public:
                     active_trajectory_->Duration());
             const std::vector<double> current_target_position
                 = EigenVectorXdToStdVectorDouble(end_pos_vel.first);
-            const std::vector<double> raw_config_correction
-                = ComputeRawNextStepPosition(current_config_,
-                                             current_target_position,
-                                             control_interval);
-            const std::vector<double> velocity_limited_config_correction
-                = LimitCorrectionVelocities(raw_config_correction);
+            const std::vector<double> raw_command
+                = ComputeRawCommandPosition(current_config_,
+                                            current_target_position,
+                                            control_interval);
+            const std::vector<double> velocity_limited_command
+                = LimitCommandVelocities(raw_command);
             if (limit_acceleration_)
             {
-              const std::vector<double> acceleration_limited_config_correction
-                  = LimitCorrectionAccelerations(
-                      velocity_limited_config_correction,
+              const std::vector<double> acceleration_limited_command
+                  = LimitCommandAccelerations(
+                      velocity_limited_command,
                       previous_velocity_command,
                       control_interval);
-              CommandVelocities(acceleration_limited_config_correction);
+              CommandVelocities(acceleration_limited_command);
               previous_velocity_command
-                  = acceleration_limited_config_correction;
+                  = acceleration_limited_command;
               PublishState(current_target_position,
-                           acceleration_limited_config_correction,
+                           acceleration_limited_command,
                            current_config_,
                            current_velocities_);
             }
             else
             {
-              CommandVelocities(velocity_limited_config_correction);
-              previous_velocity_command = velocity_limited_config_correction;
+              CommandVelocities(velocity_limited_command);
+              previous_velocity_command = velocity_limited_command;
               PublishState(current_target_position,
-                           velocity_limited_config_correction,
+                           velocity_limited_command,
                            current_config_,
                            current_velocities_);
             }
@@ -294,7 +294,7 @@ public:
     return limited_config_error_integral;
   }
 
-  std::vector<double> ComputeRawNextStepTrajectory(
+  std::vector<double> ComputeRawCommandTrajectory(
       const std::vector<double>& current_position,
       const std::vector<double>& current_velocity,
       const std::vector<double>& target_position,
@@ -317,8 +317,8 @@ public:
         = Sub(target_velocity, current_velocity);
     last_position_errors_ = position_errors;
     // Compute Feedback terms
-    std::vector<double> feedback_terms(position_errors.size(), 0.0);
-    for (size_t idx = 0; idx < feedback_terms.size(); idx++)
+    std::vector<double> velocity_commands(position_errors.size(), 0.0);
+    for (size_t idx = 0; idx < velocity_commands.size(); idx++)
     {
       const double position_error = position_errors[idx];
       const double position_error_integral = position_error_integrals_[idx];
@@ -328,12 +328,12 @@ public:
       const double i_term = position_error_integral * params.Ki();
       const double d_term = velocity_error * params.Kd();
       const double feedback_term = p_term + i_term + d_term;
-      feedback_terms[idx] = feedback_term;
+      velocity_commands[idx] = target_velocity[idx] + feedback_term;
     }
-    return feedback_terms;
+    return velocity_commands;
   }
 
-  std::vector<double> ComputeRawNextStepPosition(
+  std::vector<double> ComputeRawCommandPosition(
       const std::vector<double>& current_config,
       const std::vector<double>& target_config,
       const double time_interval)
@@ -351,8 +351,8 @@ public:
         = Divide(Sub(config_errors, last_position_errors_), time_interval);
     last_position_errors_ = config_errors;
     // Compute Feedback terms
-    std::vector<double> feedback_terms(config_errors.size(), 0.0);
-    for (size_t idx = 0; idx < feedback_terms.size(); idx++)
+    std::vector<double> velocity_commands(config_errors.size(), 0.0);
+    for (size_t idx = 0; idx < velocity_commands.size(); idx++)
     {
       const double joint_config_error = config_errors[idx];
       const double joint_config_error_integral = position_error_integrals_[idx];
@@ -363,12 +363,12 @@ public:
       const double i_term = joint_config_error_integral * params.Ki();
       const double d_term = joint_config_error_derivative * params.Kd();
       const double feedback_term = p_term + i_term + d_term;
-      feedback_terms[idx] = feedback_term;
+      velocity_commands[idx] = feedback_term;
     }
-    return feedback_terms;
+    return velocity_commands;
   }
 
-  std::vector<double> LimitCorrectionVelocities(
+  std::vector<double> LimitCommandVelocities(
       const std::vector<double>& raw_velocities) const
   {
     std::vector<double> limited_velocities(raw_velocities.size(), 0.0);
@@ -383,7 +383,7 @@ public:
     return limited_velocities;
   }
 
-  std::vector<double> LimitCorrectionAccelerations(
+  std::vector<double> LimitCommandAccelerations(
       const std::vector<double>& desired_velocities,
       const std::vector<double>& current_velocities,
       const double timestep) const
@@ -437,7 +437,8 @@ public:
                      "Received empty trajectory, aborting current trajectory");
       active_trajectory_.reset();
     }
-    else if (SetsEqual(trajectory.joint_names, joint_names_))
+    else if (CollectionsEqual<std::string>(
+                 trajectory.joint_names, joint_names_))
     {
       std::list<Eigen::VectorXd> ordered_waypoints;
       // Always add the current config to the beginning of the new trajectory
@@ -557,7 +558,7 @@ public:
   {
     if ((config_feedback.name.size() == config_feedback.position.size())
         && (config_feedback.name.size() == config_feedback.velocity.size())
-        && IsSubset(config_feedback.name, joint_names_))
+        && IsSubset<std::string>(config_feedback.name, joint_names_))
     {
       // Push the joint state into a map
       std::map<std::string, std::pair<double, double>> joint_state_map;

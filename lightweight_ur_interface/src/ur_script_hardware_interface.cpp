@@ -35,7 +35,7 @@ using common_robotics_utilities::math::RotateVectorReverse;
 using common_robotics_utilities::math::RotateVector;
 using common_robotics_utilities::utility::ClampValueAndWarn;
 using common_robotics_utilities::serialization::SerializeNetworkMemcpyable;
-using common_robotics_utilities::utility::SetsEqual;
+using common_robotics_utilities::utility::CollectionsEqual;
 using common_robotics_utilities::utility::GetKeysFromMapLike;
 
 class URScriptHardwareInterface
@@ -336,8 +336,9 @@ public:
     {
       throw std::invalid_argument("There must be exactly 6 joints");
     }
-    if (SetsEqual(joint_names_,
-                  GetKeysFromMapLike<std::string, JointLimits>(joint_limits))
+    if (CollectionsEqual<std::string>(
+            joint_names_,
+            GetKeysFromMapLike<std::string, JointLimits>(joint_limits))
         == false)
     {
       throw std::invalid_argument(
