@@ -533,7 +533,7 @@ public:
     bzero(reinterpret_cast<char*>(&serv_addr), sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(control_port);
+    serv_addr.sin_port = htons(static_cast<uint16_t>(control_port));
     int flag = 1;
     setsockopt(
         incoming_sock_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(int));

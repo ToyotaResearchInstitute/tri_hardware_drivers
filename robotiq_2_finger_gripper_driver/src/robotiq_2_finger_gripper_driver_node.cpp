@@ -131,7 +131,7 @@ private:
                         "Failed to send command to gripper");
       }
     }
-    catch (std::invalid_argument ex)
+    catch (const std::invalid_argument& ex)
     {
       ROS_ERROR_NAMED(ros::this_node::getName(),
                       "Failed to command - exception [%s]",

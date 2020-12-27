@@ -293,7 +293,7 @@ void URRealtimeInterface::RecvLoop()
             = URRealtimeState::Deserialize(recv_buffer, 0).Value();
         state_received_callback_fn_(latest_state);
       }
-      catch (std::runtime_error ex)
+      catch (const std::runtime_error& ex)
       {
         Log("Message deserialization failed for " + std::to_string(bytes_read)
             + " bytes read with error " + ex.what());
