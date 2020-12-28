@@ -9,14 +9,15 @@
     Calder Phillips-Grafflin
   </maintainer>
   <license>TODO</license>
-  <buildtool_depend>catkin</buildtool_depend>
-  <run_depend>common_robotics_utilities</run_depend>
-  <run_depend>tri_mocap_common</run_depend>
+  <buildtool_depend>catkin</buildtool_depend> 
   <run_depend>ati_netcanoem_driver</run_depend>
+  <run_depend>dji_robomaster_ep_driver</run_depend>
   <run_depend>lightweight_ur_interface</run_depend>
   <run_depend>robotiq_ft_driver</run_depend>
   <run_depend>robotiq_2_finger_gripper_driver</run_depend>
+  <run_depend>robotiq_3_finger_gripper_driver</run_depend>
   <run_depend>schunk_wsg_driver</run_depend>
+  <run_depend>tri_mocap_common</run_depend>
   <export>
     <metapackage />
   </export>
