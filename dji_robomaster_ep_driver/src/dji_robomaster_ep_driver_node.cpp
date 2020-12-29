@@ -41,8 +41,13 @@ public:
     ROS_INFO(
         "Connecting to Robomaster EP at %s:%d...",
         robot_ip_address.c_str(), robot_port);
+
+    // Commands time out after 100ms
+    const int32_t safety_timeout_ms = 100;
+
     robot_interface_ = std::unique_ptr<DJIRobomasterEPInterfaceTCP>(
-        new DJIRobomasterEPInterfaceTCP(robot_ip_address, robot_port));
+        new DJIRobomasterEPInterfaceTCP(
+            robot_ip_address, robot_port, safety_timeout_ms));
   }
 
   void Loop(const double loop_hz)

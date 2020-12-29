@@ -57,8 +57,14 @@ DJIRobomasterEPState::DJIRobomasterEPState(
 }
 
 DJIRobomasterEPInterfaceTCP::DJIRobomasterEPInterfaceTCP(
-      const std::string& robot_ip_address, const int32_t robot_port)
+    const std::string& robot_ip_address, const int32_t robot_port,
+    const int32_t safety_timeout_ms) : safety_timeout_ms_(safety_timeout_ms)
 {
+  if (safety_timeout_ms_ <= 0)
+  {
+    throw std::invalid_argument("safety_timeout_ms_ <= 0");
+  }
+
   struct hostent* nameserver = gethostbyname(robot_ip_address.c_str());
   if (nameserver == nullptr)
   {
@@ -197,7 +203,7 @@ void DJIRobomasterEPInterfaceTCP::Stop()
 
 void DJIRobomasterEPInterfaceTCP::CommandLoop()
 {
-  const std::chrono::milliseconds safety_timeout(100);
+  const std::chrono::milliseconds safety_timeout(safety_timeout_ms_);
 
   while (run_command_thread_.load())
   {
@@ -369,8 +375,13 @@ std::string DJIRobomasterEPInterfaceTCP::SendCommandAndAwaitResponse(
 
     return response_str;
   }
+  else if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+  {
+    return "";
+  }
   else
   {
+    perror(nullptr);
     throw std::runtime_error("Failed to receive response from robot");
   }
 }

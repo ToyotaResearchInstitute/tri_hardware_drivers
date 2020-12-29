@@ -55,7 +55,8 @@ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   DJIRobomasterEPInterfaceTCP(
-      const std::string& robot_ip_address, const int32_t robot_port);
+      const std::string& robot_ip_address, const int32_t robot_port,
+      const int32_t safety_timeout_ms);
 
   ~DJIRobomasterEPInterfaceTCP() { Stop(); }
 
@@ -92,6 +93,8 @@ private:
   {
     return rpm * (M_PI * 2.0) / 60.0;
   }
+
+  int32_t safety_timeout_ms_ = 0;
 
   int socket_fd_ = -1;
   mutable std::mutex state_mutex_;
