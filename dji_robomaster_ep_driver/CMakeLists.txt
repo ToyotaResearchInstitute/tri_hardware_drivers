@@ -62,7 +62,7 @@ add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
 add_compile_options(-march=native)
 
-## Declare a C++ library
+## Interface library
 add_library(${PROJECT_NAME}
             include/${PROJECT_NAME}/dji_robomaster_ep_driver.hpp
             src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp)
@@ -71,7 +71,7 @@ add_dependencies(${PROJECT_NAME}
                  ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-## Declare a C++ executable
+## ROS driver node
 add_executable(${PROJECT_NAME}_node
                src/dji_robomaster_ep_driver_node.cpp)
 add_dependencies(${PROJECT_NAME}_node
@@ -81,6 +81,12 @@ target_link_libraries(${PROJECT_NAME}_node
                       ${PROJECT_NAME}
                       ${catkin_LIBRARIES})
 
+## ROS joystick teleoperation node
+add_executable(joystick_teleop_node
+               src/joystick_teleop_node.cpp)
+add_dependencies(joystick_teleop_node ${catkin_EXPORTED_TARGETS})
+target_link_libraries(joystick_teleop_node ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############
@@ -89,6 +95,7 @@ target_link_libraries(${PROJECT_NAME}_node
 install(TARGETS
         ${PROJECT_NAME}
         ${PROJECT_NAME}_node
+        joystick_teleop_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
