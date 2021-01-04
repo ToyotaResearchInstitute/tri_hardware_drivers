@@ -34,18 +34,16 @@ public:
     {
       if (ros::ok())
       {
-        ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+        ROS_INFO("%s", message.c_str());
       }
       else
       {
         std::cout << "[Post-shutdown] " << message << std::endl;
       }
     };
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Connecting to Robotiq F/T sensor with sensor slave ID %hx"
-                   " on Modbus RTU interface %s...",
-                   sensor_slave_id,
-                   modbus_rtu_interface.c_str());
+    ROS_INFO("Connecting to Robotiq F/T sensor with sensor slave ID %hx on "
+             "Modbus RTU interface %s...",
+             sensor_slave_id, modbus_rtu_interface.c_str());
     sensor_ptr_ = std::unique_ptr<RobotiqFTModbusRtuInterface>(
                     new RobotiqFTModbusRtuInterface(logging_fn,
                                                     modbus_rtu_interface,
@@ -53,21 +51,16 @@ public:
     const std::string serial_num = sensor_ptr_->ReadSerialNumber();
     const std::string firmware_version = sensor_ptr_->ReadFirmwareVersion();
     const uint16_t year = sensor_ptr_->ReadYearOfManufacture();
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Connected to sensor with serial # %s firmware version %s"
-                   " year of manufacture %hu",
-                   serial_num.c_str(),
-                   firmware_version.c_str(),
-                   year);
+    ROS_INFO("Connected to sensor with serial # %s firmware version %s year of "
+             "manufacture %hu",
+              serial_num.c_str(), firmware_version.c_str(), year);
     status_pub_
         = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic, 1, false);
   }
 
   void Loop(const double poll_rate)
   {
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Starting to stream F/T measurements at %f Hz...",
-                   poll_rate);
+    ROS_INFO("Starting to stream F/T measurements at %f Hz...", poll_rate);
     ros::Rate rate(poll_rate);
     while (ros::ok())
     {

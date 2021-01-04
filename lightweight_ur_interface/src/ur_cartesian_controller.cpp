@@ -140,7 +140,7 @@ public:
   {
     UNUSED(req);
     UNUSED(res);
-    ROS_INFO_NAMED(ros::this_node::getName(), "Aborting pose target");
+    ROS_INFO("Aborting pose target");
     const Twist stop_twist = Twist::Zero();
     CommandTwist(stop_twist, twist_frame_);
     target_pose_valid_ = false;
@@ -273,17 +273,14 @@ public:
   {
     if (target_pose.header.frame_id == pose_frame_)
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Starting execution to a new target pose");
+      ROS_INFO("Starting execution to a new target pose");
       target_pose_ = GeometryPoseToEigenIsometry3d(target_pose.pose);
       target_pose_valid_ = true;
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid target pose frame %s, should be %s",
-                     target_pose.header.frame_id.c_str(),
-                     pose_frame_.c_str());
+      ROS_WARN("Invalid target pose frame %s, should be %s",
+               target_pose.header.frame_id.c_str(), pose_frame_.c_str());
       target_pose_valid_ = false;
     }
   }
@@ -297,10 +294,8 @@ public:
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid feedback pose frame %s, should be %s",
-                     pose_feedback.header.frame_id.c_str(),
-                     pose_frame_.c_str());
+      ROS_WARN("Invalid feedback pose frame %s, should be %s",
+               pose_feedback.header.frame_id.c_str(), pose_frame_.c_str());
       current_pose_valid_ = false;
     }
   }
@@ -310,8 +305,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ur_cartesian_controller");
-  ROS_INFO_NAMED(ros::this_node::getName(),
-                 "Starting ur_cartesian_controller...");
+  ROS_INFO("Starting ur_cartesian_controller...");
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string DEFAULT_POSE_FRAME = "base";
@@ -360,27 +354,16 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("max_angular_velocity"),
                            DEFAULT_MAX_ANGULAR_VELOCITY));
   const std::vector<lightweight_ur_interface::PIDParams> axis_controller_params
-      = lightweight_ur_interface::GetDefaultPoseControllerParams(translation_kp,
-                                                                 translation_kd,
-                                                                 rotation_kp,
-                                                                 rotation_kd);
-  const std::vector<double> axis_velocity_limits = {max_linear_velocity,
-                                                    max_linear_velocity,
-                                                    max_linear_velocity,
-                                                    max_angular_velocity,
-                                                    max_angular_velocity,
-                                                    max_angular_velocity};
-  lightweight_ur_interface::URCartesianController
-      controller(nh,
-                 pose_frame,
-                 twist_frame,
-                 target_pose_topic,
-                 pose_feedback_topic,
-                 twist_command_topic,
-                 abort_service,
-                 axis_controller_params,
-                 axis_velocity_limits);
-  ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
+      = lightweight_ur_interface::GetDefaultPoseControllerParams(
+          translation_kp, translation_kd, rotation_kp, rotation_kd);
+  const std::vector<double> axis_velocity_limits = {
+      max_linear_velocity, max_linear_velocity, max_linear_velocity,
+      max_angular_velocity, max_angular_velocity, max_angular_velocity};
+  lightweight_ur_interface::URCartesianController controller(
+      nh, pose_frame, twist_frame, target_pose_topic, pose_feedback_topic,
+      twist_command_topic, abort_service, axis_controller_params,
+      axis_velocity_limits);
+  ROS_INFO("...startup complete");
   controller.Loop(control_rate);
   return 0;
 }

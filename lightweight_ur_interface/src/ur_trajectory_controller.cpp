@@ -101,11 +101,10 @@ public:
       const PIDParams& params = joint_controller_params.at(joint_name);
       joint_controller_parameters_[joint] = params;
     }
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Running with joint limits:\n%s\nand"
-                   " joint controller parameters:\n%s",
-                   Print(joint_limits, false, "\n").c_str(),
-                   Print(joint_controller_params, false, "\n").c_str());
+    ROS_INFO(
+        "Running with joint limits:\n%s\nand joint controller parameters:\n%s",
+        Print(joint_limits, false, "\n").c_str(),
+        Print(joint_controller_params, false, "\n").c_str());
     status_pub_
         = nh_.advertise<control_msgs::JointTrajectoryControllerState>(
             status_topic, 1, false);
@@ -189,10 +188,9 @@ public:
           }
           else
           {
-            ROS_INFO_ONCE_NAMED(ros::this_node::getName(),
-                                "Reached the end of the current trajectory"
-                                " @ %f seconds, switching to hold position",
-                                elapsed_time);
+            ROS_INFO("Reached the end of the current trajectory at %f seconds, "
+                     "switching to hold position",
+                     elapsed_time);
             const std::pair<Eigen::VectorXd, Eigen::VectorXd> end_pos_vel
                 = active_trajectory_->GetPositionVelocity(
                     active_trajectory_->Duration());
@@ -270,7 +268,7 @@ public:
   {
     UNUSED(req);
     UNUSED(res);
-    ROS_INFO_NAMED(ros::this_node::getName(), "Aborting config target");
+    ROS_INFO("Aborting trajectory execution");
     CommandVelocities(std::vector<double>(joint_names_.size(), 0.0));
     active_trajectory_.reset();
     position_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
@@ -426,15 +424,12 @@ public:
   {
     if (current_config_valid_ == false)
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Ignoring trajectory command since current state "
-                     "is not valid");
+      ROS_WARN("Ignoring trajectory command since current state is not valid");
       return;
     }
     if (trajectory.points.empty())
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Received empty trajectory, aborting current trajectory");
+      ROS_INFO("Received empty trajectory, aborting current trajectory");
       active_trajectory_.reset();
     }
     else if (CollectionsEqual<std::string>(
@@ -451,11 +446,8 @@ public:
             = trajectory.points[tdx];
         if (current_point.positions.size() != joint_names_.size())
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid JointTrajectoryPoint: %zu positions,"
-                         " %zu joints",
-                         current_point.positions.size(),
-                         joint_names_.size());
+          ROS_WARN("Invalid JointTrajectoryPoint: %zu positions, %zu joints",
+                   current_point.positions.size(), joint_names_.size());
           trajectory_valid = false;
           break;
         }
@@ -490,9 +482,8 @@ public:
           }
           else
           {
-            ROS_WARN_NAMED(ros::this_node::getName(),
-                           "Invalid JointTrajectoryPoint: joint %s missing",
-                           joint_name.c_str());
+            ROS_WARN("Invalid JointTrajectoryPoint: joint %s missing",
+                     joint_name.c_str());
             trajectory_valid = false;
             break;
           }
@@ -523,16 +514,14 @@ public:
                                              acceleration_limits,
                                              max_path_deviation,
                                              timestep);
-          ROS_INFO_NAMED(ros::this_node::getName(),
-                         "Starting execution of new trajectory");
+          ROS_INFO("Starting execution of new trajectory");
           active_trajectory_.reset();
           active_trajectory_ = new_trajectory_ptr;
           active_trajectory_start_time_ = ros::Time::now();
         }
-        catch (...)
+        catch (const std::exception& ex)
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "New trajectory could not be parametrized");
+          ROS_WARN("New trajectory could not be parametrized [%s]", ex.what());
           active_trajectory_.reset();
         }
       }
@@ -545,11 +534,9 @@ public:
     {
       const std::string provided_joint_names = Print(trajectory.joint_names);
       const std::string our_joint_names = Print(joint_names_);
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid JointTrajectory, provided joint names [%s] "
-                     "do not match ours [%s]",
-                     provided_joint_names.c_str(),
-                     our_joint_names.c_str());
+      ROS_WARN("Invalid JointTrajectory, provided joint names [%s] do not match"
+               " ours [%s]",
+               provided_joint_names.c_str(), our_joint_names.c_str());
       active_trajectory_.reset();
     }
   }
@@ -586,9 +573,8 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid JointState feedback: joint %s missing",
-                         joint_name.c_str());
+          ROS_WARN("Invalid JointState feedback: joint %s missing",
+                   joint_name.c_str());
           config_valid = false;
         }
       }
@@ -601,10 +587,8 @@ public:
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid JointState feedback: %zu names, %zu positions",
-                     config_feedback.name.size(),
-                     config_feedback.position.size());
+      ROS_WARN("Invalid JointState feedback: %zu names, %zu positions",
+               config_feedback.name.size(), config_feedback.position.size());
       current_config_valid_ = false;
     }
   }
@@ -614,8 +598,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ur_trajectory_controller");
-  ROS_INFO_NAMED(ros::this_node::getName(),
-                 "Starting ur_trajectory_controller...");
+  ROS_INFO("Starting ur_trajectory_controller...");
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string DEFAULT_TRAJECTORY_COMMAND_TOPIC
@@ -671,21 +654,13 @@ int main(int argc, char** argv)
                                             real_acceleration_limit_scaling);
   // Joint PID params
   const std::map<std::string, lightweight_ur_interface::PIDParams> params
-      = lightweight_ur_interface::GetDefaultPositionControllerParams(base_kp,
-                                                                     0.0,
-                                                                     base_kd,
-                                                                     0.0);
+      = lightweight_ur_interface::GetDefaultPositionControllerParams(
+          base_kp, 0.0, base_kd, 0.0);
   lightweight_ur_interface::URTrajectoryController controller(
-        nh,
-        trajectory_command_topic,
-        state_feedback_topic,
-        velocity_command_topic,
-        status_topic,
-        abort_service,
-        limits,
-        params,
-        limit_acceleration);
-  ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
+      nh, trajectory_command_topic, state_feedback_topic,
+      velocity_command_topic, status_topic, abort_service, limits, params,
+      limit_acceleration);
+  ROS_INFO("...startup complete");
   controller.Loop(control_rate);
   return 0;
 }

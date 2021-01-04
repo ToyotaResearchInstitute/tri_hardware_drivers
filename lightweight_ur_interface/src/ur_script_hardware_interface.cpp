@@ -356,9 +356,7 @@ public:
       max_acceleration_limit_
           = std::max(max_acceleration_limit_, acceleration_limit);
     }
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Set max_acceleration_limit to %f",
-                   max_acceleration_limit_);
+    ROS_INFO("Set max_acceleration_limit to %f", max_acceleration_limit_);
     joint_state_pub_
         = nh_.advertise<sensor_msgs::JointState>(joint_state_topic, 1, false);
     ee_pose_pub_
@@ -398,7 +396,7 @@ public:
     std::function<void(const std::string&)> logging_fn
         = [] (const std::string& message)
     {
-      ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+      ROS_INFO("%s", message.c_str());
     };
     robot_ptr_ = std::unique_ptr<URRealtimeInterface>(
                    new URRealtimeInterface(robot_host,
@@ -410,8 +408,7 @@ public:
   {
     // Start robot interface
     robot_ptr_->StartRecv();
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Started robot realtime interface");
+    ROS_INFO("Started robot realtime interface");
     // Start control program interface
     const std::pair<int32_t, int32_t> initial_control_program_socket_fds
         = StartControlProgram(our_ip_address_,
@@ -423,10 +420,8 @@ public:
     int32_t control_program_incoming_sock_fd
         = initial_control_program_socket_fds.first;
     int32_t control_program_sock_fd = initial_control_program_socket_fds.second;
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Started robot control interface with fds %d, %d",
-                   control_program_incoming_sock_fd,
-                   control_program_sock_fd);
+    ROS_INFO("Started robot control interface with fds %d, %d",
+             control_program_incoming_sock_fd, control_program_sock_fd);
     // Start ROS spinloop
     ros::Rate looprate(control_rate);
     while (nh_.ok())
@@ -444,12 +439,10 @@ public:
         if (bytes_written != static_cast<ssize_t>(buffer.size()))
         {
           perror(nullptr);
-          ROS_ERROR_NAMED(ros::this_node::getName(),
-                          "Failed to send command with %zu bytes, "
-                          "sent %zd instead", buffer.size(), bytes_written);
-          ROS_INFO_NAMED(ros::this_node::getName(),
-                         "Trying to restart/reconnect to the "
-                         "robot control script...");
+          ROS_ERROR("Failed to send command with %zu bytes, sent %zd instead",
+                    buffer.size(), bytes_written);
+          ROS_INFO(
+              "Trying to restart/reconnect to the robot control script...");
           close(control_program_sock_fd);
           close(control_program_incoming_sock_fd);
           exit(1);
@@ -463,11 +456,9 @@ public:
           control_program_incoming_sock_fd
               = new_control_program_socket_fds.first;
           control_program_sock_fd = new_control_program_socket_fds.second;
-          ROS_INFO_NAMED(ros::this_node::getName(),
-                         "Restarted/reconnected robot control interface with"
-                         " fds %d, %d",
-                         control_program_incoming_sock_fd,
-                         control_program_sock_fd);
+          ROS_INFO(
+              "Restarted/reconnected robot control interface with fds %d, %d",
+               control_program_incoming_sock_fd, control_program_sock_fd);
         }
       }
       control_script_command_queue_.clear();
@@ -483,10 +474,8 @@ public:
     if (bytes_written != static_cast<ssize_t>(buffer.size()))
     {
       perror(nullptr);
-      ROS_ERROR_NAMED(ros::this_node::getName(),
-                      "Failed to send command with %zu bytes, sent %zd instead",
-                      buffer.size(),
-                      bytes_written);
+      ROS_ERROR("Failed to send command with %zu bytes, sent %zd instead",
+                buffer.size(), bytes_written);
     }
     close(control_program_sock_fd);
     close(control_program_incoming_sock_fd);
@@ -511,7 +500,7 @@ public:
     const bool success = robot_ptr_->SendURScriptCommand(control_script_string);
     if (success)
     {
-      ROS_INFO_NAMED(ros::this_node::getName(), "Uploaded control program");
+      ROS_INFO("Uploaded control program");
     }
     else
     {
@@ -526,11 +515,10 @@ public:
     }
     else
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Opened socket for control program communication");
+      ROS_INFO("Opened socket for control program communication");
     }
     struct sockaddr_in serv_addr;
-    bzero(reinterpret_cast<char*>(&serv_addr), sizeof(serv_addr));
+    std::memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(static_cast<uint16_t>(control_port));
@@ -548,8 +536,7 @@ public:
     }
     else
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Bound socket for control program communication");
+      ROS_INFO("Bound socket for control program communication");
     }
     listen(incoming_sock_fd, 5);
     struct sockaddr_in cli_addr;
@@ -565,8 +552,7 @@ public:
     }
     else
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Accepted connection for control program communication");
+      ROS_INFO("Accepted connection for control program communication");
     }
     return std::make_pair(incoming_sock_fd, new_sock_fd);
   }
@@ -718,9 +704,8 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid VelocityCommand: joint %s missing",
-                         joint_name.c_str());
+          ROS_WARN("Invalid VelocityCommand: joint %s missing",
+                   joint_name.c_str());
           command_valid = false;
         }
       }
@@ -733,18 +718,14 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(
-              ros::this_node::getName(),
-              "Ignoring VelocityCommand since robot is in teach mode");
+          ROS_WARN("Ignoring VelocityCommand since robot is in teach mode");
         }
       }
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid VelocityCommand: %zu names, %zu velocities",
-                     config_target.name.size(),
-                     config_target.velocity.size());
+      ROS_WARN("Invalid VelocityCommand: %zu names, %zu velocities",
+               config_target.name.size(), config_target.velocity.size());
     }
   }
 
@@ -754,43 +735,37 @@ public:
     if (std::isinf(twist_command.twist.linear.x)
         || std::isnan(twist_command.twist.linear.x))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.x is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.x is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.linear.y)
         || std::isnan(twist_command.twist.linear.y))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.y is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.y is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.linear.z)
         || std::isnan(twist_command.twist.linear.z))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.z is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.z is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.x)
         || std::isnan(twist_command.twist.angular.x))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.x is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.x is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.y)
         || std::isnan(twist_command.twist.angular.y))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.y is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.y is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.z)
         || std::isnan(twist_command.twist.angular.z))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.z is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.z is NAN or INF");
       valid_twist = false;
     }
     if (valid_twist)
@@ -835,8 +810,7 @@ public:
           }
           else
           {
-            ROS_WARN_NAMED(ros::this_node::getName(),
-                           "Ignoring ee-frame Twist as latest state invalid");
+            ROS_WARN("Ignoring ee-frame Twist as latest state invalid");
           }
         }
         else if (twist_command.header.frame_id == base_frame_)
@@ -846,17 +820,14 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid Twist frame: got [%s] needs [%s] or [%s]",
-                         twist_command.header.frame_id.c_str(),
-                         base_frame_.c_str(),
-                         ee_frame_.c_str());
+          ROS_WARN("Invalid Twist frame: got [%s] needs [%s] or [%s]",
+                   twist_command.header.frame_id.c_str(), base_frame_.c_str(),
+                   ee_frame_.c_str());
         }
       }
       else
       {
-        ROS_WARN_NAMED(ros::this_node::getName(),
-                       "Ignoring Twist since robot is in teach mode");
+        ROS_WARN("Ignoring Twist since robot is in teach mode");
       }
     }
   }
@@ -866,8 +837,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ur_script_hardware_interface");
-  ROS_INFO_NAMED(ros::this_node::getName(),
-                 "Starting ur_script_hardware_interface...");
+  ROS_INFO("Starting ur_script_hardware_interface...");
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string DEFAULT_JOINT_STATE_TOPIC = "/ur10/joint_states";
@@ -937,23 +907,11 @@ int main(int argc, char** argv)
       = lightweight_ur_interface::GetLimits(real_velocity_limit_scaling,
                                             real_acceleration_limit_scaling);
   lightweight_ur_interface::URScriptHardwareInterface interface(
-        nh,
-        velocity_command_topic,
-        twist_command_topic,
-        joint_state_topic,
-        ee_pose_topic,
-        ee_world_twist_topic,
-        ee_body_twist_topic,
-        ee_wrench_topic,
-        base_frame,
-        ee_frame,
-        teach_mode_service,
-        ordered_joint_names,
-        limits,
-        robot_hostname,
-        our_ip_address,
-        control_port);
-  ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
+      nh, velocity_command_topic, twist_command_topic, joint_state_topic,
+      ee_pose_topic, ee_world_twist_topic, ee_body_twist_topic, ee_wrench_topic,
+      base_frame, ee_frame, teach_mode_service, ordered_joint_names, limits,
+      robot_hostname, our_ip_address, control_port);
+  ROS_INFO("...startup complete");
   interface.Run(400.0);
   return 0;
 }

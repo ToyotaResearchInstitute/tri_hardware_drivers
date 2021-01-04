@@ -89,15 +89,12 @@ private:
           = gripper_interface_ptr_->SendGripperCommand(gripper_command);
       if (!sent)
       {
-        ROS_ERROR_NAMED(ros::this_node::getName(),
-                        "Failed to send command to gripper");
+        ROS_ERROR("Failed to send command to gripper");
       }
     }
     catch (const std::invalid_argument& ex)
     {
-      ROS_ERROR_NAMED(ros::this_node::getName(),
-                      "Failed to command - exception [%s]",
-                      ex.what());
+      ROS_ERROR("Failed to command - exception [%s]", ex.what());
     }
   }
 
@@ -133,8 +130,8 @@ int main(int argc, char** argv)
   // Default ROS params
   const std::string DEFAULT_INTERFACE_TYPE("tcp");
   const double DEFAULT_POLL_RATE = 10.0;
-  const std::string DEFAULT_STATE_TOPIC("robotiq_2_finger_state");
-  const std::string DEFAULT_COMMAND_TOPIC("robotiq_2_finger_command");
+  const std::string DEFAULT_STATE_TOPIC("robotiq_3_finger_state");
+  const std::string DEFAULT_COMMAND_TOPIC("robotiq_3_finger_command");
   // Start ROS
   ros::init(argc, argv, "robotiq_3_finger_driver");
   ros::NodeHandle nh;
@@ -155,7 +152,7 @@ int main(int argc, char** argv)
   {
     if (ros::ok())
     {
-      ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+      ROS_INFO("%s", message.c_str());
     }
     else
     {
@@ -216,9 +213,8 @@ int main(int argc, char** argv)
   }
   else
   {
-    ROS_FATAL_NAMED(ros::this_node::getName(),
-                    "Invalid interface option [%s], valid options are [tcp]"
-                    " or [rtu]", interface_type.c_str());
+    ROS_FATAL("Invalid interface option [%s], valid options are [tcp] or [rtu]",
+              interface_type.c_str());
   }
   return 0;
 }

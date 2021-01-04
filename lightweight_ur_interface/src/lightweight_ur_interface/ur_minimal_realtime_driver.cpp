@@ -158,11 +158,11 @@ URRealtimeInterface::URRealtimeInterface(
     throw std::runtime_error("Failed to find robot at " + robot_host);
   }
   Log("Connecting to robot at " + robot_host);
-  bzero(reinterpret_cast<char*>(&robot_addr_), sizeof(robot_addr_));
+  std::memset(&robot_addr_, 0, sizeof(robot_addr_));
   robot_addr_.sin_family = AF_INET;
-  bcopy(reinterpret_cast<char*>(nameserver->h_addr),
-        reinterpret_cast<char*>(&robot_addr_.sin_addr.s_addr),
-        static_cast<size_t>(nameserver->h_length));
+  std::memcpy(
+      &robot_addr_.sin_addr.s_addr, nameserver->h_addr,
+      static_cast<size_t>(nameserver->h_length));
   robot_addr_.sin_port = htons(30003);
 }
 
@@ -296,7 +296,7 @@ void URRealtimeInterface::RecvLoop()
       catch (const std::runtime_error& ex)
       {
         Log("Message deserialization failed for " + std::to_string(bytes_read)
-            + " bytes read with error " + ex.what());
+            + " bytes read with error " + std::string(ex.what()));
       }
     }
     else
@@ -312,9 +312,10 @@ void URRealtimeInterface::RecvLoop()
           ConnectToRobot();
           break;
         }
-        catch (...)
+        catch (const std::exception& ex)
         {
-          Log("Connection to robot failed, retrying in 10 seconds");
+          Log("Connection to robot failed [" + std::string(ex.what()) +
+              "], retrying in 10 seconds");
         }
       }
     }

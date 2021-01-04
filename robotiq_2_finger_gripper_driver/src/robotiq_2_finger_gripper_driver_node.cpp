@@ -45,7 +45,7 @@ public:
     {
       if (ros::ok())
       {
-        ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+        ROS_INFO("%s", message.c_str());
       }
       else
       {
@@ -55,12 +55,9 @@ public:
     // Make interface to gripper
     if (!modbus_tcp_address.empty() && modbus_rtu_interface.empty())
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Connecting to Robotiq 2-Finger gripper with gripper slave"
-                     " ID %hx on Modbus TCP interface %s:%i...",
-                     gripper_slave_id,
-                     modbus_tcp_address.c_str(),
-                     modbus_tcp_port);
+      ROS_INFO("Connecting to Robotiq 2-Finger gripper with gripper slave ID "
+               "%hx on Modbus TCP interface %s:%i...",
+               gripper_slave_id, modbus_tcp_address.c_str(), modbus_tcp_port);
       gripper_interface_ptr_
           = std::unique_ptr<Robotiq2FingerGripperModbusInterface>(
               new Robotiq2FingerGripperModbusTcpInterface(
@@ -69,12 +66,10 @@ public:
     }
     else if (modbus_tcp_address.empty() && !modbus_rtu_interface.empty())
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-                     "Connecting to Robotiq 2-Finger gripper with gripper slave"
-                     " ID %hx on Modbus RTU interface %s at %d baud...",
-                     gripper_slave_id,
-                     modbus_rtu_interface.c_str(),
-                     modbus_rtu_baud_rate);
+      ROS_INFO("Connecting to Robotiq 2-Finger gripper with gripper slave ID "
+               "%hx on Modbus RTU interface %s at %d baud...",
+               gripper_slave_id, modbus_rtu_interface.c_str(),
+               modbus_rtu_baud_rate);
       gripper_interface_ptr_
           = std::unique_ptr<Robotiq2FingerGripperModbusInterface>(
               new Robotiq2FingerGripperModbusRtuInterface(
@@ -101,7 +96,7 @@ public:
 
   void Loop(const double control_rate)
   {
-    ROS_INFO_NAMED(ros::this_node::getName(), "Gripper interface running");
+    ROS_INFO("Gripper interface running");
     ros::Rate rate(control_rate);
     while (ros::ok())
     {
@@ -109,8 +104,7 @@ public:
       ros::spinOnce();
       rate.sleep();
     }
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Gripper interface shutting down");
+    ROS_INFO("Gripper interface shutting down");
   }
 
 private:
@@ -127,15 +121,12 @@ private:
           = gripper_interface_ptr_->SendGripperCommand(gripper_command);
       if (!sent)
       {
-        ROS_ERROR_NAMED(ros::this_node::getName(),
-                        "Failed to send command to gripper");
+        ROS_ERROR("Failed to send command to gripper");
       }
     }
     catch (const std::invalid_argument& ex)
     {
-      ROS_ERROR_NAMED(ros::this_node::getName(),
-                      "Failed to command - exception [%s]",
-                      ex.what());
+      ROS_ERROR("Failed to command - exception [%s]", ex.what());
     }
   }
 

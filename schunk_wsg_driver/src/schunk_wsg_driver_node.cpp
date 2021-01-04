@@ -66,8 +66,7 @@ private:
                                                                max_effort);
     if (!sent)
     {
-      ROS_ERROR_NAMED(ros::this_node::getName(),
-                      "Failed to send command to gripper");
+      ROS_ERROR("Failed to send command to gripper");
     }
   }
 
@@ -120,7 +119,7 @@ int main(int argc, char** argv)
   {
     if (ros::ok())
     {
-      ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+      ROS_INFO("%s", message.c_str());
     }
     else
     {
@@ -170,9 +169,8 @@ int main(int argc, char** argv)
   }
   else
   {
-    ROS_FATAL_NAMED(ros::this_node::getName(),
-                    "Invalid interface option [%s], valid options are [udp]"
-                    " or [can]", interface_type.c_str());
+    ROS_FATAL("Invalid interface option [%s], valid options are [udp] or [can]",
+              interface_type.c_str());
   }
   return 0;
 }

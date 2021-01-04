@@ -107,9 +107,7 @@ public:
       max_acceleration_limit_
           = std::max(max_acceleration_limit_, acceleration_limit);
     }
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Set max_acceleration_limit to %f",
-                   max_acceleration_limit_);
+    ROS_INFO("Set max_acceleration_limit to %f", max_acceleration_limit_);
     joint_state_pub_
         = nh_.advertise<sensor_msgs::JointState>(joint_state_topic, 1, false);
     ee_pose_pub_
@@ -145,7 +143,7 @@ public:
     std::function<void(const std::string&)> logging_fn
         = [] (const std::string& message)
     {
-      ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+      ROS_INFO("%s", message.c_str());
     };
     robot_ptr_ = std::unique_ptr<URRealtimeInterface>(
                    new URRealtimeInterface(robot_host,
@@ -287,9 +285,8 @@ public:
             const double velocity_limit
                 = limits_found_itr->second.MaxVelocity();
             const double limited_velocity
-                = common_robotics_utilities::utility::ClampValueAndWarn(velocity,
-                                                                -velocity_limit,
-                                                                velocity_limit);
+                = common_robotics_utilities::utility::ClampValueAndWarn(
+                    velocity, -velocity_limit, velocity_limit);
             target_velocity[idx] = limited_velocity;
           }
           // If we don't have limits saved, then we don't need to limit
@@ -300,9 +297,8 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid VelocityCommand: joint %s missing",
-                         joint_name.c_str());
+          ROS_WARN("Invalid VelocityCommand: joint %s missing",
+                   joint_name.c_str());
           command_valid = false;
         }
       }
@@ -313,10 +309,8 @@ public:
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid VelocityCommand: %zu names, %zu velocities",
-                     config_target.name.size(),
-                     config_target.velocity.size());
+      ROS_WARN("Invalid VelocityCommand: %zu names, %zu velocities",
+               config_target.name.size(), config_target.velocity.size());
     }
   }
 
@@ -348,43 +342,37 @@ public:
     if (std::isinf(twist_command.twist.linear.x)
         || std::isnan(twist_command.twist.linear.x))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.x is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.x is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.linear.y)
         || std::isnan(twist_command.twist.linear.y))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.y is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.y is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.linear.z)
         || std::isnan(twist_command.twist.linear.z))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, linear.z is NAN or INF");
+      ROS_WARN("Invalid Twist command, linear.z is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.x)
         || std::isnan(twist_command.twist.angular.x))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.x is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.x is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.y)
         || std::isnan(twist_command.twist.angular.y))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.y is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.y is NAN or INF");
       valid_twist = false;
     }
     if (std::isinf(twist_command.twist.angular.z)
         || std::isnan(twist_command.twist.angular.z))
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid Twist command, angular.z is NAN or INF");
+      ROS_WARN("Invalid Twist command, angular.z is NAN or INF");
       valid_twist = false;
     }
     if (valid_twist)
@@ -426,8 +414,7 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Ignoring ee-frame Twist as latest state invalid");
+          ROS_WARN("Ignoring ee-frame Twist as latest state invalid");
         }
       }
       else if (twist_command.header.frame_id == base_frame_)
@@ -436,11 +423,9 @@ public:
       }
       else
       {
-        ROS_WARN_NAMED(ros::this_node::getName(),
-                       "Invalid Twist frame: got [%s] needs [%s] or [%s]",
-                       twist_command.header.frame_id.c_str(),
-                       base_frame_.c_str(),
-                       ee_frame_.c_str());
+        ROS_WARN("Invalid Twist frame: got [%s] needs [%s] or [%s]",
+                 twist_command.header.frame_id.c_str(), base_frame_.c_str(),
+                 ee_frame_.c_str());
       }
     }
   }
@@ -450,8 +435,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ur_minimal_hardware_interface");
-  ROS_INFO_NAMED(ros::this_node::getName(),
-                 "Starting ur_minimal_hardware_interface...");
+  ROS_INFO("Starting ur_minimal_hardware_interface...");
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string DEFAULT_JOINT_STATE_TOPIC = "/ur10/joint_states";
@@ -511,20 +495,10 @@ int main(int argc, char** argv)
       = lightweight_ur_interface::GetLimits(real_velocity_limit_scaling,
                                             real_acceleration_limit_scaling);
   lightweight_ur_interface::URMinimalHardwareInterface interface(
-        nh,
-        velocity_command_topic,
-        twist_command_topic,
-        joint_state_topic,
-        ee_pose_topic,
-        ee_world_twist_topic,
-        ee_body_twist_topic,
-        ee_wrench_topic,
-        base_frame,
-        ee_frame,
-        ordered_joint_names,
-        limits,
-        robot_hostname);
-  ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
+      nh, velocity_command_topic, twist_command_topic, joint_state_topic,
+      ee_pose_topic, ee_world_twist_topic, ee_body_twist_topic, ee_wrench_topic,
+      base_frame, ee_frame, ordered_joint_names, limits, robot_hostname);
+  ROS_INFO("...startup complete");
   interface.Run(400.0);
   return 0;
 }
