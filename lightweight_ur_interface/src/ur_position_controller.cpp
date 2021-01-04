@@ -100,11 +100,10 @@ public:
       const PIDParams& params = joint_controller_params.at(joint_name);
       joint_controller_parameters_[joint] = params;
     }
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Running with joint limits:\n%s\nand"
-                   " joint controller parameters:\n%s",
-                   Print(joint_limits, false, "\n").c_str(),
-                   Print(joint_controller_params, false, "\n").c_str());
+    ROS_INFO(
+        "Running with joint limits:\n%s\nand joint controller parameters:\n%s",
+        Print(joint_limits, false, "\n").c_str(),
+        Print(joint_controller_params, false, "\n").c_str());
     status_pub_
         = nh_.advertise<control_msgs::JointTrajectoryControllerState>(
             status_topic, 1, false);
@@ -219,7 +218,7 @@ public:
   {
     UNUSED(req);
     UNUSED(res);
-    ROS_INFO_NAMED(ros::this_node::getName(), "Aborting config target");
+    ROS_INFO("Aborting position target");
     CommandVelocities(std::vector<double>(joint_names_.size(), 0.0));
     target_config_valid_ = false;
     config_error_integrals_ = std::vector<double>(joint_names_.size(), 0.0);
@@ -391,16 +390,14 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid PositionCommand: joint %s missing",
-                         joint_name.c_str());
+          ROS_WARN("Invalid PositionCommand: joint %s missing",
+                   joint_name.c_str());
           command_valid = false;
         }
       }
       if (command_valid == true)
       {
-        ROS_INFO_NAMED(ros::this_node::getName(),
-                       "Starting execution to a new target configuration");
+        ROS_INFO("Starting execution to a new target configuration");
         target_config_ = target_config;
         target_config_valid_ = true;
       }
@@ -411,10 +408,8 @@ public:
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid PositionCommand: %zu names, %zu positions",
-                     config_target.name.size(),
-                     config_target.position.size());
+      ROS_WARN("Invalid PositionCommand: %zu names, %zu positions",
+               config_target.name.size(), config_target.position.size());
       target_config_valid_ = false;
     }
   }
@@ -451,9 +446,8 @@ public:
         }
         else
         {
-          ROS_WARN_NAMED(ros::this_node::getName(),
-                         "Invalid JointState feedback: joint %s missing",
-                         joint_name.c_str());
+          ROS_WARN("Invalid JointState feedback: joint %s missing",
+                   joint_name.c_str());
           config_valid = false;
         }
       }
@@ -466,10 +460,8 @@ public:
     }
     else
     {
-      ROS_WARN_NAMED(ros::this_node::getName(),
-                     "Invalid JointState feedback: %zu names, %zu positions",
-                     config_feedback.name.size(),
-                     config_feedback.position.size());
+      ROS_WARN("Invalid JointState feedback: %zu names, %zu positions",
+               config_feedback.name.size(), config_feedback.position.size());
       current_state_valid_ = false;
     }
   }
@@ -479,8 +471,7 @@ public:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "ur_position_controller");
-  ROS_INFO_NAMED(ros::this_node::getName(),
-                 "Starting ur_position_controller...");
+  ROS_INFO("Starting ur_position_controller...");
   ros::NodeHandle nh;
   ros::NodeHandle nhp("~");
   const std::string DEFAULT_POSITION_COMMAND_TOPIC
@@ -543,22 +534,13 @@ int main(int argc, char** argv)
                                             real_acceleration_limit_scaling);
   // Joint PID params
   const std::map<std::string, lightweight_ur_interface::PIDParams> params
-      = lightweight_ur_interface::GetDefaultPositionControllerParams(base_kp,
-                                                                     0.0,
-                                                                     base_kd,
-                                                                     0.0);
-  lightweight_ur_interface::URPositionController
-      controller(nh,
-                 position_command_topic,
-                 state_feedback_topic,
-                 velocity_command_topic,
-                 status_topic,
-                 abort_service,
-                 limits,
-                 params,
-                 limit_acceleration,
-                 enable_velocity_autoscaling);
-  ROS_INFO_NAMED(ros::this_node::getName(), "...startup complete");
+      = lightweight_ur_interface::GetDefaultPositionControllerParams(
+          base_kp, 0.0, base_kd, 0.0);
+  lightweight_ur_interface::URPositionController controller(
+      nh, position_command_topic, state_feedback_topic, velocity_command_topic,
+      status_topic, abort_service, limits, params, limit_acceleration,
+      enable_velocity_autoscaling);
+  ROS_INFO("...startup complete");
   controller.Loop(control_rate);
   return 0;
 }

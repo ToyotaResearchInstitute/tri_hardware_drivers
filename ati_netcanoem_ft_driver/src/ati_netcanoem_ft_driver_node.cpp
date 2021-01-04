@@ -38,18 +38,16 @@ public:
     {
       if (ros::ok())
       {
-        ROS_INFO_NAMED(ros::this_node::getName(), "%s", message.c_str());
+        ROS_INFO("%s", message.c_str());
       }
       else
       {
         std::cout << "[Post-shutdown] " << message << std::endl;
       }
     };
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Connecting to ATI F/T sensor with CAN base ID %hhx"
-                   " on socketcan interface %s...",
-                   sensor_base_can_id,
-                   can_interface.c_str());
+    ROS_INFO("Connecting to ATI F/T sensor with CAN base ID %hhx on socketcan "
+             "interface %s...",
+              sensor_base_can_id, can_interface.c_str());
     sensor_ptr_
         = std::unique_ptr<AtiNetCanOemInterface>(
             new AtiNetCanOemInterface(logging_fn,
@@ -57,24 +55,17 @@ public:
                                       sensor_base_can_id));
     const std::string serial_num = sensor_ptr_->ReadSerialNumber();
     const auto firmware_version = sensor_ptr_->ReadFirmwareVersion();
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Connected to sensor with serial # %s and firmware"
-                   " version %hhu (major version) %hhu (minor version)"
-                   " %hu (build)",
-                   serial_num.c_str(),
-                   firmware_version.MajorVersion(),
-                   firmware_version.MinorVersion(),
-                   firmware_version.BuildNumber());
-    ROS_INFO_NAMED(ros::this_node::getName(),
-                   "Attempting to load active calibration %hhu...",
-                   sensor_calibration_index);
+    ROS_INFO("Connected to sensor with serial # %s and firmware version %hhu "
+             "(major version) %hhu (minor version) %hu (build)",
+             serial_num.c_str(), firmware_version.MajorVersion(),
+             firmware_version.MinorVersion(), firmware_version.BuildNumber());
+    ROS_INFO("Attempting to load active calibration %hhu...",
+             sensor_calibration_index);
     const bool set_calibration
         = sensor_ptr_->LoadNewActiveCalibration(sensor_calibration_index);
     if (set_calibration)
     {
-      ROS_INFO_NAMED(ros::this_node::getName(),
-               "Loaded calibration %hhu",
-               sensor_calibration_index);
+      ROS_INFO("Loaded calibration %hhu", sensor_calibration_index);
       status_pub_
           = nh_.advertise<geometry_msgs::WrenchStamped>(status_topic, 1, false);
       reset_or_set_bias_service_
@@ -84,9 +75,7 @@ public:
     }
     else
     {
-      ROS_FATAL_NAMED(ros::this_node::getName(),
-              "Failed to load calibration %x",
-              sensor_calibration_index);
+      ROS_FATAL("Failed to load calibration %x", sensor_calibration_index);
     }
   }
 
@@ -106,9 +95,7 @@ public:
 
   void Loop(const double poll_rate)
   {
-    ROS_INFO_NAMED(ros::this_node::getName(),
-             "Starting to stream F/T measurements at %f Hz...",
-             poll_rate);
+    ROS_INFO("Starting to stream F/T measurements at %f Hz...", poll_rate);
     ros::Rate rate(poll_rate);
     while (ros::ok())
     {

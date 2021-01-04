@@ -6,7 +6,6 @@ find_package(catkin REQUIRED COMPONENTS
              control_msgs
              geometry_msgs
              roscpp
-             rospy
              sensor_msgs
              std_msgs
              std_srvs
