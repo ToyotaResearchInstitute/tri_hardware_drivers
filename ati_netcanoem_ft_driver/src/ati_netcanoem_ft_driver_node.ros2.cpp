@@ -66,14 +66,7 @@ public:
     std::function<void(const std::string&)> logging_fn
         = [this] (const std::string& message)
     {
-      if (rclcpp::ok())
-      {
-        RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
-      }
-      else
-      {
-        std::cout << "[Post-shutdown] " << message << std::endl;
-      }
+      RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
     };
     RCLCPP_INFO(
         this->get_logger(),
