@@ -37,7 +37,8 @@ catkin_package(INCLUDE_DIRS
                tf2_msgs
                message_runtime
                DEPENDS
-               Eigen3)
+               Eigen3
+               CFG_EXTRAS ${PROJECT_NAME}-extras.cmake)
 
 ###########
 ## Build ##
@@ -62,10 +63,14 @@ add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
 add_compile_options(-march=native)
 
+add_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=1)
+
 ## Interface library
 add_library(${PROJECT_NAME}
             include/${PROJECT_NAME}/dji_robomaster_ep_driver.hpp
-            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp)
+            include/${PROJECT_NAME}/joystick_controller_mappings.hpp
+            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp
+            src/${PROJECT_NAME}/joystick_controller_mappings.cpp)
 add_dependencies(${PROJECT_NAME}
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -73,7 +78,7 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ## ROS driver node
 add_executable(${PROJECT_NAME}_node
-               src/dji_robomaster_ep_driver_node.cpp)
+               src/dji_robomaster_ep_driver_node.ros1.cpp)
 add_dependencies(${PROJECT_NAME}_node
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -83,9 +88,9 @@ target_link_libraries(${PROJECT_NAME}_node
 
 ## ROS joystick teleoperation node
 add_executable(joystick_teleop_node
-               src/joystick_teleop_node.cpp)
+               src/joystick_teleop_node.ros1.cpp)
 add_dependencies(joystick_teleop_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(joystick_teleop_node ${catkin_LIBRARIES})
+target_link_libraries(joystick_teleop_node ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #############
 ## Install ##

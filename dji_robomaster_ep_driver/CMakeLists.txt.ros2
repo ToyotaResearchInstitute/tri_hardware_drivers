@@ -36,11 +36,16 @@ add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
 add_compile_options(-march=native)
 
+add_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
+
 ## Interface library
 add_library(${PROJECT_NAME}
             include/${PROJECT_NAME}/dji_robomaster_ep_driver.hpp
-            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp)
-ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
+            include/${PROJECT_NAME}/joystick_controller_mappings.hpp
+            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp
+            src/${PROJECT_NAME}/joystick_controller_mappings.cpp)
+ament_target_dependencies(${PROJECT_NAME}
+  common_robotics_utilities geometry_msgs sensor_msgs)
 
 ## ROS components
 add_library(${PROJECT_NAME}_components SHARED
@@ -83,9 +88,12 @@ install(DIRECTORY include/
   PATTERN ".svn" EXCLUDE
 )
 
+ament_export_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})
 ament_export_dependencies(common_robotics_utilities)
+ament_export_dependencies(geometry_msgs)
+ament_export_dependencies(sensor_msgs)
 ament_export_dependencies(Eigen3)
 
 ament_package()
