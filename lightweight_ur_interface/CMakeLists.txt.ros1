@@ -74,7 +74,7 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
 add_executable(ur_minimal_hardware_interface
-               src/ur_minimal_hardware_interface.cpp)
+               src/ur_minimal_hardware_interface.ros1.cpp)
 add_dependencies(ur_minimal_hardware_interface
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -85,7 +85,8 @@ target_link_libraries(ur_minimal_hardware_interface
 ## Declare a C++ executable
 add_executable(ur_script_hardware_interface
                include/${PROJECT_NAME}/control_program.hpp
-               src/ur_script_hardware_interface.cpp)
+               include/${PROJECT_NAME}/ur_script_hardware_interface.hpp
+               src/ur_script_hardware_interface.ros1.cpp)
 add_dependencies(ur_script_hardware_interface
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -94,7 +95,7 @@ target_link_libraries(ur_script_hardware_interface
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_position_controller src/ur_position_controller.cpp)
+add_executable(ur_position_controller src/ur_position_controller.ros1.cpp)
 add_dependencies(ur_position_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -103,7 +104,7 @@ target_link_libraries(ur_position_controller
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_trajectory_controller src/ur_trajectory_controller.cpp)
+add_executable(ur_trajectory_controller src/ur_trajectory_controller.ros1.cpp)
 add_dependencies(ur_trajectory_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -112,7 +113,7 @@ target_link_libraries(ur_trajectory_controller
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_cartesian_controller src/ur_cartesian_controller.cpp)
+add_executable(ur_cartesian_controller src/ur_cartesian_controller.ros1.cpp)
 add_dependencies(ur_cartesian_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

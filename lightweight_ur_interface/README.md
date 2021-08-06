@@ -3,9 +3,9 @@ Lightweight ROS driver for Universal Robots platforms. Exclusively uses the real
 
 ## Dependencies
 
-- [ROS Kinetic](http://ros.org)
+- [ROS](http://ros.org)
 
-ROS provides the build system, Catkin, and IPC with the driver. May work with other ROS variants, but has not been tested outside of Ubuntu 16.04.* and ROS Kinetic.
+ROS provides the build system and IPC with the driver.
 
 ## Optional Dependencies (real or simulated robot hardware)
 
@@ -13,9 +13,51 @@ ROS provides the build system, Catkin, and IPC with the driver. May work with ot
 
 - Universal Robots URSIM simulator
 
+## Setup
+
+Clone into an existing ROS workspace.
+
+This package supports [ROS 1 Kinetic+](http://wiki.ros.org/ROS/Installation) and [ROS 2 Foxy+](https://index.ros.org/doc/ros2/Installation/) distributions.
+Make sure to symlink the corresponding `CMakeLists.txt` and `package.xml` files for the ROS distribution of choice:
+
+*For ROS 1 Kinetic+*
+```sh
+cd ~/ws/src/lightweight_ur_interface
+ln -sT CMakeLists.txt.ros1 CMakeLists.txt
+ln -sT package.xml.ros1 package.xml
+```
+
+*For ROS 2 Foxy+*
+```sh
+cd ~/ws/src/lightweight_ur_interface
+ln -sT CMakeLists.txt.ros2 CMakeLists.txt
+ln -sT package.xml.ros2 package.xml
+```
+
+Use [`rosdep`](https://docs.ros.org/independent/api/rosdep/html/) to ensure all dependencies in the `package.xml` are satisfied:
+
+```sh
+cd ~/ws
+rosdep install -i -y --from-path src
+```
+
 ## Build
 
-Clone into an existing Catkin workspace and build with `catkin_make`.
+Use [`catkin_make`](http://wiki.ros.org/catkin/commands/catkin_make) or [`colcon`](https://colcon.readthedocs.io/en/released/) accordingly.
+
+*In ROS 1 Kinetic+*
+```sh
+cd ~/ws
+catkin_make  # the entire workspace
+catkin_make --pkg lightweight_ur_interface  # the package only
+```
+
+*In ROS 2 Foxy +*
+```sh
+cd ~/ws
+colcon build  # the entire workspace
+colcon build --packages-select lightweight_ur_interface  # the package only
+```
 
 ## Functionality
 
@@ -53,16 +95,23 @@ The planned solution is a second hardware interface node that reads state over t
 
 1. *Prerequisite*: Your computer must be connected to a simulated or real Universal Robots controller. Note the controller IP address, since you'll need it to start the driver.
 
-2. *Prerequisite*: ROS must be running. You can start directly by running `roscore` in a terminal, or by running a `roslaunch` file.
+2. *Prerequisite (ROS 1 Kinetic+)*: the ROS master must be running. You can start directly by running `roscore` in a terminal, or by running a `roslaunch` file.
 
 3. Start the hardware interface. As an example, using the default topic names (you should not change them unless you need to) and scaling the velocity and acceleration limits to 50% of what the hardware supports:
 
+*In ROS 1 Kinetic+*
 ```
 ~$ rosrun lightweight_ur_interface ur_minimal_hardware_interface _robot_hostname:="<YOUR ROBOT's IP ADDRESS>" _velocity_limit_scaling:=0.5 _acceleration_limit_scaling:=0.5
 ```
 
-4. Start one or more more controllers. These controllers must use equivalent or lower velocity and acceleration scaling as the hardware interface, or unexpected motion may result! You can also provide the control gains to use for the PD controllers in the form of kp and kd. Examples for each of the three controllers:
+*In ROS 2 Foxy+*
+```
+~$ ros2 run lightweight_ur_interface ur_minimal_hardware_interface --ros-args -p robot_hostname:="<YOUR ROBOT's IP ADDRESS>" -p velocity_limit_scaling:=0.5 -p acceleration_limit_scaling:=0.5
+```
 
+4. Start one or more controllers. These controllers must use equivalent or lower velocity and acceleration scaling as the hardware interface, or unexpected motion may result! You can also provide the control gains to use for the PD controllers in the form of kp and kd. Examples for each of the three controllers:
+
+*In ROS 1 Kinetic+*
 ```
 ~$ rosrun lightweight_ur_interface ur_position_controller _velocity_limit_scaling:=0.5 _acceleration_limit_scaling:=0.5 _base_kp:=1.0 _base_kd:=0.1
 
@@ -73,3 +122,17 @@ The planned solution is a second hardware interface node that reads state over t
 ```
 ~$ rosrun lightweight_ur_interface ur_trajectory_controller _velocity_limit_scaling:=0.5 _acceleration_limit_scaling:=0.5 _base_kp:=1.0 _base_kd:=0.1
 ```
+
+*In ROS 2 Foxy+*
+```
+~$ ros2 run lightweight_ur_interface ur_position_controller --ros-args -p velocity_limit_scaling:=0.5 -p acceleration_limit_scaling:=0.5 -p base_kp:=1.0 -p base_kd:=0.1
+
+```
+```
+~$ ros2 run lightweight_ur_interface ur_cartesian_controller --ros-args -p max_linear_velocity:=0.5 -p max_angular_velocity:=1.0 -p translation_kp:=1.0 -p translation_kd:=0.1 -p rotation_kp:=1.0 -p rotation_kd:=0.1
+```
+```
+~$ ros2 run lightweight_ur_interface ur_trajectory_controller --ros-args -p velocity_limit_scaling:=0.5 -p acceleration_limit_scaling:=0.5 -p base_kp:=1.0 -p base_kd:=0.1
+```
+
+Note: all ROS 2 nodes are registered as components and can be loaded together in the same process.

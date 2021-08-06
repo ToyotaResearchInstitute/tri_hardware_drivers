@@ -1,0 +1,134 @@
+cmake_minimum_required(VERSION 3.5)
+project(lightweight_ur_interface)
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+find_package(common_robotics_utilities REQUIRED)
+find_package(control_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+
+find_package(Eigen3 REQUIRED)
+set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+
+## Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  msg/PositionCommand.msg
+  msg/VelocityCommand.msg
+  DEPENDENCIES std_msgs geometry_msgs
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+## Declare main C++ library
+add_library(${PROJECT_NAME}
+            include/${PROJECT_NAME}/ur_robot_config.hpp
+            include/${PROJECT_NAME}/ur_minimal_realtime_driver.hpp
+            src/${PROJECT_NAME}/ur_minimal_realtime_driver.cpp)
+ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
+
+## Declare ROS C++ components
+add_library(${PROJECT_NAME}_components SHARED
+  include/${PROJECT_NAME}/control_program.hpp
+  include/${PROJECT_NAME}/ur_script_hardware_interface.hpp
+  src/ur_minimal_hardware_interface.ros2.cpp
+  src/ur_script_hardware_interface.ros2.cpp
+  src/ur_position_controller.ros2.cpp
+  src/ur_trajectory_controller.ros2.cpp
+  src/ur_cartesian_controller.ros2.cpp)
+ament_target_dependencies(${PROJECT_NAME}_components
+  geometry_msgs
+  common_robotics_utilities
+  control_msgs
+  rclcpp
+  rclcpp_components
+  sensor_msgs
+  std_msgs
+  std_srvs
+)
+rosidl_target_interfaces(${PROJECT_NAME}_components ${PROJECT_NAME}_msgs rosidl_generator_cpp)
+target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
+add_dependencies(${PROJECT_NAME}_components ${PROJECT_NAME}_msgs)
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "lightweight_ur_interface::URMinimalHardwareInterfaceNode"
+  EXECUTABLE ur_minimal_hardware_interface
+)
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "lightweight_ur_interface::URScriptHardwareInterfaceNode"
+  EXECUTABLE ur_script_hardware_interface
+)
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "lightweight_ur_interfaces::URPositionControllerNode"
+  EXECUTABLE ur_position_controller
+)
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "lightweight_ur_interfaces::URCartesianControllerNode"
+  EXECUTABLE ur_cartesian_controller
+)
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "lightweight_ur_interfaces::URTrajectoryControllerNode"
+  EXECUTABLE ur_trajectory_controller
+)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS
+  ${PROJECT_NAME}
+  ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.hpp"
+  PATTERN ".svn" EXCLUDE
+)
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+ament_export_dependencies(common_robotics_utilities)
+ament_export_dependencies(Eigen3)
+ament_export_dependencies(rosidl_default_runtime)
+
+ament_package()
