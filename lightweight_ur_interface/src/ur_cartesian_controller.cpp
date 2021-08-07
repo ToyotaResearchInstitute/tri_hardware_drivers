@@ -138,8 +138,8 @@ public:
   inline bool AbortCB(std_srvs::Empty::Request& req,
                       std_srvs::Empty::Response& res)
   {
-    UNUSED(req);
-    UNUSED(res);
+    CRU_UNUSED(req);
+    CRU_UNUSED(res);
     ROS_INFO("Aborting pose target");
     const Twist stop_twist = Twist::Zero();
     CommandTwist(stop_twist, twist_frame_);
