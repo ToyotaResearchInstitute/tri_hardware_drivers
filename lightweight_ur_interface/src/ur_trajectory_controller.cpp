@@ -266,8 +266,8 @@ public:
 
   bool AbortCB(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
   {
-    UNUSED(req);
-    UNUSED(res);
+    CRU_UNUSED(req);
+    CRU_UNUSED(res);
     ROS_INFO("Aborting trajectory execution");
     CommandVelocities(std::vector<double>(joint_names_.size(), 0.0));
     active_trajectory_.reset();

@@ -31,7 +31,7 @@ DJIRobomasterEPState::DJIRobomasterEPState(
 {
   // Chassis pose
   // TODO(calderpg) Figure out how to handle the chassis attitude.
-  UNUSED(chassis_attitude);
+  CRU_UNUSED(chassis_attitude);
 
   const Eigen::Translation3d position(
       chassis_position.x(), chassis_position.y(), 0.0);
