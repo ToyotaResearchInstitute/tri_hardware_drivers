@@ -62,7 +62,10 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} modbus)
 
 ## Declare a C++ executable
 add_executable(${PROJECT_NAME}_node
-               src/robotiq_3_finger_gripper_driver_node.cpp)
+               src/robotiq_3_finger_gripper_driver_node.ros1.cpp
+               src/type_conversions.hpp)
+target_compile_definitions(${PROJECT_NAME}_node PRIVATE
+  -DROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION=1)
 add_dependencies(${PROJECT_NAME}_node
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

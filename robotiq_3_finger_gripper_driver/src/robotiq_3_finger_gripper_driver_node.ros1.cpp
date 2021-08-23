@@ -9,6 +9,8 @@
 #include <ros/xmlrpc_manager.h>
 #include <signal.h>
 
+#include "type_conversions.hpp"
+
 namespace robotiq_3_finger_gripper_driver
 {
 class Robotiq3FingerDriver
@@ -57,36 +59,13 @@ public:
 
 private:
 
-  static Robotiq3FingerGripperActuatorCommand ConvertActuatorCommand(
-      const Robotiq3FingerActuatorCommand& command)
-  {
-    return Robotiq3FingerGripperActuatorCommand(command.percent_closed,
-                                                command.percent_speed,
-                                                command.percent_effort);
-  }
-
-  static Robotiq3FingerActuatorState ConvertActuatorStatus(
-      const Robotiq3FingerGripperActuatorStatus& status)
-  {
-    Robotiq3FingerActuatorState finger_state;
-    finger_state.target_percent_closed = status.TargetPosition();
-    finger_state.actual_percent_closed = status.ActualPosition();
-    finger_state.actual_percent_current = status.ActualCurrent();
-    finger_state.object_status = static_cast<uint8_t>(status.ObjectStatus());
-    return finger_state;
-  }
-
   void CommandCB(Robotiq3FingerCommand command_msg)
   {
     try
     {
-      const Robotiq3FingerGripperCommand
-          gripper_command(ConvertActuatorCommand(command_msg.finger_a_command),
-                          ConvertActuatorCommand(command_msg.finger_b_command),
-                          ConvertActuatorCommand(command_msg.finger_c_command),
-                          ConvertActuatorCommand(command_msg.scissor_command));
       const bool sent
-          = gripper_interface_ptr_->SendGripperCommand(gripper_command);
+          = gripper_interface_ptr_->SendGripperCommand(
+              ConvertFingerCommand(command_msg));
       if (!sent)
       {
         ROS_ERROR("Failed to send command to gripper");
@@ -100,25 +79,8 @@ private:
 
   void PublishGripperStatus()
   {
-    const Robotiq3FingerGripperStatus status
-        = gripper_interface_ptr_->GetGripperStatus();
-    Robotiq3FingerState state_msg;
-    state_msg.finger_a_state = ConvertActuatorStatus(status.FingerAStatus());
-    state_msg.finger_b_state = ConvertActuatorStatus(status.FingerBStatus());
-    state_msg.finger_c_state = ConvertActuatorStatus(status.FingerCStatus());
-    state_msg.scissor_state = ConvertActuatorStatus(status.ScissorStatus());
-    state_msg.gripper_activation_state
-        = static_cast<uint8_t>(status.GripperActivationStatus());
-    state_msg.gripper_mode_state
-        = static_cast<uint8_t>(status.GripperModeStatus());
-    state_msg.gripper_action_state
-        = static_cast<uint8_t>(status.GripperActionStatus());
-    state_msg.gripper_system_state
-        = static_cast<uint8_t>(status.GripperSystemStatus());
-    state_msg.gripper_motion_state
-        = static_cast<uint8_t>(status.GripperMotionStatus());
-    state_msg.gripper_fault_state
-        = static_cast<uint8_t>(status.GripperFaultStatus());
+    Robotiq3FingerState state_msg = ConvertFingerStatus(
+        gripper_interface_ptr_->GetGripperStatus());
     state_msg.header.stamp = ros::Time::now();
     status_pub_.publish(state_msg);
   }
