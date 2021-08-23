@@ -1,0 +1,80 @@
+cmake_minimum_required(VERSION 3.5)
+project(robotiq_2_finger_gripper_driver)
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+
+## Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  msg/Robotiq2FingerCommand.msg
+  msg/Robotiq2FingerState.msg
+  LIBRARY_NAME ${PROJECT_NAME}
+  DEPENDENCIES std_msgs
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include)
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+## Declare main C++ library
+add_library(${PROJECT_NAME}
+            include/${PROJECT_NAME}/robotiq_2_finger_gripper_driver.hpp
+            src/${PROJECT_NAME}/robotiq_2_finger_gripper_driver.cpp)
+target_link_libraries(${PROJECT_NAME} modbus)
+
+## Declare ROS C++ components
+add_library(${PROJECT_NAME}_components SHARED src/robotiq_2_finger_gripper_driver_node.ros2.cpp)
+ament_target_dependencies(${PROJECT_NAME}_components rclcpp rclcpp_components)
+rosidl_get_typesupport_target(${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME} ${${PROJECT_NAME}_cpp_msgs_target})
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "robotiq_2_finger_gripper_driver::Robotiq2FingerDriverNode"
+  EXECUTABLE ${PROJECT_NAME}_node
+)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.hpp"
+  PATTERN ".svn" EXCLUDE
+)
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+
+ament_package()
