@@ -1,0 +1,74 @@
+cmake_minimum_required(VERSION 3.5)
+project(robotiq_ft_driver)
+
+find_package(ament_cmake REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+
+find_package(Eigen3 REQUIRED)
+set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+## Declare a C++ library
+add_library(${PROJECT_NAME}
+            include/${PROJECT_NAME}/robotiq_ft_driver.hpp
+            src/${PROJECT_NAME}/robotiq_ft_driver.cpp)
+target_link_libraries(${PROJECT_NAME} modbus)
+
+## Declare ROS C++ components
+add_library(${PROJECT_NAME}_components SHARED
+  src/robotiq_ft_driver_node.ros2.cpp)
+ament_target_dependencies(${PROJECT_NAME}_components
+  rclcpp rclcpp_components geometry_msgs)
+target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
+
+rclcpp_components_register_node(
+  ${PROJECT_NAME}_components
+  PLUGIN "robotiq_ft_driver::RobotiqFTDriverNode"
+  EXECUTABLE ${PROJECT_NAME}_node
+)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.hpp"
+  PATTERN ".svn" EXCLUDE
+)
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+
+ament_package()
