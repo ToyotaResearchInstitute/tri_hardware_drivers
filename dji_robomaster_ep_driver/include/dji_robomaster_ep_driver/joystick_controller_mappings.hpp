@@ -25,9 +25,7 @@ public:
 
   ControllerMapping(double max_linear_velocity, double max_angular_velocity)
     : max_linear_velocity_(max_linear_velocity),
-      max_angular_velocity_(max_angular_velocity)
-  {
-  }
+      max_angular_velocity_(max_angular_velocity) {}
 
   virtual ~ControllerMapping() = default;
 
