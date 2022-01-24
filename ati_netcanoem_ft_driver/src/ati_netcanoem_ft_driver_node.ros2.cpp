@@ -118,10 +118,13 @@ void AtiNetCanOemDriverNode::ResetOrSetBiasCallback(
     std::shared_ptr<std_srvs::srv::SetBool::Request> req,
     std::shared_ptr<std_srvs::srv::SetBool::Response> res)
 {
-  if (req->data) {
+  if (req->data)
+  {
     sensor_ptr_->ResetBias();
     res->message = "Reset bias";
-  } else {
+  }
+  else
+  {
     sensor_ptr_->SetBias();
     res->message = "Set bias";
   }
