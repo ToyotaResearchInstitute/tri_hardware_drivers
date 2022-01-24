@@ -20,7 +20,7 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
+include_directories(include src SYSTEM ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
 add_compile_options(-std=c++14)
@@ -47,7 +47,7 @@ add_library(${PROJECT_NAME}
 ament_target_dependencies(${PROJECT_NAME}
   common_robotics_utilities geometry_msgs sensor_msgs)
 
-## ROS components
+## Declare C++ components library
 add_library(${PROJECT_NAME}_components SHARED
   src/dji_robomaster_ep_driver_node.ros2.cpp
   src/joystick_teleop_node.ros2.cpp)
@@ -56,17 +56,19 @@ ament_target_dependencies(${PROJECT_NAME}_components
   common_robotics_utilities geometry_msgs nav_msgs rclcpp
   rclcpp_components sensor_msgs std_msgs tf2_msgs)
 
-rclcpp_components_register_node(
+## Register C++ components
+rclcpp_components_register_nodes(
   ${PROJECT_NAME}_components
-  PLUGIN "dji_robomaster_ep_driver::DJIRobomasterEPDriverNode"
-  EXECUTABLE ${PROJECT_NAME}_node
+  "dji_robomaster_ep_driver::DJIRobomasterEPDriverNode"
+  "dji_robomaster_ep_driver::ControllerTeleopNode"
 )
 
-rclcpp_components_register_node(
-  ${PROJECT_NAME}_components
-  PLUGIN "dji_robomaster_ep_driver::ControllerTeleopNode"
-  EXECUTABLE joystick_teleop_node
-)
+## Declare C++ components' executables
+add_executable(${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+
+add_executable(joystick_teleop_node src/joystick_teleop_node_main.ros2.cpp)
+target_link_libraries(joystick_teleop_node ${PROJECT_NAME}_components)
 
 #############
 ## Install ##
@@ -79,6 +81,11 @@ install(TARGETS
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  ${PROJECT_NAME}_node joystick_teleop_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 ## Mark cpp header files for installation
