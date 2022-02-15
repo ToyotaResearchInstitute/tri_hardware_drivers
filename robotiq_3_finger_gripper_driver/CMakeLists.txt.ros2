@@ -51,17 +51,21 @@ target_link_libraries(${PROJECT_NAME} modbus)
 add_library(${PROJECT_NAME}_components SHARED
   src/robotiq_3_finger_gripper_driver_node.ros2.cpp
   src/type_conversions.hpp)
-target_compile_definitions(${PROJECT_NAME}_components PRIVATE
+target_compile_definitions(${PROJECT_NAME}_components PUBLIC
   -DROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION=2)
 ament_target_dependencies(${PROJECT_NAME}_components rclcpp rclcpp_components)
 rosidl_get_typesupport_target(${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
 target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME} ${${PROJECT_NAME}_cpp_msgs_target})
 
-rclcpp_components_register_node(
+## Register C++ components
+rclcpp_components_register_nodes(
   ${PROJECT_NAME}_components
-  PLUGIN "robotiq_3_finger_gripper_driver::Robotiq3FingerDriverNode"
-  EXECUTABLE ${PROJECT_NAME}_node
+  "robotiq_3_finger_gripper_driver::Robotiq3FingerDriverNode"
 )
+
+## Declare C++ component executable
+add_executable(${PROJECT_NAME}_node src/robotiq_3_finger_gripper_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 #############
 ## Install ##
@@ -74,6 +78,11 @@ install(TARGETS
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 ## Mark cpp header files for installation
