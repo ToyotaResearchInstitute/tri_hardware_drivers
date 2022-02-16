@@ -44,11 +44,15 @@ ament_target_dependencies(${PROJECT_NAME}_components
   rclcpp rclcpp_components geometry_msgs)
 target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
 
-rclcpp_components_register_node(
+## Register C++ components
+rclcpp_components_register_nodes(
   ${PROJECT_NAME}_components
-  PLUGIN "robotiq_ft_driver::RobotiqFTDriverNode"
-  EXECUTABLE ${PROJECT_NAME}_node
+  "robotiq_ft_driver::RobotiqFTDriverNode"
 )
+
+## Declare C++ component executable
+add_executable(${PROJECT_NAME}_node src/robotiq_ft_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 #############
 ## Install ##
@@ -59,6 +63,11 @@ install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_components
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 ## Mark cpp header files for installation
