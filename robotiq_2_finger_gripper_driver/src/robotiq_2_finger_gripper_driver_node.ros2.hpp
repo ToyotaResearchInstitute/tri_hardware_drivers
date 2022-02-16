@@ -1,3 +1,5 @@
+#pragma once
+
 #include <memory>
 
 #include <robotiq_2_finger_gripper_driver/robotiq_2_finger_gripper_driver.hpp>
