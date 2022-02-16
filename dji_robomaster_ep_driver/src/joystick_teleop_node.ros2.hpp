@@ -1,3 +1,5 @@
+#pragma once
+
 #include <dji_robomaster_ep_driver/joystick_controller_mappings.hpp>
 
 #include <memory>

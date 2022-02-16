@@ -1,3 +1,5 @@
+#pragma once
+
 #include <dji_robomaster_ep_driver/dji_robomaster_ep_driver.hpp>
 
 #include <memory>
