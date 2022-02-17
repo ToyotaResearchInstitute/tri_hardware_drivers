@@ -13,8 +13,9 @@ namespace robotiq_ft_driver
 class RobotiqFTDriverNode : public rclcpp::Node
 {
 private:
-  std::string sensor_frame_;
   using WrenchStamped = geometry_msgs::msg::WrenchStamped;
+
+  std::string sensor_frame_;
   std::shared_ptr<rclcpp::Publisher<WrenchStamped>> status_pub_;
   std::unique_ptr<RobotiqFTModbusRtuInterface> sensor_ptr_;
   std::shared_ptr<rclcpp::TimerBase> poll_timer_;
