@@ -15,9 +15,10 @@ class Robotiq2FingerDriverNode : public rclcpp::Node
 private:
   using Robotiq2FingerState =
     robotiq_2_finger_gripper_driver::msg::Robotiq2FingerState;
-  std::shared_ptr<rclcpp::Publisher<Robotiq2FingerState>> status_pub_;
   using Robotiq2FingerCommand =
     robotiq_2_finger_gripper_driver::msg::Robotiq2FingerCommand;
+
+  std::shared_ptr<rclcpp::Publisher<Robotiq2FingerState>> status_pub_;
   std::shared_ptr<rclcpp::Subscription<Robotiq2FingerCommand>> command_sub_;
   std::unique_ptr<Robotiq2FingerGripperModbusInterface> gripper_interface_ptr_;
   std::shared_ptr<rclcpp::TimerBase> poll_timer_;
