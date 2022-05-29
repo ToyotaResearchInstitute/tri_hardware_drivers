@@ -37,7 +37,11 @@ using common_robotics_utilities::utility::GetKeysFromMapLike;
 using common_robotics_utilities::conversions::StdVectorDoubleToEigenVectorXd;
 using common_robotics_utilities::conversions::EigenVectorXdToStdVectorDouble;
 using common_robotics_utilities::time_optimal_trajectory_parametrization
-          ::Trajectory;
+          ::PositionVelocityTrajectoryInterface;
+using common_robotics_utilities::time_optimal_trajectory_parametrization
+          ::PositionVelocityTimePoint;
+using common_robotics_utilities::time_optimal_trajectory_parametrization
+          ::ParametrizePathTOTP;
 
 class URTrajectoryController
 {
@@ -52,7 +56,7 @@ private:
 
   bool current_config_valid_;
   ros::Time active_trajectory_start_time_;
-  std::shared_ptr<Trajectory> active_trajectory_;
+  std::unique_ptr<PositionVelocityTrajectoryInterface> active_trajectory_;
   std::vector<double> current_config_;
   std::vector<double> current_velocities_;
 
@@ -147,12 +151,13 @@ public:
               = (ros::Time::now() - active_trajectory_start_time_).toSec();
           if (elapsed_time <= active_trajectory_->Duration())
           {
-            const std::pair<Eigen::VectorXd, Eigen::VectorXd> current_pos_vel
-                = active_trajectory_->GetPositionVelocity(elapsed_time);
+            const PositionVelocityTimePoint current_pos_vel
+                = active_trajectory_->GetPositionVelocityTimePoint(
+                    elapsed_time);
             const std::vector<double> current_target_position
-                = EigenVectorXdToStdVectorDouble(current_pos_vel.first);
+                = EigenVectorXdToStdVectorDouble(current_pos_vel.Position());
             const std::vector<double> current_target_velocity
-                = EigenVectorXdToStdVectorDouble(current_pos_vel.second);
+                = EigenVectorXdToStdVectorDouble(current_pos_vel.Velocity());
             const std::vector<double> raw_command
                 = ComputeRawCommandTrajectory(current_config_,
                                               current_velocities_,
@@ -191,11 +196,11 @@ public:
             ROS_INFO("Reached the end of the current trajectory at %f seconds, "
                      "switching to hold position",
                      elapsed_time);
-            const std::pair<Eigen::VectorXd, Eigen::VectorXd> end_pos_vel
-                = active_trajectory_->GetPositionVelocity(
+            const PositionVelocityTimePoint end_pos_vel
+                = active_trajectory_->GetPositionVelocityTimePoint(
                     active_trajectory_->Duration());
             const std::vector<double> current_target_position
-                = EigenVectorXdToStdVectorDouble(end_pos_vel.first);
+                = EigenVectorXdToStdVectorDouble(end_pos_vel.Position());
             const std::vector<double> raw_command
                 = ComputeRawCommandPosition(current_config_,
                                             current_target_position,
@@ -435,7 +440,7 @@ public:
     else if (CollectionsEqual<std::string>(
                  trajectory.joint_names, joint_names_))
     {
-      std::list<Eigen::VectorXd> ordered_waypoints;
+      std::vector<Eigen::VectorXd> ordered_waypoints;
       // Always add the current config to the beginning of the new trajectory
       ordered_waypoints.push_back(
             StdVectorDoubleToEigenVectorXd(current_config_));
@@ -508,15 +513,11 @@ public:
         const double timestep = 0.001;
         try
         {
-          std::shared_ptr<Trajectory> new_trajectory_ptr
-              = std::make_shared<Trajectory>(ordered_waypoints,
-                                             velocity_limits,
-                                             acceleration_limits,
-                                             max_path_deviation,
-                                             timestep);
+          auto new_trajectory_ptr = ParametrizePathTOTP(
+              ordered_waypoints, velocity_limits, acceleration_limits,
+              max_path_deviation, timestep);
           ROS_INFO("Starting execution of new trajectory");
-          active_trajectory_.reset();
-          active_trajectory_ = new_trajectory_ptr;
+          active_trajectory_ = std::move(new_trajectory_ptr);
           active_trajectory_start_time_ = ros::Time::now();
         }
         catch (const std::exception& ex)
