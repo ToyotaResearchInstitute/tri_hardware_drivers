@@ -29,8 +29,6 @@ using common_robotics_utilities::ros_conversions
           ::EigenIsometry3dToGeometryPoseStamped;
 using common_robotics_utilities::ros_conversions
           ::EigenVector3dToGeometryVector3;
-using common_robotics_utilities::math::RotateVectorReverse;
-using common_robotics_utilities::math::RotateVector;
 using common_robotics_utilities::utility::ClampValueAndWarn;
 using common_robotics_utilities::utility::CollectionsEqual;
 using common_robotics_utilities::utility::GetKeysFromMapLike;
@@ -48,8 +46,8 @@ private:
   ros::NodeHandle nh_;
   ros::Publisher joint_state_pub_;
   ros::Publisher ee_pose_pub_;
+  ros::Publisher ee_base_twist_pub_;
   ros::Publisher ee_body_twist_pub_;
-  ros::Publisher ee_world_twist_pub_;
   ros::Publisher ee_wrench_pub_;
   ros::Subscriber velocity_command_sub_;
   ros::Subscriber twist_command_sub_;
@@ -70,7 +68,7 @@ public:
       const std::string& twist_command_topic,
       const std::string& joint_state_topic,
       const std::string& ee_pose_topic,
-      const std::string& ee_world_twist_topic,
+      const std::string& ee_base_twist_topic,
       const std::string& ee_body_twist_topic,
       const std::string& ee_wrench_topic,
       const std::string& base_frame,
@@ -112,8 +110,8 @@ public:
         = nh_.advertise<sensor_msgs::JointState>(joint_state_topic, 1, false);
     ee_pose_pub_
         = nh_.advertise<geometry_msgs::PoseStamped>(ee_pose_topic, 1, false);
-    ee_world_twist_pub_
-        = nh_.advertise<geometry_msgs::TwistStamped>(ee_world_twist_topic,
+    ee_base_twist_pub_
+        = nh_.advertise<geometry_msgs::TwistStamped>(ee_base_twist_topic,
                                                      1,
                                                      false);
     ee_body_twist_pub_
@@ -172,6 +170,7 @@ public:
   {
     // Get the current time
     const ros::Time state_time = ros::Time::now();
+
     // Joint State
     sensor_msgs::JointState joint_state_msg;
     joint_state_msg.header.stamp = state_time;
@@ -184,34 +183,35 @@ public:
     latest_tcp_pose_ = robot_state.ActualTcpPose();
     valid_latest_state_ = true;
     latest_state_mutex_.unlock();
+
     // EE transform
     geometry_msgs::PoseStamped ee_transform_msg
         = EigenIsometry3dToGeometryPoseStamped(robot_state.ActualTcpPose(),
                                                base_frame_);
     ee_transform_msg.header.stamp = state_time;
+
     // EE twist
-    const Eigen::Matrix<double, 6, 1>& ee_world_twist
+    const Eigen::Matrix<double, 6, 1>& ee_base_twist
         = robot_state.ActualTcpTwist();
-    geometry_msgs::TwistStamped ee_world_twist_msg;
-    ee_world_twist_msg.header.stamp = state_time;
-    ee_world_twist_msg.header.frame_id = base_frame_name;
-    ee_world_twist_msg.twist.linear
-        = EigenVector3dToGeometryVector3(ee_world_twist.block<3, 1>(0, 0));
-    ee_world_twist_msg.twist.angular
-        = EigenVector3dToGeometryVector3(ee_world_twist.block<3, 1>(3, 0));
-    const Eigen::Quaterniond ee_rotation(
-          robot_state.ActualTcpPose().rotation());
-    const Eigen::Vector3d body_frame_linear_velocity
-        = RotateVectorReverse(ee_rotation, ee_world_twist.block<3, 1>(0, 0));
-    const Eigen::Vector3d body_frame_angular_velocity
-        = RotateVectorReverse(ee_rotation, ee_world_twist.block<3, 1>(3, 0));
+    geometry_msgs::TwistStamped ee_base_twist_msg;
+    ee_base_twist_msg.header.stamp = state_time;
+    ee_base_twist_msg.header.frame_id = base_frame_name;
+    ee_base_twist_msg.twist.linear
+        = EigenVector3dToGeometryVector3(ee_base_twist.block<3, 1>(0, 0));
+    ee_base_twist_msg.twist.angular
+        = EigenVector3dToGeometryVector3(ee_base_twist.block<3, 1>(3, 0));
+
+    const Eigen::Matrix<double, 6, 1> ee_body_twist
+        = common_robotics_utilities::math::TransformTwist(
+            robot_state.ActualTcpPose().inverse(), ee_base_twist);
     geometry_msgs::TwistStamped ee_body_twist_msg;
     ee_body_twist_msg.header.stamp = state_time;
     ee_body_twist_msg.header.frame_id = ee_frame_name;
     ee_body_twist_msg.twist.linear
-        = EigenVector3dToGeometryVector3(body_frame_linear_velocity);
+        = EigenVector3dToGeometryVector3(ee_body_twist.block<3, 1>(0, 0));
     ee_body_twist_msg.twist.angular
-        = EigenVector3dToGeometryVector3(body_frame_angular_velocity);
+        = EigenVector3dToGeometryVector3(ee_body_twist.block<3, 1>(3, 0));
+
     // EE wrench
     const Eigen::Matrix<double, 6, 1>& ee_wrench
         = robot_state.ActualTcpWrench();
@@ -222,10 +222,11 @@ public:
         = EigenVector3dToGeometryVector3(ee_wrench.block<3, 1>(0, 0));
     ee_wrench_msg.wrench.torque
         = EigenVector3dToGeometryVector3(ee_wrench.block<3, 1>(3, 0));
+
     // Publish
     joint_state_pub_.publish(joint_state_msg);
     ee_pose_pub_.publish(ee_transform_msg);
-    ee_world_twist_pub_.publish(ee_world_twist_msg);
+    ee_base_twist_pub_.publish(ee_base_twist_msg);
     ee_body_twist_pub_.publish(ee_body_twist_msg);
     ee_wrench_pub_.publish(ee_wrench_msg);
   }
@@ -391,25 +392,19 @@ public:
         latest_state_mutex_.unlock();
         if (valid_latest_state)
         {
-          const Eigen::Quaterniond latest_tcp_rotation(
-                latest_tcp_pose.rotation());
-          const Eigen::Vector3d ee_frame_linear_velocity(raw_twist[0],
-                                                         raw_twist[1],
-                                                         raw_twist[2]);
-          const Eigen::Vector3d ee_frame_angular_velocity(raw_twist[3],
-                                                          raw_twist[4],
-                                                          raw_twist[5]);
-          const Eigen::Vector3d base_frame_linear_velocity
-              = RotateVector(latest_tcp_rotation, ee_frame_linear_velocity);
-          const Eigen::Vector3d base_frame_angular_velocity
-              = RotateVector(latest_tcp_rotation, ee_frame_angular_velocity);
+          Eigen::Matrix<double, 6, 1> ee_body_frame_twist;
+          ee_body_frame_twist << raw_twist[0], raw_twist[1], raw_twist[2],
+                                 raw_twist[3], raw_twist[4], raw_twist[5];
+
+          const Eigen::Matrix<double, 6, 1> ee_base_frame_twist
+              = common_robotics_utilities::math::TransformTwist(
+                  latest_tcp_pose, ee_body_frame_twist);
+
           const std::vector<double> base_frame_twist
-              = {base_frame_linear_velocity.x(),
-                 base_frame_linear_velocity.y(),
-                 base_frame_linear_velocity.z(),
-                 base_frame_angular_velocity.x(),
-                 base_frame_angular_velocity.y(),
-                 base_frame_angular_velocity.z()};
+              = {ee_base_frame_twist(0), ee_base_frame_twist(1),
+                 ee_base_frame_twist(2), ee_base_frame_twist(3),
+                 ee_base_frame_twist(4), ee_base_frame_twist(5)};
+
           SendTwistCommand(base_frame_twist);
         }
         else
@@ -443,7 +438,7 @@ int main(int argc, char** argv)
       = "/ur10/joint_command_velocity";
   const std::string DEFAULT_TWIST_COMMAND_TOPIC = "/ur10/ee_twist_command";
   const std::string DEFAULT_EE_POSE_TOPIC = "/ur10/ee_pose";
-  const std::string DEFAULT_EE_WORLD_TWIST_TOPIC = "/ur10/ee_world_twist";
+  const std::string DEFAULT_EE_BASE_TWIST_TOPIC = "/ur10/ee_base_twist";
   const std::string DEFAULT_EE_BODY_TWIST_TOPIC = "/ur10/ee_body_twist";
   const std::string DEFAULT_EE_WRENCH_TOPIC = "/ur10/ee_wrench";
   const std::string DEFAULT_BASE_FRAME = "base";
@@ -461,9 +456,9 @@ int main(int argc, char** argv)
                   DEFAULT_TWIST_COMMAND_TOPIC);
   const std::string ee_pose_topic
       = nhp.param(std::string("ee_pose_topic"), DEFAULT_EE_POSE_TOPIC);
-  const std::string ee_world_twist_topic
-      = nhp.param(std::string("ee_world_twist_topic"),
-                  DEFAULT_EE_WORLD_TWIST_TOPIC);
+  const std::string ee_base_twist_topic
+      = nhp.param(std::string("ee_base_twist_topic"),
+                  DEFAULT_EE_BASE_TWIST_TOPIC);
   const std::string ee_body_twist_topic
       = nhp.param(std::string("ee_body_twist_topic"),
                   DEFAULT_EE_BODY_TWIST_TOPIC);
@@ -496,7 +491,7 @@ int main(int argc, char** argv)
                                             real_acceleration_limit_scaling);
   lightweight_ur_interface::URMinimalHardwareInterface interface(
       nh, velocity_command_topic, twist_command_topic, joint_state_topic,
-      ee_pose_topic, ee_world_twist_topic, ee_body_twist_topic, ee_wrench_topic,
+      ee_pose_topic, ee_base_twist_topic, ee_body_twist_topic, ee_wrench_topic,
       base_frame, ee_frame, ordered_joint_names, limits, robot_hostname);
   ROS_INFO("...startup complete");
   interface.Run(400.0);
