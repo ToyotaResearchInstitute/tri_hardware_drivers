@@ -1,0 +1,106 @@
+cmake_minimum_required(VERSION 3.5)
+project(dji_robomaster_ep_driver)
+
+find_package(ament_cmake REQUIRED)
+find_package(common_robotics_utilities REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+
+find_package(Eigen3 REQUIRED)
+set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include src SYSTEM ${Eigen3_INCLUDE_DIRS})
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+add_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
+
+## Interface library
+add_library(${PROJECT_NAME}
+            include/${PROJECT_NAME}/dji_robomaster_ep_driver.hpp
+            include/${PROJECT_NAME}/joystick_controller_mappings.hpp
+            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp
+            src/${PROJECT_NAME}/joystick_controller_mappings.cpp)
+ament_target_dependencies(${PROJECT_NAME}
+  common_robotics_utilities geometry_msgs sensor_msgs)
+
+## Declare C++ components library
+add_library(${PROJECT_NAME}_components SHARED
+  src/dji_robomaster_ep_driver_node.ros2.cpp
+  src/joystick_teleop_node.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
+ament_target_dependencies(${PROJECT_NAME}_components
+  common_robotics_utilities geometry_msgs nav_msgs rclcpp
+  rclcpp_components sensor_msgs std_msgs tf2_msgs)
+
+## Register C++ components
+rclcpp_components_register_nodes(
+  ${PROJECT_NAME}_components
+  "dji_robomaster_ep_driver::DJIRobomasterEPDriverNode"
+  "dji_robomaster_ep_driver::ControllerTeleopNode"
+)
+
+## Declare C++ components' executables
+add_executable(${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+
+add_executable(joystick_teleop_node src/joystick_teleop_node_main.ros2.cpp)
+target_link_libraries(joystick_teleop_node ${PROJECT_NAME}_components)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS
+  ${PROJECT_NAME}
+  ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(TARGETS
+  ${PROJECT_NAME}_node joystick_teleop_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.hpp"
+  PATTERN ".svn" EXCLUDE
+)
+
+ament_export_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+ament_export_dependencies(common_robotics_utilities)
+ament_export_dependencies(geometry_msgs)
+ament_export_dependencies(sensor_msgs)
+ament_export_dependencies(Eigen3)
+
+ament_package()

@@ -3,13 +3,55 @@ ROS driver for DJI's Robomaster EP robot, connected via USB or WiFi
 
 ## Dependencies
 
-- [ROS Kinetic+](http://ros.org)
+- [ROS](http://ros.org)
 
-ROS provides the build system, Catkin, and IPC with the driver.
+ROS provides the build system and IPC with the driver.
+
+## Setup
+
+Clone into an existing ROS workspace.
+
+This package supports [ROS 1 Kinetic+](http://wiki.ros.org/ROS/Installation) and [ROS 2 Foxy+](https://index.ros.org/doc/ros2/Installation/) distributions.
+Make sure to symlink the corresponding `CMakeLists.txt` and `package.xml` files for the ROS distribution of choice:
+
+*For ROS 1 Kinetic+*
+```sh
+cd ~/ws/src/dji_robomaster_ep_driver
+ln -sT CMakeLists.txt.ros1 CMakeLists.txt
+ln -sT package.xml.ros1 package.xml
+```
+
+*For ROS 2 Foxy+*
+```sh
+cd ~/ws/src/dji_robomaster_ep_driver
+ln -sT CMakeLists.txt.ros2 CMakeLists.txt
+ln -sT package.xml.ros2 package.xml
+```
+
+Use [`rosdep`](https://docs.ros.org/independent/api/rosdep/html/) to ensure all dependencies in the `package.xml` are satisfied:
+
+```sh
+cd ~/ws
+rosdep install -i -y --from-path src
+```
 
 ## Build
 
-Clone into an existing Catkin workspace and build with `catkin_make`.
+Use [`catkin_make`](http://wiki.ros.org/catkin/commands/catkin_make) or [`colcon`](https://colcon.readthedocs.io/en/released/) accordingly.
+
+*In ROS 1 Kinetic+*
+```sh
+cd ~/ws
+catkin_make  # the entire workspace
+catkin_make --pkg dji_robomaster_ep_driver  # the package only
+```
+
+*In ROS 2 Foxy +*
+```sh
+cd ~/ws
+colcon build  # the entire workspace
+colcon build --packages-select dji_robomaster_ep_driver  # the package only
+```
 
 ## Run
 
@@ -35,8 +77,16 @@ Parameters:
 
 To run the driver node:
 
+*In ROS 1 Kinetic+*
+
 ```
 ~$ rosrun dji_robomaster_ep_driver dji_robomaster_ep_driver_node _robot_name:="robomaster_ep" _odometry_frame_name:="world" _robot_frame_name:="robomaster_body"
+```
+
+*In ROS 2 Foxy+*
+
+```
+~$ ros2 run dji_robomaster_ep_driver dji_robomaster_ep_driver_node --ros-args -p robot_name:="robomaster_ep" -p odometry_frame_name:="world" -p robot_frame_name:="robomaster_body"
 ```
 
 3. Joystick teleoperation node
@@ -61,6 +111,14 @@ Parameters:
 
 To run the joystick teleoperation node:
 
+*In ROS 1 Kinetic+*
+
 ```
 ~$ rosrun dji_robomaster_ep_driver joystick_teleop_node _joystick_type:="xbox_one" _joystick_topic:="joy" _max_linear_velocity:="1.0" _max_angular_velocity:="1.0"
+```
+
+*In ROS 2 Foxy+*
+
+```
+~$ ros2 run dji_robomaster_ep_driver joystick_teleop_node --ros-args -p joystick_type:="xbox_one" -p joystick_topic:="joy" -p max_linear_velocity:="1.0" -p max_angular_velocity:="1.0"
 ```
