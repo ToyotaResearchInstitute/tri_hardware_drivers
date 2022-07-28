@@ -1,0 +1,94 @@
+cmake_minimum_required(VERSION 3.5)
+project(schunk_wsg_driver)
+
+find_package(ament_cmake REQUIRED)
+find_package(common_robotics_utilities REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+
+## Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  msg/WSGCommand.msg
+  msg/WSGState.msg
+  LIBRARY_NAME ${PROJECT_NAME}
+  DEPENDENCIES std_msgs
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include)
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+## Declare a C++ library
+add_library(${PROJECT_NAME}
+            include/${PROJECT_NAME}/schunk_wsg_driver_common.hpp
+            include/${PROJECT_NAME}/schunk_wsg_driver_ethernet.hpp
+            include/${PROJECT_NAME}/schunk_wsg_driver_can.hpp
+            src/${PROJECT_NAME}/schunk_wsg_driver_common.cpp
+            src/${PROJECT_NAME}/schunk_wsg_driver_ethernet.cpp
+            src/${PROJECT_NAME}/schunk_wsg_driver_can.cpp)
+ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
+
+## Declare ROS C++ components
+add_library(${PROJECT_NAME}_components SHARED
+  src/schunk_wsg_driver_node.ros2.cpp)
+ament_target_dependencies(${PROJECT_NAME}_components rclcpp rclcpp_components)
+rosidl_get_typesupport_target(${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME} ${${PROJECT_NAME}_cpp_msgs_target})
+
+## Register ROS C++ components
+rclcpp_components_register_nodes(
+  ${PROJECT_NAME}_components
+  "robotiq_3_finger_gripper_driver::Robotiq3FingerDriverNode"
+)
+
+## Declare ROS C++ component executables
+add_executable(${PROJECT_NAME}_node src/schunk_wsg_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS
+  ${PROJECT_NAME}
+  ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.hpp"
+    PATTERN ".svn" EXCLUDE)
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
+
+ament_package()
