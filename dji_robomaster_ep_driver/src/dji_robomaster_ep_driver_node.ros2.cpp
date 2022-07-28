@@ -19,8 +19,9 @@
 namespace dji_robomaster_ep_driver
 {
 
-DJIRobomasterEPDriverNode::DJIRobomasterEPDriverNode(const rclcpp::NodeOptions& options)
-  : rclcpp::Node("dji_robomaster_ep_driver_node", options)
+DJIRobomasterEPDriverNode::DJIRobomasterEPDriverNode(
+    const rclcpp::NodeOptions& options)
+    : rclcpp::Node("dji_robomaster_ep_driver_node", options)
 {
   const std::string robot_ip_address = this->declare_parameter(
       "robot_ip_address", std::string("192.168.42.2"));

@@ -18,7 +18,7 @@ namespace robotiq_3_finger_gripper_driver
 
 Robotiq3FingerDriverNode::Robotiq3FingerDriverNode(
     const rclcpp::NodeOptions& options)
-  : rclcpp::Node("robotiq_3_finger_driver", options)
+    : rclcpp::Node("robotiq_3_finger_driver", options)
 {
   // Default ROS params
   const std::string DEFAULT_INTERFACE_TYPE("tcp");

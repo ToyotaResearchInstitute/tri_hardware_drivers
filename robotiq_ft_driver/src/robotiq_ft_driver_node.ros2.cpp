@@ -10,7 +10,7 @@
 namespace robotiq_ft_driver
 {
 RobotiqFTDriverNode::RobotiqFTDriverNode(const rclcpp::NodeOptions& options)
-  : rclcpp::Node("robotiq_ft_driver", options)
+    : rclcpp::Node("robotiq_ft_driver", options)
 {
   // Default ROS params
   const double DEFAULT_POLL_RATE = 100.0;

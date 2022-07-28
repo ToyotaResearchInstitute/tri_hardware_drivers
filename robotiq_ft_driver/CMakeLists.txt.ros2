@@ -38,10 +38,10 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} modbus)
 
 ## Declare ROS C++ components
-add_library(${PROJECT_NAME}_components SHARED
-  src/robotiq_ft_driver_node.ros2.cpp)
-ament_target_dependencies(${PROJECT_NAME}_components
-  rclcpp rclcpp_components geometry_msgs)
+add_library(
+  ${PROJECT_NAME}_components SHARED src/robotiq_ft_driver_node.ros2.cpp)
+ament_target_dependencies(
+  ${PROJECT_NAME}_components rclcpp rclcpp_components geometry_msgs)
 target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
 
 ## Register C++ components

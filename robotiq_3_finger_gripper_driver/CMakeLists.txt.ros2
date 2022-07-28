@@ -54,8 +54,10 @@ add_library(${PROJECT_NAME}_components SHARED
 target_compile_definitions(${PROJECT_NAME}_components PUBLIC
   -DROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION=2)
 ament_target_dependencies(${PROJECT_NAME}_components rclcpp rclcpp_components)
-rosidl_get_typesupport_target(${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
-target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME} ${${PROJECT_NAME}_cpp_msgs_target})
+rosidl_get_typesupport_target(
+  ${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+target_link_libraries(
+  ${PROJECT_NAME}_components ${PROJECT_NAME} ${${PROJECT_NAME}_cpp_msgs_target})
 
 ## Register C++ components
 rclcpp_components_register_nodes(
@@ -64,7 +66,8 @@ rclcpp_components_register_nodes(
 )
 
 ## Declare C++ component executable
-add_executable(${PROJECT_NAME}_node src/robotiq_3_finger_gripper_driver_node_main.ros2.cpp)
+add_executable(
+  ${PROJECT_NAME}_node src/robotiq_3_finger_gripper_driver_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 #############

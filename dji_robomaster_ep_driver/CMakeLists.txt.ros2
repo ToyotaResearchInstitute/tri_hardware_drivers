@@ -64,7 +64,8 @@ rclcpp_components_register_nodes(
 )
 
 ## Declare C++ components' executables
-add_executable(${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
+add_executable(
+  ${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 add_executable(joystick_teleop_node src/joystick_teleop_node_main.ros2.cpp)

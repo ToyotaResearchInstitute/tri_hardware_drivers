@@ -53,7 +53,8 @@ rclcpp_components_register_nodes(
 )
 
 ## Declare C++ component executable
-add_executable(${PROJECT_NAME}_node src/ati_netcanoem_ft_driver_node_main.ros2.cpp)
+add_executable(
+  ${PROJECT_NAME}_node src/ati_netcanoem_ft_driver_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 ## Declare a C++ executable

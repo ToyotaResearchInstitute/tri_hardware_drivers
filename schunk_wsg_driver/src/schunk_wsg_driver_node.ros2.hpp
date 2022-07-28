@@ -9,7 +9,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-namespace schunk_wsg_driver {
+namespace schunk_wsg_driver
+{
 
 class SchunkWSGDriverNode : public rclcpp::Node
 {
@@ -20,13 +21,14 @@ public:
 
 private:
   using WSGState = schunk_wsg_driver::msg::WSGState;
-  std::shared_ptr<rclcpp::Publisher<WSGState>> status_pub_;
   using WSGCommand = schunk_wsg_driver::msg::WSGCommand;
+
+  std::shared_ptr<rclcpp::Publisher<WSGState>> status_pub_;
   std::shared_ptr<rclcpp::Subscription<WSGCommand>> command_sub_;
   std::shared_ptr<WSGInterface> gripper_interface_;
   std::shared_ptr<rclcpp::TimerBase> poll_timer_;
 
-  void CommandCB(const schunk_wsg_driver::msg::WSGCommand& command);
+  void CommandCB(const WSGCommand& command);
 
   void PublishGripperStatus();
 };

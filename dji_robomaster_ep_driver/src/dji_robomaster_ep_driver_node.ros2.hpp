@@ -22,20 +22,17 @@ public:
   void Loop();
 
 private:
-  void VelocityCommandCallback(const geometry_msgs::msg::TwistStamped& msg);
+  using TwistStamped = geometry_msgs::msg::TwistStamped;
+  using Odometry = nav_msgs::msg::Odometry;
+  using TFMessage = tf2_msgs::msg::TFMessage;
+  using Float64 = std_msgs::msg::Float64;
 
-  using VelocityCommandSubscription =
-      rclcpp::Subscription<geometry_msgs::msg::TwistStamped>;
-  std::shared_ptr<VelocityCommandSubscription> velocity_command_sub_;
+  void VelocityCommandCallback(const TwistStamped& msg);
 
-  using OdometryPublisher = rclcpp::Publisher<nav_msgs::msg::Odometry>;
-  std::shared_ptr<OdometryPublisher> odometry_pub_;
-
-  using TFMessagePublisher = rclcpp::Publisher<tf2_msgs::msg::TFMessage>;
-  std::shared_ptr<TFMessagePublisher> tf_pub_;
-
-  using Float64Publisher = rclcpp::Publisher<std_msgs::msg::Float64>;
-  std::shared_ptr<Float64Publisher> battery_percent_pub_;
+  std::shared_ptr<rclcpp::Subscription<TwistStamped>> velocity_command_sub_;
+  std::shared_ptr<rclcpp::Publisher<Odometry>> odometry_pub_;
+  std::shared_ptr<rclcpp::Publisher<TFMessage>> tf_pub_;
+  std::shared_ptr<rclcpp::Publisher<Float64>> battery_percent_pub_;
 
   std::shared_ptr<rclcpp::TimerBase> loop_timer_;
 
