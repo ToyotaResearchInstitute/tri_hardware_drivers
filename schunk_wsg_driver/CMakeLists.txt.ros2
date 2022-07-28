@@ -7,6 +7,9 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 
+## We don't depend on Drake, but we do use different build flags if present.
+find_package(drake QUIET)
+
 ## Generate messages in the 'msg' folder
 rosidl_generate_interfaces(${PROJECT_NAME}_msgs
   msg/WSGCommand.msg
@@ -24,6 +27,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}_msgs
 include_directories(include)
 
 ## Build options
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+cmake_policy(SET CMP0069 NEW)
+
 add_compile_options(-std=c++14)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
@@ -32,10 +38,17 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wshadow)
 add_compile_options(-O3)
 add_compile_options(-g)
-add_compile_options(-flto)
 add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
-add_compile_options(-march=native)
+add_compile_options(-Wpessimizing-move)
+add_compile_options(-Wuninitialized)
+
+if(drake_FOUND)
+    message(STATUS "Drake found, disabling -march=native")
+else()
+    message(STATUS "Drake NOT found, enabling -march=native")
+    add_compile_options(-march=native)
+endif()
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}

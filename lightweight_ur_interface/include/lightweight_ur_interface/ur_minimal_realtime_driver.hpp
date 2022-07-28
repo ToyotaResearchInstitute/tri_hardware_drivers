@@ -29,6 +29,9 @@
 
 namespace lightweight_ur_interface
 {
+using Twist = Eigen::Matrix<double, 6, 1>;
+using Wrench = Eigen::Matrix<double, 6, 1>;
+
 template<typename T, typename Container=std::vector<T>>
 inline common_robotics_utilities::serialization::Deserialized<Container>
 DeserializeKnownSizeVector(
@@ -79,44 +82,43 @@ private:
   std::vector<double> actual_tcp_acceleration_;
   std::vector<double> raw_target_tcp_pose_;
   std::vector<double> raw_actual_tcp_pose_;
-  Eigen::Isometry3d target_tcp_pose_;
-  Eigen::Isometry3d actual_tcp_pose_;
-  Eigen::Matrix<double, 6, 1> target_tcp_twist_;
-  Eigen::Matrix<double, 6, 1> target_tcp_wrench_;
-  Eigen::Matrix<double, 6, 1> actual_tcp_twist_;
-  Eigen::Matrix<double, 6, 1> actual_tcp_wrench_;
-  double protocol_version_;
-  double controller_uptime_;
-  double controller_rt_loop_time_;
-  double robot_mode_;
-  double safety_mode_;
-  double trajectory_limiter_speed_scaling_;
-  double linear_momentum_norm_;
-  double mainboard_voltage_;
-  double motorboard_voltage_;
-  double mainboard_current_;
-  bool initialized_;
+  Eigen::Isometry3d target_tcp_pose_ = Eigen::Isometry3d::Identity();
+  Eigen::Isometry3d actual_tcp_pose_ = Eigen::Isometry3d::Identity();
+  Twist target_tcp_twist_ = Twist::Zero();
+  Wrench target_tcp_wrench_ = Wrench::Zero();
+  Twist actual_tcp_twist_ = Twist::Zero();
+  Wrench actual_tcp_wrench_ = Wrench::Zero();
+  double protocol_version_ = 0.0;
+  double controller_uptime_ = 0.0;
+  double controller_rt_loop_time_ = 0.0;
+  double robot_mode_ = 0.0;
+  double safety_mode_ = 0.0;
+  double trajectory_limiter_speed_scaling_ = 0.0;
+  double linear_momentum_norm_ = 0.0;
+  double mainboard_voltage_ = 0.0;
+  double motorboard_voltage_ = 0.0;
+  double mainboard_current_ = 0.0;
+  bool initialized_ = false;
 
-  static inline Deserialized<std::vector<double>>
+  static Deserialized<std::vector<double>>
   DeserializeKnownSizeDoubleVector(
       const size_t size, const std::vector<uint8_t>& buffer,
       const uint64_t starting_offset)
   {
     return DeserializeKnownSizeVector<double, std::vector<double>>(
-      size, buffer, starting_offset,
-      common_robotics_utilities::serialization
-          ::DeserializeNetworkMemcpyable<double>);
+        size, buffer, starting_offset,
+        common_robotics_utilities::serialization
+            ::DeserializeNetworkMemcpyable<double>);
   }
 
-  static inline Eigen::Isometry3d TcpVectorToTransform(
+  static Eigen::Isometry3d TcpVectorToTransform(
       const std::vector<double>& tcp_vector)
   {
-    const Eigen::Translation3d translation(tcp_vector[0],
-                                           tcp_vector[1],
-                                           tcp_vector[2]);
-    const double rx = tcp_vector[3];
-    const double ry = tcp_vector[4];
-    const double rz = tcp_vector[5];
+    const Eigen::Translation3d translation(
+        tcp_vector.at(0), tcp_vector.at(1), tcp_vector.at(2));
+    const double rx = tcp_vector.at(3);
+    const double ry = tcp_vector.at(4);
+    const double rz = tcp_vector.at(5);
     const double angle = std::sqrt((rx * rx) + (ry * ry) + (rz * rz));
     Eigen::Quaterniond rotation;
     if (angle < 1e-16)
@@ -135,30 +137,28 @@ private:
     return transform;
   }
 
-  static inline Eigen::Matrix<double, 6, 1> TcpVelocityToTwist(
-      const std::vector<double>& tcp_velocity)
+  static Twist TcpVelocityToTwist(const std::vector<double>& tcp_velocity)
   {
-    Eigen::Matrix<double, 6, 1> twist = Eigen::Matrix<double, 6, 1>::Zero();
-    twist(0, 0) = tcp_velocity[0];
-    twist(1, 0) = tcp_velocity[1];
-    twist(2, 0) = tcp_velocity[2];
-    twist(3, 0) = tcp_velocity[3];
-    twist(4, 0) = tcp_velocity[4];
-    twist(5, 0) = tcp_velocity[5];
+    Twist twist = Twist::Zero();
+    twist(0, 0) = tcp_velocity.at(0);
+    twist(1, 0) = tcp_velocity.at(1);
+    twist(2, 0) = tcp_velocity.at(2);
+    twist(3, 0) = tcp_velocity.at(3);
+    twist(4, 0) = tcp_velocity.at(4);
+    twist(5, 0) = tcp_velocity.at(5);
     return twist;
   }
 
-  static inline Eigen::Matrix<double, 6, 1> TcpForceToWrench(
-      const std::vector<double>& tcp_velocity)
+  static Wrench TcpForceToWrench(const std::vector<double>& tcp_force)
   {
-    Eigen::Matrix<double, 6, 1> twist = Eigen::Matrix<double, 6, 1>::Zero();
-    twist(0, 0) = tcp_velocity[0];
-    twist(1, 0) = tcp_velocity[1];
-    twist(2, 0) = tcp_velocity[2];
-    twist(3, 0) = tcp_velocity[3];
-    twist(4, 0) = tcp_velocity[4];
-    twist(5, 0) = tcp_velocity[5];
-    return twist;
+    Wrench wrench = Wrench::Zero();
+    wrench(0, 0) = tcp_force.at(0);
+    wrench(1, 0) = tcp_force.at(1);
+    wrench(2, 0) = tcp_force.at(2);
+    wrench(3, 0) = tcp_force.at(3);
+    wrench(4, 0) = tcp_force.at(4);
+    wrench(5, 0) = tcp_force.at(5);
+    return wrench;
   }
 
 public:
@@ -166,7 +166,7 @@ public:
 
   URRealtimeState() : initialized_(false) {}
 
-  inline static Deserialized<URRealtimeState> Deserialize(
+  static Deserialized<URRealtimeState> Deserialize(
       const std::vector<uint8_t>& buffer, const uint64_t starting_offset)
   {
     URRealtimeState deserialized_state;
@@ -179,114 +179,88 @@ public:
   uint64_t DeserializeSelf(
       const std::vector<uint8_t>& buffer, const uint64_t starting_offset);
 
-  inline bool Initialized() { return initialized_; }
+  bool Initialized() { return initialized_; }
 
-  inline const std::vector<double>& TargetPosition() const
-  { return target_position_; }
+  const std::vector<double>& TargetPosition() const { return target_position_; }
 
-  inline const std::vector<double>& TargetVelocity() const
-  { return target_velocity_; }
+  const std::vector<double>& TargetVelocity() const { return target_velocity_; }
 
-  inline const std::vector<double>& TargetAcceleration() const
+  const std::vector<double>& TargetAcceleration() const
   { return target_acceleration_; }
 
-  inline const std::vector<double>& TargetCurrent() const
-  { return target_current_; }
+  const std::vector<double>& TargetCurrent() const { return target_current_; }
 
-  inline const std::vector<double>& TargetTorque() const
-  { return target_torque_; }
+  const std::vector<double>& TargetTorque() const { return target_torque_; }
 
-  inline const std::vector<double>& ActualPosition() const
-  { return actual_position_; }
+  const std::vector<double>& ActualPosition() const { return actual_position_; }
 
-  inline const std::vector<double>& ActualVelocity() const
-  { return actual_velocity_; }
+  const std::vector<double>& ActualVelocity() const { return actual_velocity_; }
 
-  inline const std::vector<double>& ActualAcceleration() const
+  const std::vector<double>& ActualAcceleration() const
   { return actual_acceleration_; }
 
-  inline const std::vector<double>& ActualCurrent() const
-  { return actual_current_; }
+  const std::vector<double>& ActualCurrent() const { return actual_current_; }
 
-  inline const std::vector<double>& ActualTorque() const
-  { return actual_torque_; }
+  const std::vector<double>& ActualTorque() const { return actual_torque_; }
 
-  inline const std::vector<double>& ControlCurrent() const
-  { return control_current_; }
+  const std::vector<double>& ControlCurrent() const { return control_current_; }
 
-  inline const std::vector<double>& MotorTemperature() const
+  const std::vector<double>& MotorTemperature() const
   { return motor_temperature_; }
 
-  inline const std::vector<double>& JointVoltage() const
-  { return joint_voltage_; }
+  const std::vector<double>& JointVoltage() const { return joint_voltage_; }
 
-  inline const std::vector<double>& JointMode() const
-  { return joint_mode_; }
+  const std::vector<double>& JointMode() const { return joint_mode_; }
 
-  inline const std::vector<double>& ActualTcpAcceleration() const
+  const std::vector<double>& ActualTcpAcceleration() const
   { return actual_tcp_acceleration_; }
 
-  inline const std::vector<double>& RawTargetTcpPose() const
+  const std::vector<double>& RawTargetTcpPose() const
   { return raw_target_tcp_pose_; }
 
-  inline const Eigen::Isometry3d& TargetTcpPose() const
-  { return target_tcp_pose_; }
+  const Eigen::Isometry3d& TargetTcpPose() const { return target_tcp_pose_; }
 
-  inline const Eigen::Matrix<double, 6, 1>& TargetTcpTwist() const
-  { return target_tcp_twist_; }
+  const Twist& TargetTcpTwist() const { return target_tcp_twist_; }
 
-  inline const Eigen::Matrix<double, 6, 1>& TargetTcpWrench() const
-  { return target_tcp_wrench_; }
+  const Wrench& TargetTcpWrench() const { return target_tcp_wrench_; }
 
-  inline const std::vector<double>& RawActualTcpPose() const
+  const std::vector<double>& RawActualTcpPose() const
   { return raw_actual_tcp_pose_; }
 
-  inline const Eigen::Isometry3d& ActualTcpPose() const
-  { return actual_tcp_pose_; }
+  const Eigen::Isometry3d& ActualTcpPose() const { return actual_tcp_pose_; }
 
-  inline const Eigen::Matrix<double, 6, 1>& ActualTcpTwist() const
-  { return actual_tcp_twist_; }
+  const Twist& ActualTcpTwist() const { return actual_tcp_twist_; }
 
-  inline const Eigen::Matrix<double, 6, 1>& ActualTcpWrench() const
-  { return actual_tcp_wrench_; }
+  const Wrench& ActualTcpWrench() const { return actual_tcp_wrench_; }
 
-  inline double ProtocolVersion() const
-  { return protocol_version_; }
+  double ProtocolVersion() const { return protocol_version_; }
 
-  inline double ControllerUptime() const
-  { return controller_uptime_; }
+  double ControllerUptime() const { return controller_uptime_; }
 
-  inline double ControllerRtLoopTime() const
-  { return controller_rt_loop_time_; }
+  double ControllerRtLoopTime() const { return controller_rt_loop_time_; }
 
-  inline double RobotMode() const
-  { return robot_mode_; }
+  double RobotMode() const { return robot_mode_; }
 
-  inline double SafetyMode() const
-  { return safety_mode_; }
+  double SafetyMode() const { return safety_mode_; }
 
-  inline double TrajectoryLimiterSpeedScaling() const
+  double TrajectoryLimiterSpeedScaling() const
   { return trajectory_limiter_speed_scaling_; }
 
-  inline double LinearMomentumNorm() const
-  { return linear_momentum_norm_; }
+  double LinearMomentumNorm() const { return linear_momentum_norm_; }
 
-  inline double MainboardVoltage() const
-  { return mainboard_voltage_; }
+  double MainboardVoltage() const { return mainboard_voltage_; }
 
-  inline double MotorboardVoltage() const
-  { return motorboard_voltage_; }
+  double MotorboardVoltage() const { return motorboard_voltage_; }
 
-  inline double MainboardCurrent() const
-  { return mainboard_current_; }
+  double MainboardCurrent() const { return mainboard_current_; }
 };
 
 class URRealtimeInterface
 {
 private:
 
-  int socket_fd_;
-  struct sockaddr_in robot_addr_;
+  int socket_fd_ = 0;
+  struct sockaddr_in robot_addr_{};
   std::mutex socket_mutex_;
   std::atomic<bool> connected_;
   std::atomic<bool> running_;
@@ -301,14 +275,14 @@ private:
 public:
 
   URRealtimeInterface(
-    const std::string& robot_host,
-    const std::function<void(const URRealtimeState&)>&
-      state_received_callback_fn,
-    const std::function<void(const std::string&)>& logging_fn);
+      const std::string& robot_host,
+      const std::function<void(const URRealtimeState&)>&
+          state_received_callback_fn,
+      const std::function<void(const std::string&)>& logging_fn);
 
   ~URRealtimeInterface();
 
-  inline void Log(const std::string& message) { logging_fn_(message); }
+  void Log(const std::string& message) { logging_fn_(message); }
 
   void StartRecv();
 
@@ -316,4 +290,4 @@ public:
 
   bool SendURScriptCommand(const std::string& command);
 };
-}
+}  // namespace lightweight_ur_interface

@@ -127,4 +127,4 @@ inline std::string MakeControlProgram(
   control_script_strm << "end\n";
   return control_script_strm.str();
 }
-}
+}  // namespace lightweight_ur_interface
