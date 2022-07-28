@@ -51,7 +51,7 @@ add_compile_options(-Wold-style-cast)
 add_compile_options(-march=native)
 
 ## Declare a C++ executable
-add_executable(mocap_tf_publisher_node src/mocap_tf_publisher_node.cpp)
+add_executable(mocap_tf_publisher_node src/mocap_tf_publisher_node.ros1.cpp)
 add_dependencies(mocap_tf_publisher_node
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

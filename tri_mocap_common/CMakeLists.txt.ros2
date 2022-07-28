@@ -1,0 +1,75 @@
+cmake_minimum_required(VERSION 3.5)
+project(tri_mocap_common)
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+find_package(geometry_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
+
+## Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  msg/MocapMarker.msg
+  msg/MocapMarkerArray.msg
+  msg/MocapObject.msg
+  msg/MocapSegment.msg
+  msg/MocapState.msg
+  DEPENDENCIES geometry_msgs std_msgs
+)
+
+###########
+## Build ##
+###########
+
+## Build options
+add_compile_options(-std=c++14)
+add_compile_options(-Wall)
+add_compile_options(-Wextra)
+add_compile_options(-Werror)
+add_compile_options(-Wconversion)
+add_compile_options(-Wshadow)
+add_compile_options(-O3)
+add_compile_options(-g)
+add_compile_options(-flto)
+add_compile_options(-Werror=non-virtual-dtor)
+add_compile_options(-Wold-style-cast)
+add_compile_options(-march=native)
+
+## Declare ROS C++ components
+add_library(
+  ${PROJECT_NAME}_components SHARED src/mocap_tf_publisher_node.ros2.cpp)
+ament_target_dependencies(${PROJECT_NAME}_components rclcpp rclcpp_components)
+rosidl_get_typesupport_target(
+  ${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+target_link_libraries(
+  ${PROJECT_NAME}_components ${${PROJECT_NAME}_cpp_msgs_target})
+
+## Register C++ components
+rclcpp_components_register_nodes(
+  ${PROJECT_NAME}_components "tri_mocap_common::MocapTFPublisherNode")
+
+## Declare C++ component executable
+add_executable(
+  ${PROJECT_NAME}_node src/mocap_tf_publisher_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+
+#############
+## Install ##
+#############
+
+## Mark executables and/or libraries for installation
+install(TARGETS ${PROJECT_NAME}_components
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+ament_package()
