@@ -4,8 +4,8 @@
 
 // ROS
 #include <rclcpp/rclcpp.hpp>
-#include <tf2_msgs/msg/TFMessage.hpp>
-#include <tri_mocap_common/msg/MocapState.hpp>
+#include <tf2_msgs/msg/tf_message.hpp>
+#include <tri_mocap_common/msg/mocap_state.hpp>
 
 namespace tri_mocap_common
 {

@@ -5,9 +5,10 @@
 #include <utility>
 
 // ROS
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <tf2_msgs/msg/TFMessage.hpp>
-#include <tri_mocap_common/msg/MocapState.hpp>
+#include <tf2_msgs/msg/tf_message.hpp>
+#include <tri_mocap_common/msg/mocap_state.hpp>
 
 #include "mocap_tf_publisher_node.ros2.hpp"
 
@@ -75,8 +76,8 @@ void MocapTFPublisherNode::MocapStateCB(const MocapState& msg)
   TFMessage transforms_msg;
 
   const std::string& mocap_name = msg.tracker_name;
-  const ros::Time transforms_time =
-      (override_timestamps_) ? this->get_clock()->now() : msg.header.stamp;
+  const rclcpp::Time transforms_time = (override_timestamps_)
+      ? this->get_clock()->now() : static_cast<rclcpp::Time>(msg.header.stamp);
   const std::string& mocap_frame = msg.header.frame_id;
 
   for (const auto& current_object : msg.tracked_objects)
@@ -90,7 +91,7 @@ void MocapTFPublisherNode::MocapStateCB(const MocapState& msg)
             = mocap_name + "_" + MakeTfCompatibleName(current_object.name)
               + "_" + MakeTfCompatibleName(current_segment.name);
 
-        geometry_msgs::TransformStamped segment_transform;
+        geometry_msgs::msg::TransformStamped segment_transform;
         segment_transform.header.stamp = transforms_time;
         segment_transform.header.frame_id = mocap_frame;
         segment_transform.child_frame_id = full_segment_name;
