@@ -6,11 +6,10 @@
 
 int main(int argc, char** argv)
 {
-  auto args = rclcpp::init_and_remove_ros_arguments(argc, argv);
+  rclcpp::init(argc, argv);
   using ati_netcanoem_ft_driver::AtiNetCanOemDriverNode;
   rclcpp::spin(
-      std::make_shared<AtiNetCanOemDriverNode>(
-          rclcpp::NodeOptions().arguments(args)));
+      std::make_shared<AtiNetCanOemDriverNode>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
 }

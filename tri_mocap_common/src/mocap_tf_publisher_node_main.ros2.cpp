@@ -6,10 +6,9 @@
 
 int main(int argc, char** argv)
 {
-  auto args = rclcpp::init_and_remove_ros_arguments(argc, argv);
-  rclcpp::spin(
-      std::make_shared<tri_mocap_common::MocapTFPublisherNode>(
-          rclcpp::NodeOptions().arguments(args)));
+  rclcpp::init(argc, argv);
+  using tri_mocap_common::MocapTFPublisherNode;
+  rclcpp::spin(std::make_shared<MocapTFPublisherNode>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
 }

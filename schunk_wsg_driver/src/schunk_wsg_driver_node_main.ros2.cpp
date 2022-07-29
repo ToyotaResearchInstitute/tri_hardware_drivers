@@ -6,10 +6,9 @@
 
 int main(int argc, char** argv)
 {
-  auto args = rclcpp::init_and_remove_ros_arguments(argc, argv);
-  rclcpp::spin(
-      std::make_shared<schunk_wsg_driver::SchunkWSGDriverNode>(
-          rclcpp::NodeOptions().arguments(args)));
+  rclcpp::init(argc, argv);
+  using schunk_wsg_driver::SchunkWSGDriverNode;
+  rclcpp::spin(std::make_shared<SchunkWSGDriverNode>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
 }

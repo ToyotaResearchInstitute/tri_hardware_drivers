@@ -6,10 +6,9 @@
 
 int main(int argc, char** argv)
 {
-  auto args = rclcpp::init_and_remove_ros_arguments(argc, argv);
-  rclcpp::spin(
-      std::make_shared<robotiq_ft_driver::RobotiqFTDriverNode>(
-          rclcpp::NodeOptions().arguments(args)));
+  rclcpp::init(argc, argv);
+  using robotiq_ft_driver::RobotiqFTDriverNode;
+  rclcpp::spin(std::make_shared<RobotiqFTDriverNode>(rclcpp::NodeOptions()));
   rclcpp::shutdown();
   return 0;
 }
