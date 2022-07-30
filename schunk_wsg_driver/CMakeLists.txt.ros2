@@ -24,7 +24,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}_msgs
 include_directories(include)
 
 ## Build options
-add_compile_options(-std=c++14)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
@@ -46,6 +45,7 @@ add_library(${PROJECT_NAME}
             src/${PROJECT_NAME}/schunk_wsg_driver_ethernet.cpp
             src/${PROJECT_NAME}/schunk_wsg_driver_can.cpp)
 ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 ## Declare ROS C++ components
 add_library(${PROJECT_NAME}_components SHARED

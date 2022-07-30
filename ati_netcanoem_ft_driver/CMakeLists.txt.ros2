@@ -20,7 +20,6 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 include_directories(include src SYSTEM ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
-add_compile_options(-std=c++14)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
@@ -38,6 +37,7 @@ add_library(${PROJECT_NAME}
             include/${PROJECT_NAME}/ati_netcanoem_ft_driver.hpp
             src/${PROJECT_NAME}/ati_netcanoem_ft_driver.cpp)
 ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 ## Declare C++ components library
 add_library(${PROJECT_NAME}_components SHARED

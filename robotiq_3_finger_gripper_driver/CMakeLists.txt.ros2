@@ -27,7 +27,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}_msgs
 include_directories(include)
 
 ## Build options
-add_compile_options(-std=c++14)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
@@ -46,6 +45,7 @@ add_library(${PROJECT_NAME}
             src/${PROJECT_NAME}/robotiq_3_finger_gripper_driver.cpp)
 ament_target_dependencies(${PROJECT_NAME} common_robotics_utilities)
 target_link_libraries(${PROJECT_NAME} modbus)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 ## Declare ROS C++ components
 add_library(${PROJECT_NAME}_components SHARED
