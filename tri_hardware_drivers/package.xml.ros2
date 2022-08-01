@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tri_hardware_drivers</name>
+  <version>0.0.0</version>
+  <description>
+    Metapackage for TRI drivers for third-party hardware
+  </description>
+  <maintainer email="calder.phillips-grafflin@tri.global">
+    Calder Phillips-Grafflin
+  </maintainer>
+  <license>TODO</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>ati_netcanoem_driver</exec_depend>
+  <exec_depend>dji_robomaster_ep_driver</exec_depend>
+  <exec_depend>lightweight_ur_interface</exec_depend>
+  <exec_depend>robotiq_ft_driver</exec_depend>
+  <exec_depend>robotiq_2_finger_gripper_driver</exec_depend>
+  <exec_depend>robotiq_3_finger_gripper_driver</exec_depend>
+  <exec_depend>schunk_wsg_driver</exec_depend>
+  <exec_depend>tri_mocap_common</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -15,7 +15,7 @@ namespace dji_robomaster_ep_driver
 {
 
 ControllerTeleopNode::ControllerTeleopNode(const rclcpp::NodeOptions& options)
-  : rclcpp::Node("joystick_teleop_node", options)
+    : rclcpp::Node("joystick_teleop_node", options)
 {
   const double max_linear_velocity =
       this->declare_parameter("max_linear_velocity", 3.5);

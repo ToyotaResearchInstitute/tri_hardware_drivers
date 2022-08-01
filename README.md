@@ -1,11 +1,19 @@
 # tri_hardware_drivers
-Single repo for ROS drivers for third-party robotics hardware used at TRI
+Single repo for ROS drivers for third-party robotics hardware used at TRI.
+
+Most drivers support being built with ROS 1 (Kinetic+) _or_ ROS 2 (Galactic+),
+with the desired ROS version being selected by symlinks to `CMakeLists.txt` and
+`package.xml` for each package.
+
+To select ROS 1 for _all_ driver packages, run `$ ./select_ros1.sh`.
+
+To select ROS 2 for _all_ driver packages, run `$ ./select_ros2.sh`.
 
 ## Dependencies
 
-- [ROS Kinetic](http://ros.org)
+- [ROS 1 Kinetic+ or ROS 2 Galactic+](http://ros.org)
 
-ROS provides the build system, Catkin, and IPC with the driver. May work with other ROS variants, but has not been tested outside of Ubuntu 16.04.* and ROS Kinetic.
+ROS provides the build system and IPC with the drivers.
 
 - [control_msgs](http://wiki.ros.org/control_msgs)
 

@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 REQUIRED)
 set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
+## We don't depend on Drake, but we do use different build flags if present.
+find_package(drake QUIET)
+
 ## Generate messages in the 'msg' folder
 add_message_files(DIRECTORY
                   msg
@@ -49,6 +52,9 @@ include_directories(include SYSTEM ${catkin_INCLUDE_DIRS}
                                    ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+cmake_policy(SET CMP0069 NEW)
+
 add_compile_options(-std=c++11)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
@@ -57,10 +63,17 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wshadow)
 add_compile_options(-O3)
 add_compile_options(-g)
-add_compile_options(-flto)
 add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
-add_compile_options(-march=native)
+add_compile_options(-Wpessimizing-move)
+add_compile_options(-Wuninitialized)
+
+if(drake_FOUND)
+    message(STATUS "Drake found, disabling -march=native")
+else()
+    message(STATUS "Drake NOT found, enabling -march=native")
+    add_compile_options(-march=native)
+endif()
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
@@ -74,7 +87,7 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
 add_executable(ur_minimal_hardware_interface
-               src/ur_minimal_hardware_interface.cpp)
+               src/ur_minimal_hardware_interface.ros1.cpp)
 add_dependencies(ur_minimal_hardware_interface
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -85,7 +98,7 @@ target_link_libraries(ur_minimal_hardware_interface
 ## Declare a C++ executable
 add_executable(ur_script_hardware_interface
                include/${PROJECT_NAME}/control_program.hpp
-               src/ur_script_hardware_interface.cpp)
+               src/ur_script_hardware_interface.ros1.cpp)
 add_dependencies(ur_script_hardware_interface
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -94,7 +107,7 @@ target_link_libraries(ur_script_hardware_interface
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_position_controller src/ur_position_controller.cpp)
+add_executable(ur_position_controller src/ur_position_controller.ros1.cpp)
 add_dependencies(ur_position_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -103,7 +116,7 @@ target_link_libraries(ur_position_controller
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_trajectory_controller src/ur_trajectory_controller.cpp)
+add_executable(ur_trajectory_controller src/ur_trajectory_controller.ros1.cpp)
 add_dependencies(ur_trajectory_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})
@@ -112,7 +125,7 @@ target_link_libraries(ur_trajectory_controller
                       ${catkin_LIBRARIES})
 
 ## Declare a C++ executable
-add_executable(ur_cartesian_controller src/ur_cartesian_controller.cpp)
+add_executable(ur_cartesian_controller src/ur_cartesian_controller.ros1.cpp)
 add_dependencies(ur_cartesian_controller
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

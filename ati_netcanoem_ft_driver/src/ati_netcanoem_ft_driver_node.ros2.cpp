@@ -12,10 +12,11 @@
 
 namespace ati_netcanoem_ft_driver
 {
-AtiNetCanOemDriverNode::AtiNetCanOemDriverNode(const rclcpp::NodeOptions& options)
-  : rclcpp::Node("ati_netcanoem_ft_driver", options)
+AtiNetCanOemDriverNode::AtiNetCanOemDriverNode(
+    const rclcpp::NodeOptions& options)
+    : rclcpp::Node("ati_netcanoem_ft_driver", options)
 {
-// Default ROS params
+  // Default ROS params
   const double DEFAULT_POLL_RATE = 100.0;
   const std::string DEFAULT_STATUS_TOPIC("ati_ft_sensor");
   const std::string DEFAULT_RESET_OR_SET_BIAS_SERVICE(

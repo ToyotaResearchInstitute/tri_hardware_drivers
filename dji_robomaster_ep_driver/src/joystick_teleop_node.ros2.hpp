@@ -18,12 +18,14 @@ public:
   void PublishCommand();
 
 private:
-  void JoyCallback(const sensor_msgs::msg::Joy& joy_msg);
+  using Joy = sensor_msgs::msg::Joy;
+  using TwistStamped = geometry_msgs::msg::TwistStamped;
+
+  void JoyCallback(const Joy& joy_msg);
 
   std::unique_ptr<ControllerMapping> controller_mapping_;
-  using TwistStamped = geometry_msgs::msg::TwistStamped;
   std::shared_ptr<rclcpp::Publisher<TwistStamped>> command_pub_;
-  std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::Joy>> joystick_sub_;
+  std::shared_ptr<rclcpp::Subscription<Joy>> joystick_sub_;
   std::shared_ptr<rclcpp::TimerBase> publish_timer_;
   geometry_msgs::msg::TwistStamped velocity_command_;
 };

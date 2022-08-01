@@ -14,14 +14,12 @@ namespace lightweight_ur_interface
 class PIDParams
 {
 private:
-
-  double kp_;
-  double ki_;
-  double kd_;
-  double i_clamp_;
+  double kp_ = 0.0;
+  double ki_ = 0.0;
+  double kd_ = 0.0;
+  double i_clamp_ = 0.0;
 
 public:
-
   PIDParams(const double kp,
             const double ki,
             const double kd,
@@ -30,25 +28,13 @@ public:
 
   PIDParams() : kp_(0.0), ki_(0.0), kd_(0.0), i_clamp_(0.0) {}
 
-  inline double Kp() const
-  {
-    return kp_;
-  }
+  double Kp() const { return kp_; }
 
-  inline double Ki() const
-  {
-    return ki_;
-  }
+  double Ki() const { return ki_; }
 
-  inline double Kd() const
-  {
-    return kd_;
-  }
+  double Kd() const { return kd_; }
 
-  inline double Iclamp() const
-  {
-    return i_clamp_;
-  }
+  double Iclamp() const { return i_clamp_; }
 };
 
 inline std::ostream& operator<<(std::ostream& strm, const PIDParams& params)
@@ -63,14 +49,12 @@ inline std::ostream& operator<<(std::ostream& strm, const PIDParams& params)
 class JointLimits
 {
 private:
-
-  double min_position_;
-  double max_position_;
-  double max_velocity_;
-  double max_acceleration_;
+  double min_position_ = 0.0;
+  double max_position_ = 0.0;
+  double max_velocity_ = 0.0;
+  double max_acceleration_ = 0.0;
 
 public:
-
   JointLimits(const double min_position,
               const double max_position,
               const double max_velocity,
@@ -90,30 +74,18 @@ public:
     : min_position_(0.0), max_position_(0.0),
       max_velocity_(0.0), max_acceleration_(0.0) {}
 
-  inline double MinPosition() const
-  {
-    return min_position_;
-  }
+  double MinPosition() const { return min_position_; }
 
-  inline double MaxPosition() const
-  {
-    return max_position_;
-  }
+  double MaxPosition() const { return max_position_; }
 
-  inline std::pair<double, double> PositionLimits() const
+  std::pair<double, double> PositionLimits() const
   {
     return std::make_pair(min_position_, max_position_);
   }
 
-  inline double MaxVelocity() const
-  {
-    return max_velocity_;
-  }
+  double MaxVelocity() const { return max_velocity_; }
 
-  inline double MaxAcceleration() const
-  {
-    return max_acceleration_;
-  }
+  double MaxAcceleration() const { return max_acceleration_; }
 };
 
 inline std::ostream& operator<<(std::ostream& strm, const JointLimits& limits)
@@ -214,4 +186,4 @@ inline std::vector<PIDParams> GetDefaultPoseControllerParams(
   pose_controller_params[5] = PIDParams(rotation_kp, 0.0, rotation_kd, 0.0);
   return pose_controller_params;
 }
-}
+}  // namespace lightweight_ur_interface

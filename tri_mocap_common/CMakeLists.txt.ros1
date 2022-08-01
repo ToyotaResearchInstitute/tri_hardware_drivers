@@ -8,6 +8,9 @@ find_package(catkin REQUIRED COMPONENTS
              tf2_msgs
              roscpp)
 
+## We don't depend on Drake, but we do use different build flags if present.
+find_package(drake QUIET)
+
 ## Generate messages in the 'msg' folder
 add_message_files(DIRECTORY
                   msg
@@ -37,6 +40,9 @@ catkin_package(CATKIN_DEPENDS
 include_directories(include SYSTEM ${catkin_INCLUDE_DIRS})
 
 ## Build options
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+cmake_policy(SET CMP0069 NEW)
+
 add_compile_options(-std=c++11)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
@@ -45,13 +51,20 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wshadow)
 add_compile_options(-O3)
 add_compile_options(-g)
-add_compile_options(-flto)
 add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
-add_compile_options(-march=native)
+add_compile_options(-Wpessimizing-move)
+add_compile_options(-Wuninitialized)
+
+if(drake_FOUND)
+    message(STATUS "Drake found, disabling -march=native")
+else()
+    message(STATUS "Drake NOT found, enabling -march=native")
+    add_compile_options(-march=native)
+endif()
 
 ## Declare a C++ executable
-add_executable(mocap_tf_publisher_node src/mocap_tf_publisher_node.cpp)
+add_executable(mocap_tf_publisher_node src/mocap_tf_publisher_node.ros1.cpp)
 add_dependencies(mocap_tf_publisher_node
                  ${${PROJECT_NAME}_EXPORTED_TARGETS}
                  ${catkin_EXPORTED_TARGETS})

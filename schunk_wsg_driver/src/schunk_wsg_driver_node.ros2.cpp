@@ -12,7 +12,7 @@ namespace schunk_wsg_driver
 {
 
 SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
-  : rclcpp::Node("schunk_wsg_driver", options)
+    : rclcpp::Node("schunk_wsg_driver", options)
 {
   // Default ROS params
   const std::string DEFAULT_INTERFACE_TYPE("udp");
@@ -99,7 +99,7 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
 
 SchunkWSGDriverNode::~SchunkWSGDriverNode()
 {
-   gripper_interface_->Log("Gripper interface shutting down");
+  gripper_interface_->Log("Gripper interface shutting down");
 }
 
 void SchunkWSGDriverNode::CommandCB(

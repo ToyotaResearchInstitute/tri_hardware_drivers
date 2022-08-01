@@ -8,6 +8,7 @@ uint64_t URRealtimeState::DeserializeSelf(const std::vector<uint8_t>& buffer,
                                           const uint64_t starting_offset)
 {
   uint64_t current_offset = starting_offset;
+
   const auto deser_length
       = DeserializeNetworkMemcpyable<int32_t>(buffer, current_offset);
   const int32_t message_length = deser_length.Value();
@@ -21,123 +22,153 @@ uint64_t URRealtimeState::DeserializeSelf(const std::vector<uint8_t>& buffer,
                              + " message_length="
                              + std::to_string(message_length));
   }
+
   const auto deser_uptime
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   controller_uptime_ = deser_uptime.Value();
   current_offset += deser_uptime.BytesRead();
+
   const auto deser_target_position
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_position_ = deser_target_position.Value();
   current_offset += deser_target_position.BytesRead();
+
   const auto deser_target_velocity
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_velocity_ = deser_target_velocity.Value();
   current_offset += deser_target_velocity.BytesRead();
+
   const auto deser_target_acceleration
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_acceleration_ = deser_target_acceleration.Value();
   current_offset += deser_target_acceleration.BytesRead();
+
   const auto deser_target_current
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_current_ = deser_target_current.Value();
   current_offset += deser_target_current.BytesRead();
+
   const auto deser_target_torque
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_torque_ = deser_target_torque.Value();
   current_offset += deser_target_torque.BytesRead();
+
   const auto deser_actual_position
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   actual_position_ = deser_actual_position.Value();
   current_offset += deser_actual_position.BytesRead();
+
   const auto deser_actual_velocity
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   actual_velocity_ = deser_actual_velocity.Value();
   current_offset += deser_actual_velocity.BytesRead();
+
   const auto deser_actual_current
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   actual_current_ = deser_actual_current.Value();
   current_offset += deser_actual_current.BytesRead();
+
   const auto deser_control_current
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   control_current_ = deser_control_current.Value();
   current_offset += deser_control_current.BytesRead();
+
   const auto deser_actual_tcp_vector
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   raw_actual_tcp_pose_ = deser_actual_tcp_vector.Value();
   actual_tcp_pose_ = TcpVectorToTransform(raw_actual_tcp_pose_);
   current_offset += deser_actual_tcp_vector.BytesRead();
+
   const auto deser_actual_tcp_twist
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   actual_tcp_twist_ = TcpVelocityToTwist(deser_actual_tcp_twist.Value());
   current_offset += deser_actual_tcp_twist.BytesRead();
+
   const auto deser_actual_tcp_wrench
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   actual_tcp_wrench_ = TcpForceToWrench(deser_actual_tcp_wrench.Value());
   current_offset += deser_actual_tcp_wrench.BytesRead();
+
   const auto deser_target_tcp_vector
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   raw_target_tcp_pose_ = deser_target_tcp_vector.Value();
   target_tcp_pose_ = TcpVectorToTransform(raw_target_tcp_pose_);
   current_offset += deser_target_tcp_vector.BytesRead();
+
   const auto deser_target_tcp_twist
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   target_tcp_twist_ = TcpVelocityToTwist(deser_target_tcp_twist.Value());
   current_offset += deser_target_tcp_twist.BytesRead();
+
   const auto deser_digital_io_bits
       = DeserializeNetworkMemcpyable<uint64_t>(buffer, current_offset);
   current_offset += deser_digital_io_bits.BytesRead();
+
   const auto deser_motor_temperature
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   motor_temperature_ = deser_motor_temperature.Value();
   current_offset += deser_motor_temperature.BytesRead();
+
   const auto deser_controller_rt_loop_time
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   controller_rt_loop_time_ = deser_controller_rt_loop_time.Value();
   current_offset += deser_controller_rt_loop_time.BytesRead();
+
   const auto deser_test_val
       = DeserializeNetworkMemcpyable<uint64_t>(buffer, current_offset);
   current_offset += deser_test_val.BytesRead();
+
   const auto deser_robot_mode
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   robot_mode_ = deser_robot_mode.Value();
   current_offset += deser_robot_mode.BytesRead();
+
   const auto deser_joint_mode
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   joint_mode_ = deser_joint_mode.Value();
   current_offset += deser_joint_mode.BytesRead();
+
   const auto deser_safety_mode
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   safety_mode_ = deser_safety_mode.Value();
   current_offset += deser_safety_mode.BytesRead();
+
   const auto deser_actual_tcp_acceleration
       = DeserializeKnownSizeDoubleVector(3, buffer, current_offset);
   actual_tcp_acceleration_ = deser_actual_tcp_acceleration.Value();
   current_offset += deser_actual_tcp_acceleration.BytesRead();
+
   const auto deser_trajectory_limiter_speed_scaling
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   trajectory_limiter_speed_scaling_
       = deser_trajectory_limiter_speed_scaling.Value();
   current_offset += deser_trajectory_limiter_speed_scaling.BytesRead();
+
   const auto deser_linear_momentum_norm
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   linear_momentum_norm_ = deser_linear_momentum_norm.Value();
   current_offset += deser_linear_momentum_norm.BytesRead();
+
   const auto deser_mainboard_voltage
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   mainboard_voltage_ = deser_mainboard_voltage.Value();
   current_offset += deser_mainboard_voltage.BytesRead();
+
   const auto deser_motorboard_voltage
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   motorboard_voltage_ = deser_motorboard_voltage.Value();
   current_offset += deser_motorboard_voltage.BytesRead();
+
   const auto deser_mainboard_current
       = DeserializeNetworkMemcpyable<double>(buffer, current_offset);
   mainboard_current_ = deser_mainboard_current.Value();
   current_offset += deser_mainboard_current.BytesRead();
+
   const auto deser_joint_voltage
       = DeserializeKnownSizeDoubleVector(6, buffer, current_offset);
   joint_voltage_ = deser_joint_voltage.Value();
   current_offset += deser_joint_voltage.BytesRead();
+
   const uint64_t bytes_read = current_offset - starting_offset;
   return bytes_read;
 }
@@ -357,4 +388,4 @@ bool URRealtimeInterface::SendURScriptCommand(const std::string& command)
     return false;
   }
 }
-}
+}  // namespace lightweight_ur_interface

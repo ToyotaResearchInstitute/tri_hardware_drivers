@@ -406,7 +406,8 @@ WSGRawCommandMessage WSGInterface::MakePrePositionCommand(
     double speed_mm_per_s) const
 {
   WSGRawCommandMessage preposition_command(kPrePosition);
-  const uint8_t flags = stop_mode | move_mode;
+  const uint8_t flags =
+      static_cast<uint8_t>(stop_mode) | static_cast<uint8_t>(move_mode);
   preposition_command.AppendParameterToBuffer(flags);
   preposition_command.AppendParameterToBuffer(static_cast<float>(width_mm));
   preposition_command.AppendParameterToBuffer(

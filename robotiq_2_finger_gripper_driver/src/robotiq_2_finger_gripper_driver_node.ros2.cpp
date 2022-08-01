@@ -15,7 +15,7 @@ namespace robotiq_2_finger_gripper_driver
 {
 Robotiq2FingerDriverNode::Robotiq2FingerDriverNode(
     const rclcpp::NodeOptions& options)
-  : rclcpp::Node("robotiq_2_finger_driver", options)
+    : rclcpp::Node("robotiq_2_finger_driver", options)
 {
   // Default ROS params
   const double DEFAULT_POLL_RATE = 10.0;

@@ -1,24 +1,31 @@
 cmake_minimum_required(VERSION 3.5)
-project(robotiq_ft_driver)
+project(tri_mocap_common)
 
 find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-
-find_package(Eigen3 REQUIRED)
-set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+find_package(std_msgs REQUIRED)
+find_package(tf2_msgs REQUIRED)
 
 ## We don't depend on Drake, but we do use different build flags if present.
 find_package(drake QUIET)
 
+## Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  msg/MocapMarker.msg
+  msg/MocapMarkerArray.msg
+  msg/MocapObject.msg
+  msg/MocapSegment.msg
+  msg/MocapState.msg
+  DEPENDENCIES geometry_msgs std_msgs
+)
+
 ###########
 ## Build ##
 ###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
@@ -44,27 +51,23 @@ else()
     add_compile_options(-march=native)
 endif()
 
-## Declare a C++ library
-add_library(${PROJECT_NAME}
-            include/${PROJECT_NAME}/robotiq_ft_driver.hpp
-            src/${PROJECT_NAME}/robotiq_ft_driver.cpp)
-target_link_libraries(${PROJECT_NAME} modbus)
-
 ## Declare ROS C++ components
 add_library(
-  ${PROJECT_NAME}_components SHARED src/robotiq_ft_driver_node.ros2.cpp)
+  ${PROJECT_NAME}_components SHARED src/mocap_tf_publisher_node.ros2.cpp)
 ament_target_dependencies(
-  ${PROJECT_NAME}_components rclcpp rclcpp_components geometry_msgs)
-target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
+  ${PROJECT_NAME}_components rclcpp rclcpp_components tf2_msgs)
+rosidl_get_typesupport_target(
+  ${PROJECT_NAME}_cpp_msgs_target ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+target_link_libraries(
+  ${PROJECT_NAME}_components ${${PROJECT_NAME}_cpp_msgs_target})
 
 ## Register C++ components
 rclcpp_components_register_nodes(
-  ${PROJECT_NAME}_components
-  "robotiq_ft_driver::RobotiqFTDriverNode"
-)
+  ${PROJECT_NAME}_components "tri_mocap_common::MocapTFPublisherNode")
 
 ## Declare C++ component executable
-add_executable(${PROJECT_NAME}_node src/robotiq_ft_driver_node_main.ros2.cpp)
+add_executable(
+  ${PROJECT_NAME}_node src/mocap_tf_publisher_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 #############
@@ -72,7 +75,7 @@ target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 #############
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_components
+install(TARGETS ${PROJECT_NAME}_components
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -82,15 +85,5 @@ install(
   TARGETS ${PROJECT_NAME}_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-
-## Mark cpp header files for installation
-install(DIRECTORY include/
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE
-)
-
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
 
 ament_package()

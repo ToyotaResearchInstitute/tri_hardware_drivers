@@ -14,6 +14,9 @@ find_package(tf2_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 
+## We don't depend on Drake, but we do use different build flags if present.
+find_package(drake QUIET)
+
 ###########
 ## Build ##
 ###########
@@ -23,7 +26,10 @@ set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 include_directories(include src SYSTEM ${Eigen3_INCLUDE_DIRS})
 
 ## Build options
-add_compile_options(-std=c++14)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+cmake_policy(SET CMP0069 NEW)
+
+add_compile_options(-std=c++17)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Werror)
@@ -31,10 +37,17 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wshadow)
 add_compile_options(-O3)
 add_compile_options(-g)
-add_compile_options(-flto)
 add_compile_options(-Werror=non-virtual-dtor)
 add_compile_options(-Wold-style-cast)
-add_compile_options(-march=native)
+add_compile_options(-Wpessimizing-move)
+add_compile_options(-Wuninitialized)
+
+if(drake_FOUND)
+    message(STATUS "Drake found, disabling -march=native")
+else()
+    message(STATUS "Drake NOT found, enabling -march=native")
+    add_compile_options(-march=native)
+endif()
 
 add_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
 
@@ -64,7 +77,8 @@ rclcpp_components_register_nodes(
 )
 
 ## Declare C++ components' executables
-add_executable(${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
+add_executable(
+  ${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
 
 add_executable(joystick_teleop_node src/joystick_teleop_node_main.ros2.cpp)
