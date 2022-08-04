@@ -29,7 +29,7 @@ using common_robotics_utilities::ros_conversions
           ::EigenIsometry3dToGeometryPoseStamped;
 using common_robotics_utilities::ros_conversions
           ::EigenVector3dToGeometryVector3;
-using common_robotics_utilities::utility::ClampValueAndWarn;
+using common_robotics_utilities::utility::ClampValue;
 using common_robotics_utilities::utility::CollectionsEqual;
 using common_robotics_utilities::utility::GetKeysFromMapLike;
 
@@ -286,8 +286,7 @@ public:
             const double velocity_limit
                 = limits_found_itr->second.MaxVelocity();
             const double limited_velocity
-                = common_robotics_utilities::utility::ClampValueAndWarn(
-                    velocity, -velocity_limit, velocity_limit);
+                = ClampValue(velocity, -velocity_limit, velocity_limit);
             target_velocity[idx] = limited_velocity;
           }
           // If we don't have limits saved, then we don't need to limit
@@ -477,11 +476,9 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("acceleration_limit_scaling"),
                            DEFAULT_ACCELERATION_LIMIT_SCALING));
   const double real_velocity_limit_scaling
-      = common_robotics_utilities::utility::ClampValueAndWarn(
-          velocity_limit_scaling, 0.0, 1.0);
+      = ClampValue(velocity_limit_scaling, 0.0, 1.0);
   const double real_acceleration_limit_scaling
-      = common_robotics_utilities::utility::ClampValueAndWarn(
-          acceleration_limit_scaling, 0.0, 1.0);
+      = ClampValue(acceleration_limit_scaling, 0.0, 1.0);
   // Joint names in true order
   const std::vector<std::string> ordered_joint_names
       = lightweight_ur_interface::GetOrderedJointNames();
