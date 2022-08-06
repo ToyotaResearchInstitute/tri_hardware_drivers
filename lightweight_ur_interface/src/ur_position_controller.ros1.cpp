@@ -25,7 +25,6 @@ namespace lightweight_ur_interface
 {
 using common_robotics_utilities::print::Print;
 using common_robotics_utilities::utility::ClampValue;
-using common_robotics_utilities::utility::ClampValueAndWarn;
 using common_robotics_utilities::math::Add;
 using common_robotics_utilities::math::Sub;
 using common_robotics_utilities::math::Multiply;
@@ -383,9 +382,9 @@ public:
         {
           const double position = found_itr->second;
           const double limited_position
-              = ClampValueAndWarn(position,
-                                  joint_position_limit.first,
-                                  joint_position_limit.second);
+              = ClampValue(position,
+                           joint_position_limit.first,
+                           joint_position_limit.second);
           target_config[idx] = limited_position;
         }
         else
@@ -513,11 +512,9 @@ int main(int argc, char** argv)
       = std::abs(nhp.param(std::string("acceleration_limit_scaling"),
                            DEFAULT_ACCELERATION_LIMIT_SCALING));
   const double real_velocity_limit_scaling
-      = common_robotics_utilities::utility::ClampValueAndWarn(
-          velocity_limit_scaling, 0.0, 1.0);
+      = ClampValue(velocity_limit_scaling, 0.0, 1.0);
   const double real_acceleration_limit_scaling
-      = common_robotics_utilities::utility::ClampValueAndWarn(
-          acceleration_limit_scaling, 0.0, 1.0);
+      = ClampValue(acceleration_limit_scaling, 0.0, 1.0);
   const double base_kp
       = std::abs(nhp.param(std::string("base_kp"), DEFAULT_BASE_KP));
   const double base_kd

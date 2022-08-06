@@ -144,14 +144,14 @@ void DJIRobomasterEPInterfaceTCP::CommandVelocity(const Twist& velocity_command)
   const auto clamp_linear_velocity = [] (const double val)
   {
     const double linear_velocity_limit = 3.5;
-    return common_robotics_utilities::utility::ClampValueAndWarn(
+    return common_robotics_utilities::utility::ClampValue(
         val, -linear_velocity_limit, linear_velocity_limit);
   };
 
   const auto clamp_angular_velocity = [] (const double val)
   {
     const double angular_velocity_limit = DegreesToRadians(600.0);
-    return common_robotics_utilities::utility::ClampValueAndWarn(
+    return common_robotics_utilities::utility::ClampValue(
         val, -angular_velocity_limit, angular_velocity_limit);
   };
 
