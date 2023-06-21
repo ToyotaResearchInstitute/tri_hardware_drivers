@@ -27,13 +27,15 @@ public:
   SchunkWSGDriver(const ros::NodeHandle& nh,
                   const std::shared_ptr<WSGInterface>& gripper_interface,
                   const std::string& command_topic,
-                  const std::string& status_topic)
+                  const std::string& status_topic,
+                  const uint16_t update_period_ms)
     : nh_(nh), gripper_interface_ptr_(gripper_interface)
   {
     status_pub_ = nh_.advertise<WSGState>(status_topic, 1, false);
     command_sub_
         = nh_.subscribe(command_topic, 1, &SchunkWSGDriver::CommandCB, this);
-    const bool success = gripper_interface_ptr_->InitializeGripper();
+    const bool success
+        = gripper_interface_ptr_->InitializeGripper(update_period_ms);
     if (!success)
     {
       throw std::invalid_argument("Unable to initialize gripper");
@@ -92,6 +94,7 @@ int main(int argc, char** argv)
 {
   // Default ROS params
   const std::string DEFAULT_INTERFACE_TYPE("udp");
+  const int32_t DEFAULT_UPDATE_PERIOD_MS = 20;
   const double DEFAULT_CONTROL_RATE = 10.0;
   const std::string DEFAULT_COMMAND_TOPIC("schunk_wsg_gripper_command");
   const std::string DEFAULT_STATE_TOPIC("schunk_wsg_gripper_state");
@@ -107,6 +110,8 @@ int main(int argc, char** argv)
   // Get params
   const std::string interface_type
       = nhp.param(std::string("interface_type"), DEFAULT_INTERFACE_TYPE);
+  const uint16_t update_period_ms = static_cast<uint16_t>(std::abs(
+      nhp.param(std::string("update_period_ms"), DEFAULT_UPDATE_PERIOD_MS)));
   const double control_rate
       = std::abs(nhp.param(std::string("control_rate"), DEFAULT_CONTROL_RATE));
   const std::string command_topic
@@ -145,7 +150,8 @@ int main(int argc, char** argv)
     schunk_wsg_driver::SchunkWSGDriver gripper(nh,
                                                gripper_interface,
                                                command_topic,
-                                               status_topic);
+                                               status_topic,
+                                               update_period_ms);
     gripper.Loop(control_rate);
   }
   else if (interface_type == "can")
@@ -164,7 +170,8 @@ int main(int argc, char** argv)
     schunk_wsg_driver::SchunkWSGDriver gripper(nh,
                                                gripper_interface,
                                                command_topic,
-                                               status_topic);
+                                               status_topic,
+                                               update_period_ms);
     gripper.Loop(control_rate);
   }
   else

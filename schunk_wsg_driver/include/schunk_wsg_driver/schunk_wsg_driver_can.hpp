@@ -4,13 +4,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <array>
-#include <vector>
 #include <map>
 #include <string>
 #include <iostream>
 #include <atomic>
 #include <thread>
-#include <mutex>
 #include <chrono>
 #include <linux/can.h>
 #include <linux/can/raw.h>
@@ -31,8 +29,6 @@ private:
   uint32_t gripper_recv_can_id_;
   std::thread recv_thread_;
   std::atomic<bool> active_;
-  std::mutex status_mutex_;
-  std::vector<WSGRawStatusMessage> status_queue_;
 
 public:
 
@@ -47,8 +43,6 @@ protected:
   void RecvFromGripper();
 
   virtual bool CommandGripper(const WSGRawCommandMessage& command);
-
-  virtual std::vector<WSGRawStatusMessage> GetStatusQueue();
 
   virtual void ShutdownConnection();
 };

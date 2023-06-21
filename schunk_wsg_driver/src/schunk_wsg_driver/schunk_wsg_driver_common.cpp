@@ -454,9 +454,9 @@ bool WSGInterface::PrePositionNonBlocking(const PrePositionStopMode stop_mode,
   return result;
 }
 
-PhysicalLimits WSGInterface::GetGripperPhysicalLimits()
+PhysicalLimits WSGInterface::RetrieveGripperPhysicalLimits()
 {
-  Log("Getting gripper physical limits...");
+  Log("Retrieving gripper physical limits...");
   const WSGRawCommandMessage physical_limits_command(kGetSystemLimits);
   const auto maybe_status
       = SendCommandAndAwaitStatus(physical_limits_command, 0.1);
@@ -492,13 +492,30 @@ PhysicalLimits WSGInterface::GetGripperPhysicalLimits()
                         overdrive_force);
 }
 
+std::vector<WSGRawStatusMessage> WSGInterface::GetStatusQueue()
+{
+  std::lock_guard<std::mutex> lock(status_queue_mutex_);
+  const std::vector<WSGRawStatusMessage> status_queue = status_queue_;
+  status_queue_.clear();
+  return status_queue;
+}
+
+void WSGInterface::AppendToStatusQueue(const WSGRawStatusMessage& status_msg)
+{
+  std::lock_guard<std::mutex> lock(status_queue_mutex_);
+  status_queue_.push_back(status_msg);
+}
+
 // Public interface
 
-bool WSGInterface::InitializeGripper()
+bool WSGInterface::InitializeGripper(const uint16_t update_period_ms)
 {
+  if (update_period_ms < 10)
+  {
+    throw std::runtime_error("update_period_ms < 10");
+  }
   Log("Initializing gripper...");
   // Enable periodic updates
-  const uint16_t update_period_ms = 20;
   const double update_adjust_timeout = 0.25;
   bool success = true;
   Log("Enabling recurring status...");
@@ -554,8 +571,8 @@ bool WSGInterface::InitializeGripper()
   {
     throw std::runtime_error("Failed to Tare");
   }
-  // Get the physical limits
-  const PhysicalLimits limits = GetGripperPhysicalLimits();
+  // Initialize the physical limits
+  const PhysicalLimits limits = RetrieveGripperPhysicalLimits();
   Log(limits.Print());
   // Set all limits to max
   Log("Reseting gripper soft limits...");
@@ -701,6 +718,13 @@ double WSGInterface::GetCommandEffortN(const double target_effort,
   }
 }
 
+WSGInterface::OwningMaybe<PhysicalLimits>
+WSGInterface::GetGripperPhysicalLimits() const
+{
+  std::lock_guard<std::mutex> status_lock(status_mutex_);
+  return maybe_physical_limits_;
+}
+
 bool WSGInterface::SetTargetPositionSpeedEffort(const double target_position,
                                                 const double max_speed,
                                                 const double max_effort)
@@ -708,13 +732,7 @@ bool WSGInterface::SetTargetPositionSpeedEffort(const double target_position,
   RefreshGripperStatus();
   const double force_deadband = 5.0;
   const GripperMotionStatus current_status = GetGripperStatus();
-  status_mutex_.lock();
-  if (!maybe_physical_limits_)
-  {
-    throw std::runtime_error("Physical limits are not available");
-  }
-  const PhysicalLimits physical_limits = maybe_physical_limits_.Value();
-  status_mutex_.unlock();
+  const PhysicalLimits physical_limits = GetGripperPhysicalLimits().Value();
   bool is_new_command = false;
   if (std::abs(max_effort - current_status.ActualEffort()) > force_deadband)
   {
@@ -757,16 +775,21 @@ bool WSGInterface::SetTargetPositionSpeedEffort(const double target_position,
   }
 }
 
-GripperMotionStatus WSGInterface::GetGripperStatus()
+GripperMotionStatus WSGInterface::GetGripperStatus() const
 {
-  std::lock_guard<std::mutex> status_lock(status_mutex_);
+  GripperMotionStatus motion_status;
+  {
+    std::lock_guard<std::mutex> status_lock(status_mutex_);
+    motion_status = motion_status_;
+  }
+
   // The Schunk gripper only returns a positive value for force,
   // so we invert when the direction of motion is reversed
-  if (motion_status_.ActualVelocity() <= 0.0)
+  if (motion_status.ActualVelocity() <= 0.0)
   {
-    motion_status_.UpdateActualEffort(-motion_status_.ActualEffort());
+    motion_status.UpdateActualEffort(-motion_status.ActualEffort());
   }
-  return motion_status_;
+  return motion_status;
 }
 
 void WSGInterface::RefreshGripperStatus()
