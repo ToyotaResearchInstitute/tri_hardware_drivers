@@ -667,7 +667,7 @@ double WSGInterface::GetCommandSpeedMMpS(const double target_speed,
           + std::to_string(max_mmps) + " mm/s");
       return max_mmps;
     }
-    else if (target_speed < min_mmps)
+    else if (target_speed_mmps < min_mmps)
     {
       Log("Target speed lower than using physical limits min speed of "
           + std::to_string(min_mmps) + " mm/s");
