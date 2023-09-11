@@ -421,6 +421,9 @@ public:
 
   void Shutdown();
 
+  OwningMaybe<WSGRawStatusMessage> SendCommandAndAwaitStatus(
+      const WSGRawCommandMessage& command, const double timeout);
+
 protected:
 
   double GetCommandPositionMM(const double target_position,
@@ -431,9 +434,6 @@ protected:
 
   double GetCommandEffortN(const double target_effort,
                            const PhysicalLimits& limits);
-
-  OwningMaybe<WSGRawStatusMessage> SendCommandAndAwaitStatus(
-      const WSGRawCommandMessage& command, const double timeout);
 
   bool StopGripper();
 
