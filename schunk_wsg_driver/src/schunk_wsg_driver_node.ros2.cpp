@@ -16,6 +16,7 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
 {
   // Default ROS params
   const std::string DEFAULT_INTERFACE_TYPE("udp");
+  const int32_t DEFAULT_UPDATE_PERIOD_MS = 20;
   const double DEFAULT_CONTROL_RATE = 10.0;
   const std::string DEFAULT_COMMAND_TOPIC("schunk_wsg_gripper_command");
   const std::string DEFAULT_STATE_TOPIC("schunk_wsg_gripper_state");
@@ -24,12 +25,14 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
   const int32_t DEFAULT_LOCAL_PORT = 1501;
   const std::string DEFAULT_SOCKETCAN_INTERFACE("can0");
   const int32_t DEFAULT_GRIPPER_BASE_CAN_ID = 0x000;
+
   // Make the logging function
   std::function<void(const std::string&)> logging_fn
       = [this] (const std::string& message)
   {
     RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
   };
+
   // Make the interface
   const std::string interface_type
       = this->declare_parameter("interface_type", DEFAULT_INTERFACE_TYPE);
@@ -81,7 +84,10 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
           command_topic, 1,
           std::bind(&SchunkWSGDriverNode::CommandCB, this, _1));
 
-  const bool success = gripper_interface_->InitializeGripper();
+  // Initialize gripper
+  const uint16_t update_period_ms = static_cast<uint16_t>(std::abs(
+      this->declare_parameter("update_period_ms", DEFAULT_UPDATE_PERIOD_MS)));
+  const bool success = gripper_interface_->InitializeGripper(update_period_ms);
   if (!success)
   {
     throw std::invalid_argument("Unable to initialize gripper");

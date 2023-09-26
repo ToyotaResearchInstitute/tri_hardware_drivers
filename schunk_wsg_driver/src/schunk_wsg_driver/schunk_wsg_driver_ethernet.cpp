@@ -92,14 +92,6 @@ bool WSGUDPInterface::CommandGripper(const WSGRawCommandMessage& command)
   }
 }
 
-std::vector<WSGRawStatusMessage> WSGUDPInterface::GetStatusQueue()
-{
-  std::lock_guard<std::mutex> lock(status_mutex_);
-  const std::vector<WSGRawStatusMessage> status_queue = status_queue_;
-  status_queue_.clear();
-  return status_queue;
-}
-
 void WSGUDPInterface::RecvFromGripper()
 {
   std::vector<uint8_t> recv_buffer(1024, 0x00);
@@ -134,8 +126,7 @@ void WSGUDPInterface::RecvFromGripper()
                                 recv_buffer.begin() + read_size);
       const WSGRawStatusMessage status_msg
           = WSGRawStatusMessage::Deserialize(serialized_message, 0).Value();
-      std::lock_guard<std::mutex> lock(status_mutex_);
-      status_queue_.push_back(status_msg);
+      AppendToStatusQueue(status_msg);
     }
   }
 }

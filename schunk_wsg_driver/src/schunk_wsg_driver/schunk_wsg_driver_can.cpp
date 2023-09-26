@@ -130,14 +130,6 @@ bool WSGCANInterface::CommandGripper(const WSGRawCommandMessage& command)
   return true;
 }
 
-std::vector<WSGRawStatusMessage> WSGCANInterface::GetStatusQueue()
-{
-  std::lock_guard<std::mutex> lock(status_mutex_);
-  const std::vector<WSGRawStatusMessage> status_queue = status_queue_;
-  status_queue_.clear();
-  return status_queue;
-}
-
 void WSGCANInterface::RecvFromGripper()
 {
   std::vector<uint8_t> recv_buffer;
@@ -171,8 +163,7 @@ void WSGCANInterface::RecvFromGripper()
         {
           recv_buffer.clear();
         }
-        std::lock_guard<std::mutex> lock(status_mutex_);
-        status_queue_.push_back(deserialized_status_msg.Value());
+        AppendToStatusQueue(deserialized_status_msg.Value());
       }
       else
       {
