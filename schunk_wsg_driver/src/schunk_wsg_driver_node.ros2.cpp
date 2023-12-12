@@ -36,7 +36,7 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
   // Make the interface
   const std::string interface_type
       = this->declare_parameter("interface_type", DEFAULT_INTERFACE_TYPE);
-  if (interface_type == "udp")
+  if (interface_type == "tcp" || interface_type == "udp")
   {
     const std::string gripper_ip_address
         = this->declare_parameter("gripper_ip_address",
@@ -44,12 +44,22 @@ SchunkWSGDriverNode::SchunkWSGDriverNode(const rclcpp::NodeOptions& options)
     const uint16_t gripper_port
         = static_cast<uint16_t>(
             this->declare_parameter("gripper_port", DEFAULT_GRIPPER_PORT));
-    const uint16_t local_port
-        = static_cast<uint16_t>(
-            this->declare_parameter("local_port", DEFAULT_LOCAL_PORT));
-    gripper_interface_
-        = std::make_shared<schunk_wsg_driver::WSGUDPInterface>(
-            logging_fn, gripper_ip_address, gripper_port, local_port);
+
+    if (interface_type == "tcp")
+    {
+      gripper_interface_
+          = std::make_shared<schunk_wsg_driver::WSGTCPInterface>(
+              logging_fn, gripper_ip_address, gripper_port);
+    }
+    else if (interface_type == "udp")
+    {
+      const uint16_t local_port
+          = static_cast<uint16_t>(
+              this->declare_parameter("local_port", DEFAULT_LOCAL_PORT));
+      gripper_interface_
+          = std::make_shared<schunk_wsg_driver::WSGUDPInterface>(
+              logging_fn, gripper_ip_address, gripper_port, local_port);
+    }
   }
   else if (interface_type == "can")
   {

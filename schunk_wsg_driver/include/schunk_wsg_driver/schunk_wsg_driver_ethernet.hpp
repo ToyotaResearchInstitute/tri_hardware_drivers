@@ -43,4 +43,29 @@ protected:
 
   virtual void ShutdownConnection();
 };
+
+class WSGTCPInterface : public WSGInterface
+{
+private:
+
+  int socket_fd_;
+  std::thread recv_thread_;
+  std::atomic<bool> active_;
+
+public:
+
+  WSGTCPInterface(const std::function<void(const std::string&)>& logging_fn,
+                  const std::string& gripper_ip_address,
+                  const uint16_t gripper_port);
+
+  ~WSGTCPInterface();
+
+protected:
+
+  void RecvFromGripper();
+
+  virtual bool CommandGripper(const WSGRawCommandMessage& command);
+
+  virtual void ShutdownConnection();
+};
 }
