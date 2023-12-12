@@ -398,6 +398,7 @@ private:
   std::vector<WSGRawStatusMessage> status_queue_;
 
   std::function<void(const std::string&)> logging_fn_;
+  bool enabled_recurring_status_{};
 
 public:
 
@@ -408,7 +409,8 @@ public:
 
   void Log(const std::string& message) { logging_fn_(message); }
 
-  bool InitializeGripper(const uint16_t update_period_ms = 20);
+  bool InitializeGripper(
+      const uint16_t update_period_ms, bool enable_recurring_status = true);
 
   bool SetTargetPositionSpeedEffort(const double target_position,
                                     const double max_speed,
@@ -435,6 +437,8 @@ protected:
 
   double GetCommandEffortN(const double target_effort,
                            const PhysicalLimits& limits);
+
+  bool StartGripper();
 
   bool StopGripper();
 
