@@ -131,7 +131,7 @@ int main(int argc, char** argv)
       std::cout << "[Post-shutdown] " << message << std::endl;
     }
   };
-  if (interface_type == "udp")
+  if (interface_type == "tcp" || interface_type == "udp")
   {
     const std::string gripper_ip_address
         = nhp.param(std::string("gripper_ip_address"),
@@ -139,14 +139,22 @@ int main(int argc, char** argv)
     const uint16_t gripper_port
         = static_cast<uint16_t>(
             nhp.param(std::string("gripper_port"), DEFAULT_GRIPPER_PORT));
-    const uint16_t local_port
-        = static_cast<uint16_t>(
-            nhp.param(std::string("local_port"), DEFAULT_LOCAL_PORT));
-    std::shared_ptr<schunk_wsg_driver::WSGUDPInterface> gripper_interface(
-          new schunk_wsg_driver::WSGUDPInterface(logging_fn,
-                                                 gripper_ip_address,
-                                                 gripper_port,
-                                                 local_port));
+    std::shared_ptr<schunk_wsg_driver::WSGInterface> gripper_interface;
+    if (interface_type == "tcp")
+    {
+      gripper_interface
+          = std::make_shared<schunk_wsg_driver::WSGTCPInterface>(
+              logging_fn, gripper_ip_address, gripper_port, local_port);
+    }
+    else if (interface_type == "udp")
+    {
+      const uint16_t local_port
+          = static_cast<uint16_t>(
+              nhp.param(std::string("local_port"), DEFAULT_LOCAL_PORT));
+      gripper_interface
+          = std::make_shared<schunk_wsg_driver::WSGUDPInterface>(
+              logging_fn, gripper_ip_address, gripper_port, local_port);
+    }
     schunk_wsg_driver::SchunkWSGDriver gripper(nh,
                                                gripper_interface,
                                                command_topic,
