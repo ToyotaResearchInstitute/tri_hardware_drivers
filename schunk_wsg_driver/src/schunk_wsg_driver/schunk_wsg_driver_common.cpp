@@ -187,11 +187,11 @@ bool WSGInterface::StartGripper()
 
 bool WSGInterface::StopGripper()
 {
-  GripperCommand stop_comand_flag = kStop;
+  GripperCommand stop_command_flag = kStop;
   if (use_scripting_interface_) {
     // This flag appears to be the best for restarting the driver when running
     // the scripting interface.
-    stop_comand_flag = kDisconnectAnnounce;
+    stop_command_flag = kDisconnectAnnounce;
   }
   const WSGRawCommandMessage stop_command(stop_command_flag);
   const bool result = CommandGripper(stop_command);
@@ -522,7 +522,7 @@ void WSGInterface::AppendToStatusQueue(const WSGRawStatusMessage& status_msg)
 // Public interface
 
 bool WSGInterface::InitializeGripper(
-    const uint16_t recurring_update_period_ms, bool use_scripting_interface)
+    const uint16_t update_period_ms, bool use_scripting_interface)
 {
   if (update_period_ms < 10)
   {
