@@ -178,9 +178,22 @@ WSGInterface::SendCommandAndAwaitStatus(const WSGRawCommandMessage& command,
   return response;
 }
 
+bool WSGInterface::StartGripper()
+{
+  const WSGRawCommandMessage command(kAcknowledgeStopOrFault);
+  const bool result = CommandGripper(command);
+  return result;
+}
+
 bool WSGInterface::StopGripper()
 {
-  const WSGRawCommandMessage stop_command(kStop);
+  GripperCommand stop_command_flag = kStop;
+  if (use_external_scripting_interface_) {
+    // This flag appears to be the best for restarting the driver when running
+    // the scripting interface.
+    stop_command_flag = kDisconnectAnnounce;
+  }
+  const WSGRawCommandMessage stop_command(stop_command_flag);
   const bool result = CommandGripper(stop_command);
   return result;
 }
@@ -508,51 +521,60 @@ void WSGInterface::AppendToStatusQueue(const WSGRawStatusMessage& status_msg)
 
 // Public interface
 
-bool WSGInterface::InitializeGripper(const uint16_t update_period_ms)
+bool WSGInterface::InitializeGripper(
+    const uint16_t update_period_ms, bool use_external_scripting_interface)
 {
   if (update_period_ms < 10)
   {
     throw std::runtime_error("update_period_ms < 10");
   }
   Log("Initializing gripper...");
-  // Enable periodic updates
-  const double update_adjust_timeout = 0.25;
+  use_external_scripting_interface_ = use_external_scripting_interface;
   bool success = true;
-  Log("Enabling recurring status...");
-  success &= EnableRecurringStatus(kGetSystemState,
-                                   update_period_ms,
-                                   update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to enable recurring kGetSystemState");
+  if (!use_external_scripting_interface_) {
+    // Enable periodic updates if we are not using the scripting interface.
+    const double update_adjust_timeout = 0.25;
+    Log("Enabling recurring status...");
+    success &= EnableRecurringStatus(kGetSystemState,
+                                    update_period_ms,
+                                    update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to enable recurring kGetSystemState");
+    }
+    success &= EnableRecurringStatus(kGetGraspState,
+                                    update_period_ms,
+                                    update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to enable recurring kGetGraspState");
+    }
+    success &= EnableRecurringStatus(kGetOpeningWidth,
+                                    update_period_ms,
+                                    update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to enable recurring kGetOpeningWidth");
+    }
+    success &= EnableRecurringStatus(kGetSpeed,
+                                    update_period_ms,
+                                    update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to enable recurring kGetSpeed");
+    }
+    success &= EnableRecurringStatus(kGetForce,
+                                    update_period_ms,
+                                    update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to enable recurring kGetForce");
+    }
   }
-  success &= EnableRecurringStatus(kGetGraspState,
-                                   update_period_ms,
-                                   update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to enable recurring kGetGraspState");
-  }
-  success &= EnableRecurringStatus(kGetOpeningWidth,
-                                   update_period_ms,
-                                   update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to enable recurring kGetOpeningWidth");
-  }
-  success &= EnableRecurringStatus(kGetSpeed,
-                                   update_period_ms,
-                                   update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to enable recurring kGetSpeed");
-  }
-  success &= EnableRecurringStatus(kGetForce,
-                                   update_period_ms,
-                                   update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to enable recurring kGetForce");
+  Log("Start the gripper...");
+  success &= StartGripper();
+  if (!success) {
+    throw std::runtime_error("Failed to start gripper");
   }
   // Home the gripper
   Log("Homing the gripper...");
@@ -601,30 +623,32 @@ void WSGInterface::Shutdown()
   {
     throw std::runtime_error("Failed to stop gripper");
   }
-  success &= DisableRecurringStatus(kGetSystemState, update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to disable recurring kGetSystemState");
-  }
-  success &= DisableRecurringStatus(kGetGraspState, update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to disable recurring kGetGraspState");
-  }
-  success &= DisableRecurringStatus(kGetOpeningWidth, update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to disable recurring kGetOpeningWidth");
-  }
-  success &= DisableRecurringStatus(kGetSpeed, update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to disable recurring kGetSpeed");
-  }
-  success &= DisableRecurringStatus(kGetForce, update_adjust_timeout);
-  if (!success)
-  {
-    throw std::runtime_error("Failed to disable recurring kGetForce");
+  if (!use_external_scripting_interface_) {
+    success &= DisableRecurringStatus(kGetSystemState, update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to disable recurring kGetSystemState");
+    }
+    success &= DisableRecurringStatus(kGetGraspState, update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to disable recurring kGetGraspState");
+    }
+    success &= DisableRecurringStatus(kGetOpeningWidth, update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to disable recurring kGetOpeningWidth");
+    }
+    success &= DisableRecurringStatus(kGetSpeed, update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to disable recurring kGetSpeed");
+    }
+    success &= DisableRecurringStatus(kGetForce, update_adjust_timeout);
+    if (!success)
+    {
+      throw std::runtime_error("Failed to disable recurring kGetForce");
+    }
   }
   ShutdownConnection();
 }
