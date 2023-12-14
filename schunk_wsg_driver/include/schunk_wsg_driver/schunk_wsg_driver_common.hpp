@@ -411,10 +411,10 @@ public:
 
   // Initialize gripper.
   // @param update_period_ms Update period, namely used for recurring status.
-  // @param use_external_scripting_interface Set to true if using scripting to both send
-  //   commands and receive status. Note that this mode will not use Schunk's
-  //   recurring status feature, and instead rely on the script to send status
-  //   data back.
+  // @param use_external_scripting_interface Set to true if using scripting to
+  //   both send commands and receive status. Note that this mode will not use
+  //   Schunk's recurring status feature, and instead rely on the script to
+  //   send status data back.
   bool InitializeGripper(
       const uint16_t update_period_ms,
       bool use_external_scripting_interface = false);
