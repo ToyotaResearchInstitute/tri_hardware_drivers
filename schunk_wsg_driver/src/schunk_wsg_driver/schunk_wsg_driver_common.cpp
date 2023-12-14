@@ -187,9 +187,13 @@ bool WSGInterface::StartGripper()
 
 bool WSGInterface::StopGripper()
 {
-  // const WSGRawCommandMessage stop_command(kStop);
-  // TODO(eric.couisneau): Why? I dunno.
-  const WSGRawCommandMessage stop_command(kDisconnectAnnounce);
+  GripperCommand stop_comand_flag = kStop;
+  if (use_scripting_interface_) {
+    // This flag appears to be the best for restarting the driver when running
+    // the scripting interface.
+    stop_comand_flag = kDisconnectAnnounce;
+  }
+  const WSGRawCommandMessage stop_command(stop_command_flag);
   const bool result = CommandGripper(stop_command);
   return result;
 }
@@ -518,18 +522,18 @@ void WSGInterface::AppendToStatusQueue(const WSGRawStatusMessage& status_msg)
 // Public interface
 
 bool WSGInterface::InitializeGripper(
-    const uint16_t update_period_ms, bool enable_recurring_status)
+    const uint16_t recurring_update_period_ms, bool use_scripting_interface)
 {
   if (update_period_ms < 10)
   {
     throw std::runtime_error("update_period_ms < 10");
   }
   Log("Initializing gripper...");
+  use_scripting_interface_ = use_scripting_interface;
   bool success = true;
-  // Enable periodic updates
-  if (enable_recurring_status) {
-    enabled_recurring_status_ = true;
-      const double update_adjust_timeout = 0.25;
+  if (!use_scripting_interface_) {
+    // Enable periodic updates if we are not using the scripting interface.
+    const double update_adjust_timeout = 0.25;
     Log("Enabling recurring status...");
     success &= EnableRecurringStatus(kGetSystemState,
                                     update_period_ms,
@@ -619,8 +623,7 @@ void WSGInterface::Shutdown()
   {
     throw std::runtime_error("Failed to stop gripper");
   }
-  if (enabled_recurring_status_) {
-    enabled_recurring_status_ = false;
+  if (!use_scripting_interface_) {
     success &= DisableRecurringStatus(kGetSystemState, update_adjust_timeout);
     if (!success)
     {

@@ -144,7 +144,7 @@ int main(int argc, char** argv)
     {
       gripper_interface
           = std::make_shared<schunk_wsg_driver::WSGTCPInterface>(
-              logging_fn, gripper_ip_address, gripper_port, local_port);
+              logging_fn, gripper_ip_address, gripper_port);
     }
     else if (interface_type == "udp")
     {

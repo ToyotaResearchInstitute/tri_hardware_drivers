@@ -18,6 +18,14 @@ WSGUDPInterface::WSGUDPInterface(
   Log("Attempting to create WSG gripper UDP interface with gripper IP "
       + gripper_ip_address + " gripper port " + std::to_string(gripper_port)
       + " local port " + std::to_string(local_port));
+  // Attempt resolving address.
+  struct hostent* nameserver = gethostbyname(gripper_ip_address.c_str());
+  if (nameserver == nullptr)
+  {
+    perror(nullptr);
+    throw std::runtime_error(
+        "Failed to find gripper at [" + gripper_ip_address + "]");
+  }
   // Make the sockets
   send_socket_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
   if (send_socket_fd_ <= 0)
@@ -239,9 +247,6 @@ void WSGTCPInterface::ShutdownConnection()
   Log("Waiting for recv thread to terminate...");
   recv_thread_.join();
   Log("Close socket...");
-  // TODO(eric.cousineau): Calling shutdown(socket_fd_, SHUT_RDWR) here causes
-  // the gripper to stop. This would not be a problem, but I (Eric) cannot seem
-  // to get the gripper to restart. Instead, we close the socket.
   const int close_res = close(socket_fd_);
   if (close_res != 0)
   {
@@ -293,6 +298,16 @@ void WSGTCPInterface::RecvFromGripper()
     }
     else
     {
+      const int enable_flag = 1;
+      const int setquickack_res = setsockopt(
+          socket_fd_, IPPROTO_TCP, TCP_QUICKACK,
+          reinterpret_cast<const void*>(&enable_flag), sizeof(int));
+      if (setquickack_res != 0)
+      {
+        perror(nullptr);
+        throw std::runtime_error("Failed to enable TCP_QUICKACK");
+      }
+
       std::vector<uint8_t> serialized_message;
       serialized_message.insert(serialized_message.end(),
                                 recv_buffer.begin(),

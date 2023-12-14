@@ -398,7 +398,7 @@ private:
   std::vector<WSGRawStatusMessage> status_queue_;
 
   std::function<void(const std::string&)> logging_fn_;
-  bool enabled_recurring_status_{};
+  bool use_scripting_interface_ = false;
 
 public:
 
@@ -409,8 +409,15 @@ public:
 
   void Log(const std::string& message) { logging_fn_(message); }
 
+  // Initialize gripper.
+  // @param update_period_ms Update period, namely used for recurring status.
+  // @param use_scripting_interface Set to true if using scripting to both send
+  //   commands and receive status. Note that this mode will not use Schunk's
+  //   recurring status feature, and instead rely on the script to send status
+  //   data back.
   bool InitializeGripper(
-      const uint16_t update_period_ms, bool enable_recurring_status = true);
+      const uint16_t update_period_ms,
+      bool use_scripting_interface = false);
 
   bool SetTargetPositionSpeedEffort(const double target_position,
                                     const double max_speed,
