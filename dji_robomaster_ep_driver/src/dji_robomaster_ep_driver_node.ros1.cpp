@@ -25,9 +25,10 @@ public:
       const ros::NodeHandle& nh, const std::string& robot_ip_address,
       const int32_t robot_port, const std::string& robot_name,
       const std::string& odometry_frame_name,
-      const std::string& robot_frame_name)
+      const std::string& robot_frame_name, const bool publish_odometry_tf)
       : nh_(nh), odometry_frame_name_(odometry_frame_name),
-        robot_frame_name_(robot_frame_name)
+        robot_frame_name_(robot_frame_name),
+        publish_odometry_tf_(publish_odometry_tf)
   {
     odometry_pub_ = nh_.advertise<nav_msgs::Odometry>(
         robot_name + "/odometry", 1, false);
@@ -107,8 +108,12 @@ public:
         battery_percent_message.data = latest_state.BatteryPercent();
 
         odometry_pub_.publish(odometry_message);
-        tf_pub_.publish(tf_message);
         battery_percent_pub_.publish(battery_percent_message);
+
+        if (publish_odometry_tf_)
+        {
+          tf_pub_.publish(tf_message);
+        }
       }
       else
       {
@@ -150,6 +155,7 @@ private:
   std::unique_ptr<DJIRobomasterEPInterfaceTCP> robot_interface_;
   std::string odometry_frame_name_;
   std::string robot_frame_name_;
+  bool publish_odometry_tf_ = false;
 };
 }  // namespace
 }  // namespace dji_robomaster_ep_driver
@@ -169,10 +175,12 @@ int main(int argc, char** argv)
   const std::string robot_frame_name = nhp.param(
       std::string("robot_frame_name"), std::string("robomaster_body"));
   const double loop_hz = nhp.param(std::string("loop_hz"), 60.0);
+  const bool publish_odometry_tf = nhp.param(
+      std::string("publish_odometry_tf"), true);
 
   dji_robomaster_ep_driver::DJIRobomasterEPDriver driver(
       nh, robot_ip_address, robot_port, robot_name, odometry_frame_name,
-      robot_frame_name);
+      robot_frame_name, publish_odometry_tf);
   driver.Loop(loop_hz);
   return 0;
 }

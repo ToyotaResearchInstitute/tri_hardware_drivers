@@ -34,12 +34,19 @@ DJIRobomasterEPDriverNode::DJIRobomasterEPDriverNode(
   robot_frame_name_ = this->declare_parameter(
       "robot_frame_name", std::string("robomaster_body"));
   const double loop_hz = this->declare_parameter("loop_hz", 60.0);
+  const bool publish_odometry_tf = this->declare_parameter(
+      "publish_odometry_tf", true);
 
   odometry_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(
       robot_name + "/odometry", 1);
-  tf_pub_ = this->create_publisher<tf2_msgs::msg::TFMessage>("/tf", 1);
   battery_percent_pub_ = this->create_publisher<std_msgs::msg::Float64>(
       robot_name + "/battery_percent", 1);
+
+  if (publish_odometry_tf)
+  {
+    tf_pub_ = this->create_publisher<tf2_msgs::msg::TFMessage>("/tf", 1);
+  }
+
   using std::placeholders::_1;
   auto velocity_callback = std::bind(
       &DJIRobomasterEPDriverNode::VelocityCommandCallback, this, _1);
@@ -123,8 +130,12 @@ void DJIRobomasterEPDriverNode::Loop()
     battery_percent_message.data = latest_state.BatteryPercent();
 
     odometry_pub_->publish(odometry_message);
-    tf_pub_->publish(tf_message);
     battery_percent_pub_->publish(battery_percent_message);
+
+    if (tf_pub_)
+    {
+      tf_pub_->publish(tf_message);
+    }
   }
   else
   {
