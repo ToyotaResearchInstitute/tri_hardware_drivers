@@ -69,8 +69,8 @@ public:
   Twist ComputeVelocityCommand(const Joy& joy_msg) const override;
 
 private:
-  const size_t kLeftX = 1;
-  const size_t kLeftY = 0;
+  const size_t kLeftX = 0;
+  const size_t kLeftY = 1;
   const size_t kRightX = 3;
 };
 
