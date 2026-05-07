@@ -43,6 +43,30 @@ XboxOneControllerMapping::ComputeVelocityCommand(const Joy& joy_msg) const
 }
 
 Twist
+FortVSCControllerMapping::ComputeVelocityCommand(const Joy& joy_msg) const
+{
+  const double left_x = joy_msg.axes.at(kLeftX);
+  const double left_y = joy_msg.axes.at(kLeftY);
+  const double right_x = joy_msg.axes.at(kRightX);
+
+  // Flip the sign of each axis as normal Xbox-like controllers are
+  // left/up (+) <-> right/down (-) and the Fort VSC is flipped.
+  const double left_stick_up_down = -left_y;
+  const double left_stick_left_right = -left_x;
+  const double right_stick_left_right = -right_x;
+
+  Twist velocity_command;
+  velocity_command.linear.x = max_linear_velocity() * left_stick_up_down;
+  velocity_command.linear.y = max_linear_velocity() * left_stick_left_right;
+  velocity_command.linear.z = 0.0;
+  velocity_command.angular.x = 0.0;
+  velocity_command.angular.y = 0.0;
+  velocity_command.angular.z = max_angular_velocity() * right_stick_left_right;
+
+  return velocity_command;
+}
+
+Twist
 Logitech3DProControllerMapping::ComputeVelocityCommand(const Joy& joy_msg) const
 {
   const double pitch_axis = joy_msg.axes.at(kPitch);

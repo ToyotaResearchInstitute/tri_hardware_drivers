@@ -29,7 +29,7 @@ ControllerTeleopNode::ControllerTeleopNode(const rclcpp::NodeOptions& options)
   {
     throw std::runtime_error("max_angular_velocity_ <= 0.0");
   }
-  // Joystick type, options are "xbox_one"  or "3d_pro".
+  // Joystick type, options are "xbox_one", "fort_vsc", or "3d_pro".
   const std::string joystick_type = this->declare_parameter(
       "joystick_type", std::string("xbox_one"));
   if (joystick_type == "xbox_one")
@@ -38,6 +38,14 @@ ControllerTeleopNode::ControllerTeleopNode(const rclcpp::NodeOptions& options)
         this->get_logger(),
         "Configured teleop controller for Xbox One controller");
     controller_mapping_ = std::make_unique<XboxOneControllerMapping>(
+        max_linear_velocity, max_angular_velocity);
+  }
+  else if (joystick_type == "fort_vsc")
+  {
+    RCLCPP_INFO(
+        this->get_logger(),
+        "Configured teleop controller for Fort VSC (USB) controller");
+    controller_mapping_ = std::make_unique<FortVSCControllerMapping>(
         max_linear_velocity, max_angular_velocity);
   }
   else if (joystick_type == "3d_pro")

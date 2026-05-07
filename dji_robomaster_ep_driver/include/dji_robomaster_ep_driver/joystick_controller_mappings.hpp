@@ -61,6 +61,19 @@ private:
   }
 };
 
+class FortVSCControllerMapping : public ControllerMapping
+{
+public:
+  using ControllerMapping::ControllerMapping;
+
+  Twist ComputeVelocityCommand(const Joy& joy_msg) const override;
+
+private:
+  const size_t kLeftX = 1;
+  const size_t kLeftY = 0;
+  const size_t kRightX = 3;
+};
+
 class Logitech3DProControllerMapping : public ControllerMapping
 {
 public:
