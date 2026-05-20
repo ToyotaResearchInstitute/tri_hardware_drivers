@@ -49,11 +49,9 @@ FortVSCControllerMapping::ComputeVelocityCommand(const Joy& joy_msg) const
   const double left_y = joy_msg.axes.at(kLeftY);
   const double right_x = joy_msg.axes.at(kRightX);
 
-  // Flip the sign of each axis as normal Xbox-like controllers are
-  // left/up (+) <-> right/down (-) and the Fort VSC is flipped.
-  const double left_stick_up_down = -left_y;
-  const double left_stick_left_right = -left_x;
-  const double right_stick_left_right = -right_x;
+  const double left_stick_up_down = left_y;
+  const double left_stick_left_right = left_x;
+  const double right_stick_left_right = right_x;
 
   Twist velocity_command;
   velocity_command.linear.x = max_linear_velocity() * left_stick_up_down;
