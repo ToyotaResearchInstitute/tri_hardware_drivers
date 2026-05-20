@@ -38,6 +38,13 @@ public:
           new XboxOneControllerMapping(max_linear_velocity,
                                        max_angular_velocity));
     }
+    else if (joy_type == "fort_vsc")
+    {
+      ROS_INFO("Configured teleop controller for Fort VSC (USB) controller");
+      controller_mapping_ = std::unique_ptr<ControllerMapping>(
+          new FortVSCControllerMapping(max_linear_velocity,
+                                       max_angular_velocity));
+    }
     else if (joy_type == "3d_pro")
     {
       ROS_INFO("Configured teleop controller for Logitech 3D PRO controller");
