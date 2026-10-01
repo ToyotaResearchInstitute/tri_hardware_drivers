@@ -86,14 +86,16 @@ ControllerTeleopNode::ControllerTeleopNode(const rclcpp::NodeOptions& options)
 
 void ControllerTeleopNode::PublishCommand()
 {
-  command_pub_->publish(velocity_command_);
+  auto now_command = velocity_command_;
+  now_command.header.stamp = now();
+  command_pub_->publish(now_command);
 }
 
 
 void ControllerTeleopNode::JoyCallback(const sensor_msgs::msg::Joy& joy_msg)
 {
   velocity_command_.twist =
-    controller_mapping_->ComputeVelocityCommand(joy_msg);
+      controller_mapping_->ComputeVelocityCommand(joy_msg);
   velocity_command_.header.stamp = joy_msg.header.stamp;
 }
 
