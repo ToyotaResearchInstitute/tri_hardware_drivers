@@ -73,7 +73,9 @@ public:
     while (ros::ok())
     {
       ros::spinOnce();
-      command_pub_.publish(velocity_command_);
+      auto now_command = velocity_command_;
+      now_command.header.stamp = ros::Time::now();
+      command_pub_.publish(now_command);
       loop_rate.sleep();
     }
   }
