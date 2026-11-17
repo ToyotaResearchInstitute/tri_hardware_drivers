@@ -2,24 +2,15 @@
 
 #include <robotiq_3_finger_gripper_driver/robotiq_3_finger_gripper_driver.hpp>
 
-#if ROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION == 2
 #include <robotiq_3_finger_gripper_driver/msg/robotiq3_finger_command.hpp>
 #include <robotiq_3_finger_gripper_driver/msg/robotiq3_finger_state.hpp>
-#elif ROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION == 1
-#include <robotiq_3_finger_gripper_driver/Robotiq3FingerCommand.h>
-#include <robotiq_3_finger_gripper_driver/Robotiq3FingerState.h>
-#else
-#error "Undefined or unknown ROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION"
-#endif
 
 namespace robotiq_3_finger_gripper_driver
 {
-#if ROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION == 2
 using Robotiq3FingerCommand = msg::Robotiq3FingerCommand;
 using Robotiq3FingerActuatorCommand = msg::Robotiq3FingerActuatorCommand;
 using Robotiq3FingerState = msg::Robotiq3FingerState;
 using Robotiq3FingerActuatorState = msg::Robotiq3FingerActuatorState;
-#endif
 
 inline Robotiq3FingerGripperActuatorCommand ConvertActuatorCommand(
     const Robotiq3FingerActuatorCommand& command)

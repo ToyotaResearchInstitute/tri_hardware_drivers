@@ -1,17 +1,12 @@
 # tri_hardware_drivers
 Single repo for ROS drivers for third-party robotics hardware used at TRI.
 
-Most drivers support being built with ROS 1 (Kinetic+) _or_ ROS 2 (Galactic+),
-with the desired ROS version being selected by symlinks to `CMakeLists.txt` and
-`package.xml` for each package.
-
-To select ROS 1 for _all_ driver packages, run `$ ./select_ros1.sh`.
-
-To select ROS 2 for _all_ driver packages, run `$ ./select_ros2.sh`.
+The drivers are ROS 2 (Humble+) packages, built with `colcon`.
+`lightweight_ur_interface` is not a ROS 2 package yet.
 
 ## Dependencies
 
-- [ROS 1 Kinetic+ or ROS 2 Galactic+](http://ros.org)
+- [ROS 2 Humble+](http://ros.org)
 
 ROS provides the build system and IPC with the drivers.
 
