@@ -1,12 +1,12 @@
 # tri_hardware_drivers
 Single repo for ROS drivers for third-party robotics hardware used at TRI.
 
-The drivers are ROS 2 (Humble+) packages, built with `colcon`.
+The drivers are ROS 2 (Jazzy+) packages, built with `colcon`.
 `lightweight_ur_interface` is not a ROS 2 package yet.
 
 ## Dependencies
 
-- [ROS 2 Humble+](http://ros.org)
+- [ROS 2 Jazzy+](http://ros.org)
 
 ROS provides the build system and IPC with the drivers.
 

@@ -1,96 +1,87 @@
-cmake_minimum_required(VERSION 3.5)
-project(robotiq_ft_driver)
+cmake_minimum_required(VERSION 3.28...4.2)
+project(robotiq_ft_driver VERSION 0.0.0 LANGUAGES CXX)
+
+include(CheckIPOSupported)
+include(GNUInstallDirs)
 
 find_package(ament_cmake REQUIRED)
+
+find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 
-find_package(Eigen3 REQUIRED)
-set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-
-## We don't depend on Drake, but we do use different build flags if present.
-find_package(drake QUIET)
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include SYSTEM ${Eigen3_INCLUDE_DIRS})
-
-## Build options
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-cmake_policy(SET CMP0069 NEW)
-
-add_compile_options(-std=c++17)
-add_compile_options(-Wall)
-add_compile_options(-Wextra)
-add_compile_options(-Werror)
-add_compile_options(-Wconversion)
-add_compile_options(-Wshadow)
-add_compile_options(-O3)
-add_compile_options(-g)
-add_compile_options(-Werror=non-virtual-dtor)
-add_compile_options(-Wold-style-cast)
-add_compile_options(-Wpessimizing-move)
-add_compile_options(-Wuninitialized)
-
-if(drake_FOUND)
-    message(STATUS "Drake found, disabling -march=native")
-else()
-    message(STATUS "Drake NOT found, enabling -march=native")
-    add_compile_options(-march=native)
+# Defaults when this project is built on its own, as colcon does. A parent
+# project or the command line can override them.
+if(PROJECT_IS_TOP_LEVEL)
+  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+  endif()
+  if(NOT DEFINED CMAKE_COMPILE_WARNING_AS_ERROR)
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+  endif()
+  if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    check_ipo_supported(RESULT ipo_supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ipo_supported})
+  endif()
 endif()
 
-## Declare a C++ library
+# Warnings for this project's own targets only; consumers don't inherit them.
+add_library(${PROJECT_NAME}_warnings INTERFACE)
+set(${PROJECT_NAME}_warning_flags
+  -Wall -Wextra -Wconversion -Wshadow -Wold-style-cast -Wpessimizing-move
+  -Wuninitialized -Werror=non-virtual-dtor)
+target_compile_options(${PROJECT_NAME}_warnings INTERFACE
+  "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:${${PROJECT_NAME}_warning_flags}>")
+
+# Hardware interface, independent of ROS.
 add_library(${PROJECT_NAME}
-            include/${PROJECT_NAME}/robotiq_ft_driver.hpp
-            src/${PROJECT_NAME}/robotiq_ft_driver.cpp)
-target_link_libraries(${PROJECT_NAME} modbus)
+  src/${PROJECT_NAME}/robotiq_ft_driver.cpp)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+target_sources(${PROJECT_NAME}
+  PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS include
+    FILES
+      include/robotiq_ft_driver/robotiq_ft_driver.hpp)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    Eigen3::Eigen
+    modbus
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
 
-## Declare ROS C++ components
-add_library(
-  ${PROJECT_NAME}_components SHARED src/robotiq_ft_driver_node.ros2.cpp)
-ament_target_dependencies(
-  ${PROJECT_NAME}_components rclcpp rclcpp_components geometry_msgs)
-target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
+# ROS node(s), as components and as standalone executables.
+add_library(${PROJECT_NAME}_components SHARED
+  src/robotiq_ft_driver_node.ros2.cpp)
+target_include_directories(${PROJECT_NAME}_components PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+target_compile_features(${PROJECT_NAME}_components PUBLIC cxx_std_17)
+target_link_libraries(${PROJECT_NAME}_components
+  PUBLIC
+    ${PROJECT_NAME}
+    rclcpp::rclcpp
+    ${geometry_msgs_TARGETS}
+  PRIVATE
+    rclcpp_components::component
+    $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+rclcpp_components_register_nodes(${PROJECT_NAME}_components
+  "robotiq_ft_driver::RobotiqFTDriverNode")
 
-## Register C++ components
-rclcpp_components_register_nodes(
-  ${PROJECT_NAME}_components
-  "robotiq_ft_driver::RobotiqFTDriverNode"
-)
+add_executable(${PROJECT_NAME}_node
+  src/robotiq_ft_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node
+  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_warnings)
 
-## Declare C++ component executable
-add_executable(${PROJECT_NAME}_node src/robotiq_ft_driver_node_main.ros2.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}Targets
+  FILE_SET HEADERS)
+install(TARGETS ${PROJECT_NAME}_components)
+install(TARGETS ${PROJECT_NAME}_node
+  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
 
-#############
-## Install ##
-#############
-
-## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_components
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(
-  TARGETS ${PROJECT_NAME}_node
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-## Mark cpp header files for installation
-install(DIRECTORY include/
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE
-)
-
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-
+ament_export_targets(${PROJECT_NAME}Targets HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  Eigen3)
 ament_package()

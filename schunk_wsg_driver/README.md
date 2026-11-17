@@ -7,7 +7,7 @@ ROS driver for Schunk WSG grippers supporting UDP and CAN control interfaces
 
 CAN is supported using the socketcan system in Linux that allows CAN bus communication in a manner similar to network sockets.
 
-- [ROS 2 Humble+](http://ros.org)
+- [ROS 2 Jazzy+](http://ros.org)
 
 ROS provides the build system and IPC with the driver.
 

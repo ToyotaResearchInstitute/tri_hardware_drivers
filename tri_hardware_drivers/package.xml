@@ -10,9 +10,8 @@
   </maintainer>
   <license>TODO</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <exec_depend>ati_netcanoem_driver</exec_depend>
+  <exec_depend>ati_netcanoem_ft_driver</exec_depend>
   <exec_depend>dji_robomaster_ep_driver</exec_depend>
-  <exec_depend>lightweight_ur_interface</exec_depend>
   <exec_depend>robotiq_ft_driver</exec_depend>
   <exec_depend>robotiq_2_finger_gripper_driver</exec_depend>
   <exec_depend>robotiq_3_finger_gripper_driver</exec_depend>

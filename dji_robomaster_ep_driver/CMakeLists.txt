@@ -1,8 +1,13 @@
-cmake_minimum_required(VERSION 3.5)
-project(dji_robomaster_ep_driver)
+cmake_minimum_required(VERSION 3.28...4.2)
+project(dji_robomaster_ep_driver VERSION 0.0.0 LANGUAGES CXX)
+
+include(CheckIPOSupported)
+include(GNUInstallDirs)
 
 find_package(ament_cmake REQUIRED)
+
 find_package(common_robotics_utilities REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -11,110 +16,93 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 
-find_package(Eigen3 REQUIRED)
-set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-
-## We don't depend on Drake, but we do use different build flags if present.
-find_package(drake QUIET)
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(include src SYSTEM ${Eigen3_INCLUDE_DIRS})
-
-## Build options
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-cmake_policy(SET CMP0069 NEW)
-
-add_compile_options(-std=c++17)
-add_compile_options(-Wall)
-add_compile_options(-Wextra)
-add_compile_options(-Werror)
-add_compile_options(-Wconversion)
-add_compile_options(-Wshadow)
-add_compile_options(-O3)
-add_compile_options(-g)
-add_compile_options(-Werror=non-virtual-dtor)
-add_compile_options(-Wold-style-cast)
-add_compile_options(-Wpessimizing-move)
-add_compile_options(-Wuninitialized)
-
-if(drake_FOUND)
-    message(STATUS "Drake found, disabling -march=native")
-else()
-    message(STATUS "Drake NOT found, enabling -march=native")
-    add_compile_options(-march=native)
+# Defaults when this project is built on its own, as colcon does. A parent
+# project or the command line can override them.
+if(PROJECT_IS_TOP_LEVEL)
+  if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
+  endif()
+  if(NOT DEFINED CMAKE_COMPILE_WARNING_AS_ERROR)
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+  endif()
+  if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    check_ipo_supported(RESULT ipo_supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${ipo_supported})
+  endif()
 endif()
 
-add_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
+# Warnings for this project's own targets only; consumers don't inherit them.
+add_library(${PROJECT_NAME}_warnings INTERFACE)
+set(${PROJECT_NAME}_warning_flags
+  -Wall -Wextra -Wconversion -Wshadow -Wold-style-cast -Wpessimizing-move
+  -Wuninitialized -Werror=non-virtual-dtor)
+target_compile_options(${PROJECT_NAME}_warnings INTERFACE
+  "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:${${PROJECT_NAME}_warning_flags}>")
 
-## Interface library
+# Hardware interface, independent of ROS.
 add_library(${PROJECT_NAME}
-            include/${PROJECT_NAME}/dji_robomaster_ep_driver.hpp
-            include/${PROJECT_NAME}/joystick_controller_mappings.hpp
-            src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp
-            src/${PROJECT_NAME}/joystick_controller_mappings.cpp)
-ament_target_dependencies(${PROJECT_NAME}
-  common_robotics_utilities geometry_msgs sensor_msgs)
+  src/${PROJECT_NAME}/dji_robomaster_ep_driver.cpp
+  src/${PROJECT_NAME}/joystick_controller_mappings.cpp)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+target_sources(${PROJECT_NAME}
+  PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS include
+    FILES
+      include/dji_robomaster_ep_driver/dji_robomaster_ep_driver.hpp
+      include/dji_robomaster_ep_driver/joystick_controller_mappings.hpp)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    common_robotics_utilities::common_robotics_utilities
+    Eigen3::Eigen
+    ${geometry_msgs_TARGETS}
+    ${sensor_msgs_TARGETS}
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
 
-## Declare C++ components library
+# ROS node(s), as components and as standalone executables.
 add_library(${PROJECT_NAME}_components SHARED
   src/dji_robomaster_ep_driver_node.ros2.cpp
   src/joystick_teleop_node.ros2.cpp)
-target_link_libraries(${PROJECT_NAME}_components ${PROJECT_NAME})
-ament_target_dependencies(${PROJECT_NAME}_components
-  common_robotics_utilities geometry_msgs nav_msgs rclcpp
-  rclcpp_components sensor_msgs std_msgs tf2_msgs)
-
-## Register C++ components
-rclcpp_components_register_nodes(
-  ${PROJECT_NAME}_components
+target_include_directories(${PROJECT_NAME}_components PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+target_compile_features(${PROJECT_NAME}_components PUBLIC cxx_std_17)
+target_link_libraries(${PROJECT_NAME}_components
+  PUBLIC
+    ${PROJECT_NAME}
+    rclcpp::rclcpp
+    ${nav_msgs_TARGETS}
+    ${std_msgs_TARGETS}
+    ${tf2_msgs_TARGETS}
+  PRIVATE
+    rclcpp_components::component
+    $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+rclcpp_components_register_nodes(${PROJECT_NAME}_components
   "dji_robomaster_ep_driver::DJIRobomasterEPDriverNode"
-  "dji_robomaster_ep_driver::ControllerTeleopNode"
-)
+  "dji_robomaster_ep_driver::ControllerTeleopNode")
 
-## Declare C++ components' executables
-add_executable(
-  ${PROJECT_NAME}_node src/dji_robomaster_ep_driver_node_main.ros2.cpp)
-target_link_libraries(${PROJECT_NAME}_node ${PROJECT_NAME}_components)
+add_executable(${PROJECT_NAME}_node
+  src/dji_robomaster_ep_driver_node_main.ros2.cpp)
+target_link_libraries(${PROJECT_NAME}_node
+  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_warnings)
 
-add_executable(joystick_teleop_node src/joystick_teleop_node_main.ros2.cpp)
-target_link_libraries(joystick_teleop_node ${PROJECT_NAME}_components)
+add_executable(joystick_teleop_node
+  src/joystick_teleop_node_main.ros2.cpp)
+target_link_libraries(joystick_teleop_node
+  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_warnings)
 
-#############
-## Install ##
-#############
+install(TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}Targets
+  FILE_SET HEADERS)
+install(TARGETS ${PROJECT_NAME}_components)
+install(TARGETS ${PROJECT_NAME}_node joystick_teleop_node
+  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
 
-## Mark executables and/or libraries for installation
-install(TARGETS
-  ${PROJECT_NAME}
-  ${PROJECT_NAME}_components
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(TARGETS
-  ${PROJECT_NAME}_node joystick_teleop_node
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-## Mark cpp header files for installation
-install(DIRECTORY include/
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.hpp"
-  PATTERN ".svn" EXCLUDE
-)
-
-ament_export_definitions(-DDJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
-ament_export_dependencies(common_robotics_utilities)
-ament_export_dependencies(geometry_msgs)
-ament_export_dependencies(sensor_msgs)
-ament_export_dependencies(Eigen3)
-
+ament_export_targets(${PROJECT_NAME}Targets HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  common_robotics_utilities
+  Eigen3
+  geometry_msgs
+  sensor_msgs)
 ament_package()

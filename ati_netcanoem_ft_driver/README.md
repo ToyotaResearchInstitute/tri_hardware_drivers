@@ -19,7 +19,7 @@ ROS provides the build system and IPC with the driver.
 
 Clone into an existing ROS workspace.
 
-This package supports [ROS 2 Humble+](https://docs.ros.org/en/rolling/Installation.html) distributions.
+This package supports [ROS 2 Jazzy+](https://docs.ros.org/en/rolling/Installation.html) distributions.
 
 Use [`rosdep`](https://docs.ros.org/independent/api/rosdep/html/) to ensure all dependencies in the `package.xml` are satisfied:
 
