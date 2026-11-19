@@ -31,13 +31,23 @@ if(PROJECT_IS_TOP_LEVEL)
   endif()
 endif()
 
-# Warnings for this project's own targets only; consumers don't inherit them.
-add_library(${PROJECT_NAME}_warnings INTERFACE)
+# Flags for this project's own targets only; consumers don't inherit them.
+add_library(${PROJECT_NAME}_compile_options INTERFACE)
 set(${PROJECT_NAME}_warning_flags
   -Wall -Wextra -Wconversion -Wshadow -Wold-style-cast -Wpessimizing-move
   -Wuninitialized -Werror=non-virtual-dtor)
-target_compile_options(${PROJECT_NAME}_warnings INTERFACE
+target_compile_options(${PROJECT_NAME}_compile_options INTERFACE
   "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:${${PROJECT_NAME}_warning_flags}>")
+
+# We don't depend on Drake, but we do use different build flags if present.
+find_package(drake QUIET)
+if(drake_FOUND)
+  message(STATUS "Drake found, disabling -march=native")
+else()
+  message(STATUS "Drake NOT found, enabling -march=native")
+  target_compile_options(${PROJECT_NAME}_compile_options INTERFACE
+    $<$<COMPILE_LANGUAGE:CXX>:-march=native>)
+endif()
 
 # Hardware interface, independent of ROS.
 add_library(${PROJECT_NAME}
@@ -59,7 +69,7 @@ target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
     ${geometry_msgs_TARGETS}
     ${sensor_msgs_TARGETS}
-  PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+  PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_compile_options>)
 target_compile_definitions(${PROJECT_NAME} PUBLIC
   DJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
 
@@ -79,7 +89,7 @@ target_link_libraries(${PROJECT_NAME}_components
     ${tf2_msgs_TARGETS}
   PRIVATE
     rclcpp_components::component
-    $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+    $<BUILD_INTERFACE:${PROJECT_NAME}_compile_options>)
 rclcpp_components_register_nodes(${PROJECT_NAME}_components
   "dji_robomaster_ep_driver::DJIRobomasterEPDriverNode"
   "dji_robomaster_ep_driver::ControllerTeleopNode")
@@ -87,12 +97,12 @@ rclcpp_components_register_nodes(${PROJECT_NAME}_components
 add_executable(${PROJECT_NAME}_node
   src/dji_robomaster_ep_driver_node_main.ros2.cpp)
 target_link_libraries(${PROJECT_NAME}_node
-  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_warnings)
+  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_compile_options)
 
 add_executable(joystick_teleop_node
   src/joystick_teleop_node_main.ros2.cpp)
 target_link_libraries(joystick_teleop_node
-  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_warnings)
+  PRIVATE ${PROJECT_NAME}_components ${PROJECT_NAME}_compile_options)
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}Targets
