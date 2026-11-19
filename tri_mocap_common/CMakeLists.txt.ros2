@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}_msgs
   msg/MocapObject.msg
   msg/MocapSegment.msg
   msg/MocapState.msg
+  LIBRARY_NAME ${PROJECT_NAME}
   DEPENDENCIES geometry_msgs std_msgs)
 rosidl_get_typesupport_target(msgs_cpp
   ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
