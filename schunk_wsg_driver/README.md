@@ -7,9 +7,9 @@ ROS driver for Schunk WSG grippers supporting UDP and CAN control interfaces
 
 CAN is supported using the socketcan system in Linux that allows CAN bus communication in a manner similar to network sockets.
 
-- [ROS 2 Jazzy+](http://ros.org)
+- [ROS Kinetic](http://ros.org)
 
-ROS provides the build system and IPC with the driver.
+ROS provides the build system, Catkin, and IPC with the driver.
 
 
 ## Optional Dependencies
@@ -20,7 +20,7 @@ To use the CAN interface, your CAN adapter must support socketcan. A full list o
 
 ## Build
 
-Clone into an existing ROS workspace and build with [`colcon`](https://colcon.readthedocs.io/en/released/).
+Clone into an existing Catkin workspace and build with `catkin_make`.
 
 ## Run
 
@@ -51,7 +51,7 @@ Common parameters:
 3. Start driver node. You can integrate the parameters and starting into a ROS launch file, or you can provide all parameters on the command line:
 
 ```
-~$ ros2 run schunk_wsg_driver schunk_wsg_driver_node --ros-args -p interface_type:="udp" -p gripper_ip_address:="192.168.1.2"
+~$ rosrun schunk_wsg_driver schunk_wsg_driver_node _interface_type:="udp" _gripper_ip_address:="192.168.1.2"
 ```
 
 ### CAN interface
@@ -77,5 +77,5 @@ Common parameters:
 4. Start driver node. You can integrate the parameters and starting into a ROS launch file, or you can provide all parameters on the command line:
 
 ```
-~$ ros2 run schunk_wsg_driver schunk_wsg_driver_node --ros-args -p interface_type:="can" -p socketcan_interface:="can0" -p gripper_base_can_id:=100
+~$ rosrun schunk_wsg_driver schunk_wsg_driver_node _interface_type:="can" _socketcan_interface:="can0" _gripper_base_can_id:="100"
 ```

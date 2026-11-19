@@ -60,6 +60,8 @@ target_link_libraries(${PROJECT_NAME}
     ${geometry_msgs_TARGETS}
     ${sensor_msgs_TARGETS}
   PRIVATE $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+  DJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION=2)
 
 # ROS node(s), as components and as standalone executables.
 add_library(${PROJECT_NAME}_components SHARED

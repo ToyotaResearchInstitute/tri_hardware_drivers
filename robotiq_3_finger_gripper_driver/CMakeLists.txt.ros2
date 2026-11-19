@@ -77,6 +77,8 @@ target_link_libraries(${PROJECT_NAME}_components
   PRIVATE
     rclcpp_components::component
     $<BUILD_INTERFACE:${PROJECT_NAME}_warnings>)
+target_compile_definitions(${PROJECT_NAME}_components PUBLIC
+  ROBOTIQ_3_FINGER_GRIPPER_DRIVER__SUPPORTED_ROS_VERSION=2)
 rclcpp_components_register_nodes(${PROJECT_NAME}_components
   "robotiq_3_finger_gripper_driver::Robotiq3FingerDriverNode")
 

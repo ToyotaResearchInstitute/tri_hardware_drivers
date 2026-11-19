@@ -3,7 +3,11 @@
 namespace dji_robomaster_ep_driver
 {
 
+#if DJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION == 2
   using Twist = geometry_msgs::msg::Twist;
+#elif DJI_ROBOMASTER_EP_DRIVER__SUPPORTED_ROS_VERSION == 1
+  using Twist = geometry_msgs::Twist;
+#endif
 
 Twist
 XboxOneControllerMapping::ComputeVelocityCommand(const Joy& joy_msg) const

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package>
+  <name>ati_netcanoem_ft_driver</name>
+  <version>0.0.0</version>
+  <description>
+    ROS driver for ATI F/T sensors using the NETCANOEM interface
+  </description>
+
+  <maintainer email="calder.phillips-grafflin@tri.global">
+    Calder Phillips-Grafflin
+  </maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>common_robotics_utilities</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>common_robotics_utilities</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>std_srvs</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>
